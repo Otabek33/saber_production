@@ -1,0 +1,96 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{{ name }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Debtors and creditors" as section %}
+  {% include "partials/_page_header.html" with title=name section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card"><div class="card-body py-3 px-4">
+        <span class="text-muted">{% translate "Shipped" %}</span>
+        <h5 class="mb-0 mt-1">{{ shipped|floatformat:"2g" }}</h5>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card"><div class="card-body py-3 px-4">
+        <span class="text-muted">{% translate "Paid" %}</span>
+        <h5 class="mb-0 mt-1">{{ paid|floatformat:"2g" }}</h5>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card"><div class="card-body py-3 px-4">
+        <span class="text-muted">{% if balance >= 0 %}{% translate "Owes us" %}{% else %}{% translate "Paid in advance" %}{% endif %}</span>
+        <h5 class="mb-0 mt-1 {% if balance > 0 %}text-danger{% elif balance < 0 %}text-success{% endif %}">{{ balance|floatformat:"2g" }}</h5>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-xl-9">
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Date" %}</th>
+                <th>{% translate "Operation" %}</th>
+                <th class="num">{% translate "Shipped" %}</th>
+                <th class="num">{% translate "Paid" %}</th>
+                <th class="num">{% translate "Balance" context "ledger" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for line in page_obj %}
+                <tr>
+                  <td class="text-nowrap">
+                    {% if line.sale %}<a href="{% url 'sales:daily' %}?date={{ line.date.isoformat }}" class="text-reset">{{ line.date|date:"d.m.Y" }}</a>{% elif line.kind == "opening" %}—{% else %}{{ line.date|date:"d.m.Y" }}{% endif %}
+                  </td>
+                  <td>
+                    {% if line.kind == "payment" %}<span class="badge bg-success-subtle text-success me-1">{% translate "Payment" %}</span>{% elif line.kind == "refund" %}<span class="badge bg-warning-subtle text-warning me-1">{% translate "Refund" %}</span>{% elif line.kind == "opening" %}<span class="badge bg-secondary-subtle text-secondary me-1">{% translate "Opening balance" %}</span>{% endif %}
+                    <span class="{% if line.operation %}text-muted fs-2{% endif %}">{{ line.text|truncatechars:140 }}</span>
+                  </td>
+                  <td class="num">{% if line.debit %}{{ line.debit|floatformat:"2g" }}{% endif %}</td>
+                  <td class="num text-success">{% if line.credit %}{{ line.credit|floatformat:"2g" }}{% endif %}</td>
+                  <td class="num fw-semibold">{{ line.balance|floatformat:"2g" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-6">{% translate "No shipments or payments yet." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% include "partials/_pagination.html" %}
+      </div>
+    </div>
+    <div class="col-xl-3">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Clients" %}</h5></div>
+        <ul class="list-group list-group-flush">
+          {% for client in clients %}
+            <li class="list-group-item px-4 py-2 d-flex justify-content-between align-items-center">
+              <span>{{ client.name }}</span>
+              {% if perms.sales.change_client %}
+                <a href="{% url 'sales:client_edit' client.pk %}?next={{ request.get_full_path|urlencode }}" class="text-muted" title="{% translate "Edit client" %}" aria-label="{% translate "Edit client" %}">
+                  <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                </a>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="px-4 py-3 border-top text-muted fs-2">
+          {% if payer %}
+            {% blocktranslate with name=payer.name %}Payments: bank lines from {{ name }}.{% endblocktranslate %}
+          {% else %}
+            {% translate "No bank payer is linked, so payments aren't counted. Link one on the client's page." %}
+          {% endif %}
+          {% if since %}{% blocktranslate with date=since|date:"d.m.Y" %}Counted from {{ date }}.{% endblocktranslate %}{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

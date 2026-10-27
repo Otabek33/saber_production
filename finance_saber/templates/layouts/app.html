@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% comment %}
+  Signed-in pages: header, horizontal menu and the page body.
+  Blocks: page_header (usually the _page_header.html include) and content.
+{% endcomment %}
+
+{% block body %}
+  <div id="main-wrapper">
+    <div class="page-wrapper">
+      {% include "partials/_header.html" %}
+
+      <div class="body-wrapper">
+        <div class="container-fluid">
+          {% include "partials/_messages.html" %}
+          {% block page_header %}{% endblock %}
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="dark-transparent sidebartoggler"></div>
+{% endblock %}

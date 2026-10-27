@@ -1,0 +1,42 @@
+{% load i18n %}
+{# Horizontal main menu, built from finance_saber/core/navigation.py #}
+<aside class="left-sidebar with-horizontal" aria-label="{% translate "Main menu" %}">
+  <div>
+    {# Drawer header (small screens only): brand and a close button, so the menu can be closed without the overlay #}
+    <div class="drawer-head d-flex d-xl-none align-items-center justify-content-between px-4 pb-3 mb-2 border-bottom">
+      {% include "partials/_brand.html" with class="nav-link p-0" %}
+      <button type="button" class="btn btn-sm bg-primary-subtle text-primary sidebartoggler" aria-label="{% translate "Close menu" %}">
+        <iconify-icon icon="solar:close-circle-line-duotone" class="fs-6"></iconify-icon>
+      </button>
+    </div>
+    <nav id="sidebarnavh" class="sidebar-nav scroll-sidebar container-fluid">
+      <ul id="sidebarnav">
+        {% for item in nav_menu %}
+          <li class="sidebar-item{% if item.active %} selected{% endif %}">
+            {% if item.children %}
+              <a class="sidebar-link has-arrow{% if item.active %} active{% endif %}" href="javascript:void(0)" aria-expanded="false">
+                <span><iconify-icon icon="{{ item.icon }}" class="ti"></iconify-icon></span>
+                <span class="hide-menu">{{ item.label }}</span>
+              </a>
+              <ul aria-expanded="false" class="collapse first-level">
+                {% for child in item.children %}
+                  <li class="sidebar-item{% if child.active %} selected{% endif %}">
+                    <a href="{{ child.url }}" class="sidebar-link{% if child.active %} active{% endif %}"{% if child.active %} aria-current="page"{% endif %}>
+                      <i class="ti ti-circle"></i>
+                      <span class="hide-menu">{{ child.label }}</span>
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <a class="sidebar-link{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
+                <span><iconify-icon icon="{{ item.icon }}" class="ti"></iconify-icon></span>
+                <span class="hide-menu">{{ item.label }}</span>
+              </a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+</aside>

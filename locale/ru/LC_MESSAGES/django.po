@@ -1,0 +1,3377 @@
+# Russian translation of finance saber.
+#
+# Edit this file, then compile it to django.mo:
+# python manage.py compilemessages   (needs GNU gettext)
+# pybabel compile -d locale -D django (Babel, from the dev dependencies)
+msgid ""
+msgstr ""
+"Project-Id-Version:  finance_saber\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-10-22 11:22+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ru\n"
+"Language-Team: ru <LL@li.org>\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+# --- Layout
+# -------------------------------------------------------------------
+msgid "Loading"
+msgstr "Загрузка"
+
+msgid "Welcome to"
+msgstr "Добро пожаловать в"
+
+msgid "Accounts, sales, purchases and reporting for your business, in one place."
+msgstr "Учёт, продажи, закупки и отчётность вашего бизнеса в одном месте."
+
+msgid "Toggle menu"
+msgstr "Показать или скрыть меню"
+
+msgid "Search"
+msgstr "Поиск"
+
+msgid "Toggle toolbar"
+msgstr "Показать или скрыть панель"
+
+msgid "Dark mode"
+msgstr "Тёмная тема"
+
+msgid "Light mode"
+msgstr "Светлая тема"
+
+msgid "Notifications"
+msgstr "Уведомления"
+
+msgid "You're all caught up."
+msgstr "Новых уведомлений нет."
+
+msgid "Account menu"
+msgstr "Меню аккаунта"
+
+msgid "My Profile"
+msgstr "Мой профиль"
+
+msgid "Change Password"
+msgstr "Сменить пароль"
+
+msgid "Admin"
+msgstr "Администрирование"
+
+msgid "Sign Out"
+msgstr "Выйти"
+
+msgid "Language"
+msgstr "Язык"
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "Dashboard"
+msgstr "Главная"
+
+msgid "Search pages"
+msgstr "Поиск страниц"
+
+msgid "Quick Page Links"
+msgstr "Быстрые ссылки"
+
+msgid "No pages match your search."
+msgstr "Страницы не найдены."
+
+# --- Main menu
+# ----------------------------------------------------------------
+msgid "Finance"
+msgstr "Финансы"
+
+msgid "Chart of accounts"
+msgstr "План счетов"
+
+msgid "Journal entries"
+msgstr "Журнал проводок"
+
+msgid "Bank & cash"
+msgstr "Банк и касса"
+
+msgid "Sales"
+msgstr "Продажи"
+
+msgid "Customers"
+msgstr "Клиенты"
+
+msgid "Invoices"
+msgstr "Счета клиентам"
+
+msgid "Payments received"
+msgstr "Поступления"
+
+msgid "Purchases"
+msgstr "Закупки"
+
+msgid "Vendors"
+msgstr "Поставщики"
+
+msgid "Bills"
+msgstr "Счета поставщиков"
+
+msgid "Payments made"
+msgstr "Платежи"
+
+msgid "Reports"
+msgstr "Отчёты"
+
+msgid "Profit & loss"
+msgstr "Прибыли и убытки"
+
+msgid "Balance sheet"
+msgstr "Баланс"
+
+msgid "Cash flow"
+msgstr "Движение денежных средств"
+
+msgid "Coming soon"
+msgstr "Скоро"
+
+#, python-format
+msgid "%(title)s is coming soon"
+msgstr "«%(title)s» скоро появится"
+
+msgid "This module hasn't been built yet. It will appear here once it's ready."
+msgstr "Этот раздел ещё в разработке. Он появится здесь, когда будет готов."
+
+msgid "Back to dashboard"
+msgstr "На главную"
+
+# --- Dashboard (sample data from the MatDash template)
+# ------------------------
+msgid "Welcome back"
+msgstr "С возвращением,"
+
+msgid "Budget"
+msgstr "Бюджет"
+
+msgid "Expense"
+msgstr "Расходы"
+
+msgid "Projects"
+msgstr "Проекты"
+
+msgid "Revenue Forecast"
+msgstr "Прогноз выручки"
+
+msgid "Overview of Profit"
+msgstr "Обзор прибыли"
+
+msgid "Your Performance"
+msgstr "Ваши показатели"
+
+msgid "Last check on 25 february"
+msgstr "Последняя проверка 25 февраля"
+
+msgid "64 new orders"
+msgstr "64 новых заказа"
+
+msgid "Processing"
+msgstr "В обработке"
+
+msgid "4 orders"
+msgstr "4 заказа"
+
+msgid "On hold"
+msgstr "Приостановлены"
+
+msgid "12 orders"
+msgstr "12 заказов"
+
+msgid "Delivered"
+msgstr "Доставлены"
+
+msgid "Learn insigs how to manage all aspects of your startup."
+msgstr "Узнайте, как управлять всеми сторонами вашего бизнеса."
+
+msgid "Last 7 days"
+msgstr "За последние 7 дней"
+
+msgid "April 07 - April 14"
+msgstr "7–14 апреля"
+
+msgid "Last Week"
+msgstr "Прошлая неделя"
+
+msgid "Sales Overview"
+msgstr "Обзор продаж"
+
+msgid "Revenue by Product"
+msgstr "Выручка по продуктам"
+
+msgid "App"
+msgstr "Приложения"
+
+msgid "Mobile"
+msgstr "Мобильные"
+
+msgid "SaaS"
+msgstr "SaaS"
+
+msgid "Others"
+msgstr "Другое"
+
+msgid "Assigned"
+msgstr "Ответственный"
+
+msgid "Progress"
+msgstr "Прогресс"
+
+msgid "Priority"
+msgstr "Приоритет"
+
+msgid "Low"
+msgstr "Низкий"
+
+msgid "Medium"
+msgstr "Средний"
+
+msgid "Very High"
+msgstr "Очень высокий"
+
+msgid "High"
+msgstr "Высокий"
+
+msgid "Total settlements"
+msgstr "Всего расчётов"
+
+msgid "Total balance"
+msgstr "Общий баланс"
+
+msgid "Withdrawals"
+msgstr "Списания"
+
+# --- Sign in, sign up, password reset
+# -----------------------------------------
+msgid "Sign In"
+msgstr "Вход"
+
+#, python-format
+msgid "Sign in to your %(site)s account"
+msgstr "Войдите в свой аккаунт %(site)s"
+
+msgid "Remember this device"
+msgstr "Запомнить это устройство"
+
+msgid "Forgot Password?"
+msgstr "Забыли пароль?"
+
+#, python-format
+msgid "New to %(site)s?"
+msgstr "Впервые в %(site)s?"
+
+msgid "Create an account"
+msgstr "Создать аккаунт"
+
+msgid "Sign Up"
+msgstr "Регистрация"
+
+#, python-format
+msgid "Create your %(site)s account"
+msgstr "Создайте аккаунт %(site)s"
+
+msgid "Already have an account?"
+msgstr "Уже есть аккаунт?"
+
+msgid "Email address"
+msgstr "Адрес электронной почты"
+
+msgid "A user with that email address already exists."
+msgstr "Пользователь с таким адресом электронной почты уже существует."
+
+msgid "Welcome! Your account has been created."
+msgstr "Добро пожаловать! Ваш аккаунт создан."
+
+msgid "Forgot Password"
+msgstr "Восстановление пароля"
+
+msgid "Forgot your password?"
+msgstr "Забыли пароль?"
+
+msgid "Enter the email address on your account and we'll send you a link to reset your password."
+msgstr "Введите адрес электронной почты вашего аккаунта, и мы отправим ссылку для сброса пароля."
+
+msgid "Send Reset Link"
+msgstr "Отправить ссылку"
+
+msgid "Back to Sign In"
+msgstr "Вернуться ко входу"
+
+msgid "Check Your Email"
+msgstr "Проверьте почту"
+
+msgid "Check your email"
+msgstr "Проверьте почту"
+
+msgid "If an account exists for that address, we've sent a link to reset its password. It may take a few minutes to arrive; check your spam folder too."
+msgstr "Если аккаунт с этим адресом существует, мы отправили на него ссылку для сброса пароля. Письмо может прийти через несколько минут; проверьте также папку «Спам»."
+
+msgid "Set a New Password"
+msgstr "Новый пароль"
+
+msgid "Set a new password"
+msgstr "Задайте новый пароль"
+
+msgid "Link expired"
+msgstr "Ссылка недействительна"
+
+msgid "Choose a new password for your account."
+msgstr "Придумайте новый пароль для вашего аккаунта."
+
+msgid "This reset link is invalid or has already been used. Request a new one below."
+msgstr "Эта ссылка недействительна или уже использована. Запросите новую ниже."
+
+msgid "Request a New Link"
+msgstr "Запросить новую ссылку"
+
+msgid "Password Changed"
+msgstr "Пароль изменён"
+
+msgid "Password changed"
+msgstr "Пароль изменён"
+
+msgid "Your password has been set. You can now sign in with it."
+msgstr "Новый пароль сохранён. Теперь вы можете войти с ним."
+
+#, python-format
+msgid "Hello %(name)s,"
+msgstr "Здравствуйте, %(name)s!"
+
+#, python-format
+msgid "Someone asked to reset the password for your %(brand)s account. To choose a new password, open this link:"
+msgstr "Поступил запрос на сброс пароля для вашего аккаунта %(brand)s. Чтобы задать новый пароль, перейдите по ссылке:"
+
+msgid "If you didn't ask for this, you can ignore this email; your password won't change."
+msgstr "Если вы не запрашивали сброс, просто проигнорируйте это письмо — пароль останется прежним."
+
+#, python-format
+msgid "Reset your %(brand)s password"
+msgstr "Сброс пароля %(brand)s"
+
+# --- Profile
+# ------------------------------------------------------------------
+msgid "Member since"
+msgstr "С нами с"
+
+msgid "Last sign in"
+msgstr "Последний вход"
+
+msgid "Personal details"
+msgstr "Личные данные"
+
+msgid "Save Changes"
+msgstr "Сохранить"
+
+msgid "Cancel"
+msgstr "Отмена"
+
+msgid "Your profile has been updated."
+msgstr "Профиль обновлён."
+
+msgid "Your password has been changed."
+msgstr "Пароль изменён."
+
+# --- Cash desk
+# ----------------------------------------------------------------
+msgid "Cash desk"
+msgstr "Касса"
+
+msgid "Cash operations"
+msgstr "Кассовые операции"
+
+msgid "Handbook"
+msgstr "Справочник"
+
+msgctxt "operation type"
+msgid "Income"
+msgstr "Приход"
+
+msgctxt "operation type"
+msgid "Expense"
+msgstr "Расход"
+
+msgctxt "operation type"
+msgid "Transfer"
+msgstr "Перевод"
+
+msgctxt "ledger"
+msgid "Income"
+msgstr "Приход"
+
+msgctxt "ledger"
+msgid "Expense"
+msgstr "Расход"
+
+msgctxt "ledger"
+msgid "Balance"
+msgstr "Остаток"
+
+msgid "Cash UZS"
+msgstr "Наличные UZS"
+
+msgid "Cash USD"
+msgstr "Наличные USD"
+
+msgid "Card"
+msgstr "Карта"
+
+msgid "name"
+msgstr "название"
+
+msgid "slug"
+msgstr "код в адресе"
+
+msgid "active"
+msgstr "активна"
+
+msgid "cash desk"
+msgstr "касса"
+
+msgid "cash desks"
+msgstr "кассы"
+
+msgid "type"
+msgstr "тип"
+
+msgid "position"
+msgstr "порядок"
+
+msgid "Order in lists and reports."
+msgstr "Порядок в списках и отчётах."
+
+msgid "article"
+msgstr "статья"
+
+msgid "articles"
+msgstr "статьи"
+
+msgid "category"
+msgstr "категория"
+
+msgid "categories"
+msgstr "категории"
+
+msgid "date"
+msgstr "дата"
+
+msgid "account"
+msgstr "счёт"
+
+msgid "For a transfer, the account the money leaves."
+msgstr "Для перевода — счёт, с которого списываются деньги."
+
+msgid "amount"
+msgstr "сумма"
+
+msgid "to account"
+msgstr "на счёт"
+
+msgid "amount received"
+msgstr "сумма зачисления"
+
+msgid "exchange rate"
+msgstr "курс"
+
+msgid "note"
+msgstr "примечание"
+
+msgid "cancelled"
+msgstr "отменена"
+
+msgid "created by"
+msgstr "создал"
+
+msgid "created"
+msgstr "создана"
+
+msgid "updated"
+msgstr "изменена"
+
+msgid "operation"
+msgstr "операция"
+
+msgid "operations"
+msgstr "операции"
+
+#, python-format
+msgid "This category belongs to a %(kind)s article."
+msgstr "Эта категория относится к статье с типом «%(kind)s»."
+
+msgid "Choose the account the money goes to."
+msgstr "Выберите счёт, на который поступают деньги."
+
+msgid "Choose a different account from the one the money leaves."
+msgstr "Выберите счёт, отличный от счёта списания."
+
+msgid "Both accounts are in the same currency, so the amounts must match."
+msgstr "Оба счёта в одной валюте, поэтому суммы должны совпадать."
+
+msgid "Enter the amount received in the other currency."
+msgstr "Укажите сумму зачисления в другой валюте."
+
+msgid "Amount"
+msgstr "Сумма"
+
+msgid "Amount received"
+msgstr "Сумма зачисления"
+
+msgid "Rate"
+msgstr "Курс"
+
+msgid "UZS per 1 USD."
+msgstr "UZS за 1 USD."
+
+msgid "From"
+msgstr "С"
+
+msgid "To"
+msgstr "По"
+
+msgid "Type"
+msgstr "Тип"
+
+msgid "All types"
+msgstr "Все типы"
+
+msgid "Article"
+msgstr "Статья"
+
+msgid "All articles"
+msgstr "Все статьи"
+
+msgid "Account"
+msgstr "Счёт"
+
+msgid "All accounts"
+msgstr "Все счета"
+
+msgid "The start date is after the end date."
+msgstr "Дата начала позже даты окончания."
+
+msgid "There is no cash desk yet. Add one in the admin."
+msgstr "Кассы пока нет. Добавьте её в администрировании."
+
+msgid "Operation added."
+msgstr "Операция добавлена."
+
+msgid "Operation updated."
+msgstr "Операция изменена."
+
+msgid "Operation cancelled. It no longer counts towards the balance."
+msgstr "Операция отменена и больше не учитывается в остатке."
+
+msgid "Operation restored."
+msgstr "Операция восстановлена."
+
+msgid "Saved."
+msgstr "Сохранено."
+
+msgid "New article"
+msgstr "Новая статья"
+
+msgid "Edit article"
+msgstr "Изменить статью"
+
+msgid "New category"
+msgstr "Новая категория"
+
+msgid "Edit category"
+msgstr "Изменить категорию"
+
+msgid "inactive"
+msgstr "неактивна"
+
+msgid "No categories yet."
+msgstr "Категорий пока нет."
+
+msgid "No articles yet."
+msgstr "Статей пока нет."
+
+#, python-format
+msgid "%(counter)s article"
+msgid_plural "%(counter)s articles"
+msgstr[0] "%(counter)s статья"
+msgstr[1] "%(counter)s статьи"
+msgstr[2] "%(counter)s статей"
+msgstr[3] "%(counter)s статьи"
+
+msgid "Articles and categories in use can't be deleted, so past operations keep their meaning. Untick “Active” to hide one from new operations instead."
+msgstr "Используемые статьи и категории нельзя удалить, чтобы прошлые операции сохраняли смысл. Вместо этого снимите отметку «Активна» — тогда они не будут предлагаться для новых операций."
+
+msgid "Edit operation"
+msgstr "Изменить операцию"
+
+msgid "This operation is cancelled and doesn't count towards the balance."
+msgstr "Эта операция отменена и не учитывается в остатке."
+
+#, python-format
+msgid "Created %(created)s by %(author)s."
+msgstr "Создана %(created)s, автор: %(author)s."
+
+msgid "New operation"
+msgstr "Новая операция"
+
+msgid "Add"
+msgstr "Добавить"
+
+msgid "Apply"
+msgstr "Применить"
+
+msgid "Reset"
+msgstr "Сбросить"
+
+msgid "Category"
+msgstr "Категория"
+
+msgid "Date"
+msgstr "Дата"
+
+msgid "Note"
+msgstr "Примечание"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Actions"
+msgstr "Действия"
+
+msgid "Cancelled"
+msgstr "Отменена"
+
+msgid "Edit"
+msgstr "Изменить"
+
+msgid "Restore"
+msgstr "Восстановить"
+
+msgid "Cancel operation"
+msgstr "Отменить операцию"
+
+msgid "Cancel this operation? It will stay in the list but no longer count towards the balance."
+msgstr "Отменить операцию? Она останется в списке, но перестанет учитываться в остатке."
+
+msgid "No operations for this period."
+msgstr "За этот период операций нет."
+
+msgid "Total for the period"
+msgstr "Итого за период"
+
+#, python-format
+msgid "Balance on %(date)s"
+msgstr "Остаток на %(date)s"
+
+#, python-format
+msgid "Opening balance on %(date)s"
+msgstr "Остаток на начало %(date)s"
+
+msgid "source"
+msgstr "источник"
+
+msgid "Hide group"
+msgstr "Свернуть группу"
+
+msgid "Show group"
+msgstr "Развернуть группу"
+
+msgid "Balance carried over from the previous page"
+msgstr "Остаток на начало страницы"
+
+#, python-format
+msgid "Rows %(start)s–%(end)s of %(total)s"
+msgstr "Строки %(start)s–%(end)s из %(total)s"
+
+msgid "Pages"
+msgstr "Страницы"
+
+msgid "Previous page"
+msgstr "Предыдущая страница"
+
+msgid "Next page"
+msgstr "Следующая страница"
+
+msgid "All cash desks"
+msgstr "Все кассы"
+
+#, python-format
+msgid "Choose one or more of: %(accounts)s."
+msgstr "Выберите один или несколько счетов: %(accounts)s."
+
+msgid "Leave empty to use the article on every cash desk."
+msgstr "Оставьте пустым, чтобы статья была доступна во всех кассах."
+
+msgid "This cash desk doesn't keep this account."
+msgstr "В этой кассе нет такого счёта."
+
+msgid "This category isn't used on this cash desk."
+msgstr "Эта категория не используется в этой кассе."
+
+msgid "Which accounts this desk keeps, e.g. only UZS cash."
+msgstr "Какие счета ведёт касса, например только наличные UZS."
+
+msgid "accounts"
+msgstr "счета"
+
+# --- Bank
+# ---------------------------------------------------------------------
+#, python-format
+msgid "%(count)s bank lines re-filed."
+msgstr "Перенесено банковских строк: %(count)s."
+
+#, python-format
+msgid "%(count)s new counterparties and %(lines)s lines need an article: see Counterparties."
+msgstr "Новых контрагентов без статьи: %(count)s, строк без статьи: %(lines)s. Классифицируйте их в разделе «Контрагенты»."
+
+msgid "A bank desk records statement lines with counterparties."
+msgstr "Банковская касса хранит строки выписки с контрагентами."
+
+msgid "Account number"
+msgstr "Номер счёта"
+
+msgid "All"
+msgstr "Все"
+
+msgid "All regions"
+msgstr "Все регионы"
+
+msgid "Also re-file this counterparty's existing bank lines"
+msgstr "Перенести уже загруженные строки этого контрагента"
+
+msgid "As in the bank statement: \"account/INN/name\"."
+msgstr "Как в банковской выписке: «счёт/ИНН/название»."
+
+msgid "Bank"
+msgstr "Банк"
+
+msgid "Bank account"
+msgstr "Банковский счёт"
+
+msgid "Bank statement (.xlsx)"
+msgstr "Банковская выписка (.xlsx)"
+
+msgid "Cash"
+msgstr "Наличные"
+
+msgid "Classify"
+msgstr "Классифицировать"
+
+#, python-format
+msgid "Couldn't read the statement: %(error)s"
+msgstr "Не удалось прочитать выписку: %(error)s"
+
+msgid "Couldn't find the statement header (columns Дата, Счет/ИНН, Оборот Дебет, Оборот Кредит)."
+msgstr "Не найдена шапка выписки (столбцы Дата, Счет/ИНН, Оборот Дебет, Оборот Кредит)."
+
+msgid "The file is not a readable .xlsx workbook."
+msgstr "Файл не является книгой Excel (.xlsx) или повреждён."
+
+#, python-format
+msgid "Sheet %(name)s not found."
+msgstr "Лист «%(name)s» не найден."
+
+#, python-format
+msgid "Row %(row)s has both a debit and a credit amount."
+msgstr "В строке %(row)s заполнены и дебет, и кредит."
+
+msgid "Counterparties"
+msgstr "Контрагенты"
+
+msgid "Counterparty"
+msgstr "Контрагент"
+
+#, python-format
+msgid "%(counter)s counterparty needs an article."
+msgid_plural "%(counter)s counterparties need an article."
+msgstr[0] "%(counter)s контрагенту нужна статья."
+msgstr[1] "%(counter)s контрагентам нужна статья."
+msgstr[2] "%(counter)s контрагентам нужна статья."
+msgstr[3] "%(counter)s контрагентам нужна статья."
+
+msgid "Doc. no."
+msgstr "№ док"
+
+msgid "Edit counterparty"
+msgstr "Изменить контрагента"
+
+msgid "Edit region"
+msgstr "Изменить регион"
+
+msgid "INN"
+msgstr "ИНН"
+
+msgid "Income or expense"
+msgstr "Приход или расход"
+
+msgid "Lines"
+msgstr "Строк"
+
+msgid "Name"
+msgstr "Название"
+
+msgid "Name, INN or account"
+msgstr "Название, ИНН или счёт"
+
+msgid "Need an article"
+msgstr "Нужна статья"
+
+msgid "New counterparty"
+msgstr "Новый контрагент"
+
+msgid "New region"
+msgstr "Новый регион"
+
+msgid "No counterparties found."
+msgstr "Контрагенты не найдены."
+
+msgid "No regions yet."
+msgstr "Регионов пока нет."
+
+msgid "Payment purpose"
+msgstr "Назначение платежа"
+
+msgid "Region"
+msgstr "Регион"
+
+msgid "Regions"
+msgstr "Регионы"
+
+msgid "Show them"
+msgstr "Показать"
+
+#, python-format
+msgid "Statement uploaded: %(created)s lines added, %(duplicates)s already recorded."
+msgstr "Выписка загружена: добавлено строк — %(created)s, уже были — %(duplicates)s."
+
+msgid "The bank's daily .xlsx export (columns Дата, Счет/ИНН, № док, Оборот Дебет, Оборот Кредит, Назначение платежа). Lines already recorded are skipped, and known counterparties are classified automatically."
+msgstr "Ежедневная выписка банка в формате .xlsx (столбцы Дата, Счет/ИНН, № док, Оборот Дебет, Оборот Кредит, Назначение платежа). Уже загруженные строки пропускаются, известные контрагенты классифицируются автоматически."
+
+msgid "The file is too large (over 5 MB)."
+msgstr "Файл слишком большой (больше 5 МБ)."
+
+msgid "Upload statement"
+msgstr "Загрузить выписку"
+
+msgid "Used for this counterparty's bank lines."
+msgstr "Используется для банковских строк этого контрагента."
+
+msgid "account number"
+msgstr "номер счёта"
+
+msgid "counterparties"
+msgstr "контрагенты"
+
+msgid "counterparty"
+msgstr "контрагент"
+
+msgid "document no."
+msgstr "№ документа"
+
+msgid "region"
+msgstr "регион"
+
+msgid "regions"
+msgstr "регионы"
+
+msgid "statement reference"
+msgstr "реквизиты из выписки"
+
+msgid "Filters"
+msgstr "Фильтры"
+
+msgid "Upload"
+msgstr "Загрузить"
+
+msgid "A changed recipe applies to production entered or re-saved from now on. Days already saved keep what they used."
+msgstr "Изменённая рецептура применяется к выпуску, введённому или пересохранённому с этого момента. Уже сохранённые дни сохраняют свой расход."
+
+msgid "Add a line"
+msgstr "Добавить строку"
+
+msgid "Add a product"
+msgstr "Добавить продукт"
+
+msgid "As in production reports."
+msgstr "Как в производственных отчётах."
+
+msgid "As in sales reports."
+msgstr "Как в отчётах о продажах."
+
+msgid "Author"
+msgstr "Автор"
+
+msgid "Cancel movement"
+msgstr "Отменить движение"
+
+msgid "Cancel this movement? Stock will be recalculated."
+msgstr "Отменить это движение? Остаток будет пересчитан."
+
+msgid "Click a day to fill in or correct its production."
+msgstr "Нажмите на день, чтобы ввести или исправить выпуск."
+
+msgid "Counted"
+msgstr "Подсчитано"
+
+msgid "Counted quantity"
+msgstr "Фактическое количество"
+
+msgid "Customer / note"
+msgstr "Покупатель / примечание"
+
+msgid "Daily production"
+msgstr "Выпуск за день"
+
+msgid "Delete"
+msgstr "Удалить"
+
+msgid "Edit material"
+msgstr "Изменить сырьё"
+
+msgid "Edit recipe"
+msgstr "Изменить рецептуру"
+
+msgid "Finished goods"
+msgstr "Готовая продукция"
+
+msgid "Highlighted when stock falls below this."
+msgstr "Подсвечивается, когда остаток ниже этого значения."
+
+msgid "How many units the current material stock allows"
+msgstr "Сколько единиц позволяет текущий остаток сырья"
+
+msgid "Item"
+msgstr "Позиция"
+
+msgid "Leave empty or 0 for products not made. Materials are written off by the recipes."
+msgstr "Оставьте пустым или 0, если продукт не выпускался. Сырьё списывается по рецептурам."
+
+msgid "Material"
+msgstr "Сырьё"
+
+msgid "Material receipt"
+msgstr "Приход сырья"
+
+msgid "Material write-off"
+msgstr "Списание сырья"
+
+msgid "Materials"
+msgstr "Сырьё"
+
+msgid "Materials and products in use can't be deleted, so past movements keep their meaning. Untick “Active” to hide one from new entries instead."
+msgstr "Используемое сырьё и продукцию нельзя удалить, чтобы прошлые движения сохраняли смысл. Снимите «Активно», чтобы скрыть позицию из новых записей."
+
+msgid "Materials used"
+msgstr "Расход сырья"
+
+msgid "Month"
+msgstr "Месяц"
+
+msgid "Movement cancelled."
+msgstr "Движение отменено."
+
+msgid "Movement restored."
+msgstr "Движение восстановлено."
+
+msgid "Movements"
+msgstr "Движения"
+
+msgid "New material"
+msgstr "Новое сырьё"
+
+msgid "New product"
+msgstr "Новый продукт"
+
+msgid "Next day"
+msgstr "Следующий день"
+
+msgid "Next month"
+msgstr "Следующий месяц"
+
+msgid "No materials found."
+msgstr "Сырьё не найдено."
+
+msgid "No movements found."
+msgstr "Движений не найдено."
+
+msgid "No products found."
+msgstr "Продукция не найдена."
+
+msgid "No products yet."
+msgstr "Продуктов пока нет."
+
+msgid "No recipe"
+msgstr "Нет рецептуры"
+
+msgid "Norm per unit"
+msgstr "Норма на 1 шт"
+
+msgid "Norm per unit of each material. Production written off by these recipes."
+msgstr "Норма каждого сырья на 1 банку. Выпуск списывает сырьё по этим рецептурам."
+
+msgid "Nothing produced this day yet."
+msgstr "В этот день ещё ничего не выпущено."
+
+msgid "Opening balance"
+msgstr "Начальный остаток"
+
+msgid "Order"
+msgstr "Порядок"
+
+msgid "Packaging"
+msgstr "Упаковка"
+
+msgid "Previous day"
+msgstr "Предыдущий день"
+
+msgid "Previous month"
+msgstr "Предыдущий месяц"
+
+msgid "Produced"
+msgstr "Выпущено"
+
+msgid "Produced this day"
+msgstr "Выпущено за день"
+
+msgid "Produced this month"
+msgstr "Выпуск за месяц"
+
+msgid "Produced, units"
+msgstr "Выпуск, шт"
+
+msgid "Product"
+msgstr "Продукт"
+
+msgid "Product added. Now enter its recipe."
+msgstr "Продукт добавлен. Теперь введите его рецептуру."
+
+msgid "Production"
+msgstr "Производство"
+
+#, python-format
+msgid "Production for %(date)s saved (%(count)s products changed)."
+msgstr "Выпуск за %(date)s сохранён (изменено продуктов: %(count)s)."
+
+msgid "Production journal"
+msgstr "Журнал выпуска"
+
+msgid "Quantity"
+msgstr "Количество"
+
+msgid "Raw material"
+msgstr "Сырьё"
+
+msgid "Raw materials"
+msgstr "Сырьё на складе"
+
+msgid "Reason"
+msgstr "Причина"
+
+msgid "Receipt"
+msgstr "Приход"
+
+msgid "Receipt recorded."
+msgstr "Приход записан."
+
+msgid "Received this month"
+msgstr "Приход за месяц"
+
+msgid "Recipe saved. It applies to production entered from now on."
+msgstr "Рецептура сохранена. Она применяется к выпуску, введённому с этого момента."
+
+msgid "Recipes and norms"
+msgstr "Рецептуры и нормы"
+
+msgid "Sales name"
+msgstr "Название в продажах"
+
+msgid "Save"
+msgstr "Сохранить"
+
+msgid "Save anyway"
+msgstr "Всё равно сохранить"
+
+msgid "Search by name"
+msgstr "Поиск по названию"
+
+msgid "Shelf life"
+msgstr "Срок годности"
+
+msgid "Shipment"
+msgstr "Отгрузка"
+
+msgid "Shipment recorded."
+msgstr "Отгрузка записана."
+
+msgid "Shipped this month"
+msgstr "Отгружено за месяц"
+
+msgid "Some materials would go below zero. Check them, then save anyway or correct."
+msgstr "Остаток некоторых видов сырья станет отрицательным. Проверьте их, затем сохраните или исправьте."
+
+msgid "Stock"
+msgstr "Остаток"
+
+msgid "Stock after"
+msgstr "Остаток после"
+
+msgid "Stock allows"
+msgstr "Хватит на"
+
+msgid "Stock allows, units"
+msgstr "Хватит на, шт"
+
+msgid "Stock count"
+msgstr "Инвентаризация"
+
+#, python-format
+msgid "Stock count recorded: correction %(difference)s."
+msgstr "Инвентаризация записана: корректировка %(difference)s."
+
+msgid "Stock is the sum of all movements. A wrong entry isn't deleted: cancel it in Stock movements, and stock is recalculated."
+msgstr "Остаток — это сумма всех движений. Ошибочная запись не удаляется: отмените её в «Движениях склада», и остаток пересчитается."
+
+msgid "Stock movements"
+msgstr "Движения склада"
+
+msgid "Stock, units"
+msgstr "Остаток, шт"
+
+msgid "Supplier / note"
+msgstr "Поставщик / примечание"
+
+msgid "Total"
+msgstr "Итого"
+
+msgid "Total for the month"
+msgstr "Итого за месяц"
+
+msgid "Unit"
+msgstr "Ед. изм."
+
+msgid "Used"
+msgstr "Расход"
+
+msgid "Used in production"
+msgstr "Расход на производство"
+
+msgid "Used this month"
+msgstr "Расход за месяц"
+
+msgid "Volume, l"
+msgstr "Объём, л"
+
+msgid "Write-off"
+msgstr "Списание"
+
+msgid "Write-off recorded."
+msgstr "Списание записано."
+
+msgid "affects stock"
+msgstr "влияет на остаток"
+
+msgid "counted"
+msgstr "подсчитано"
+
+msgid "e.g. кг, шт, л"
+msgstr "например: кг, шт, л"
+
+msgid "material"
+msgstr "сырьё"
+
+msgid "material movement"
+msgstr "движение сырья"
+
+msgid "material movements"
+msgstr "движения сырья"
+
+msgid "materials"
+msgstr "сырьё"
+
+msgid "minimum stock"
+msgstr "минимальный остаток"
+
+msgid "norm per unit"
+msgstr "норма на 1 шт"
+
+msgid "product"
+msgstr "продукт"
+
+msgid "product movement"
+msgstr "движение продукции"
+
+msgid "product movements"
+msgstr "движения продукции"
+
+msgid "production run"
+msgstr "выпуск"
+
+msgid "production runs"
+msgstr "выпуски"
+
+msgid "products"
+msgstr "продукты"
+
+msgid "quantity"
+msgstr "количество"
+
+msgid "recipe line"
+msgstr "строка рецептуры"
+
+msgid "recipe lines"
+msgstr "строки рецептуры"
+
+msgid "sales name"
+msgstr "название в продажах"
+
+msgid "shelf life"
+msgstr "срок годности"
+
+msgid "unit"
+msgstr "ед. изм."
+
+msgid "volume, l"
+msgstr "объём, л"
+
+#, python-format
+msgid "%(counter)s material is below zero: production used more than was received. Record the receipt or a stock count."
+msgid_plural "%(counter)s materials are below zero: production used more than was received. Record the receipts or a stock count."
+msgstr[0] "%(counter)s позиция сырья ниже нуля: производство израсходовало больше, чем поступило. Запишите приход или инвентаризацию."
+msgstr[1] "%(counter)s позиции сырья ниже нуля: производство израсходовало больше, чем поступило. Запишите приход или инвентаризацию."
+msgstr[2] "%(counter)s позиций сырья ниже нуля: производство израсходовало больше, чем поступило. Запишите приход или инвентаризацию."
+msgstr[3] ""
+
+msgid "Import from Excel"
+msgstr "Импорт из Excel"
+
+msgid "Report workbook (sheet Сбор)"
+msgstr "Файл отчёта (лист Сбор)"
+
+msgid "Recipes, and the materials list with stock in columns W–AA."
+msgstr "Рецептуры и список сырья с остатками в столбцах W–AA."
+
+msgid "Finance workbook (sheet Warehouse)"
+msgstr "Финансовый файл (лист Warehouse)"
+
+msgid "Products and units produced per day."
+msgstr "Продукция и выпуск по дням."
+
+msgid "Stock counted on"
+msgstr "Дата остатков"
+
+msgid "Date of the stock column in Сбор; it becomes the opening balance."
+msgstr "Дата столбца остатков в «Сбор»; он станет начальным остатком."
+
+msgid "Only check, don't save"
+msgstr "Только проверить, не сохранять"
+
+msgid "The file is too large (over 20 MB)."
+msgstr "Файл слишком большой (больше 20 МБ)."
+
+msgid "Excel data imported."
+msgstr "Данные из Excel импортированы."
+
+msgid "Nothing was imported: some recipe materials are not in the stock list."
+msgstr "Ничего не импортировано: часть сырья из рецептур отсутствует в списке остатков."
+
+msgid "Checked: nothing was saved. Untick “Only check” to import."
+msgstr "Проверено, ничего не сохранено. Снимите «Только проверить», чтобы импортировать."
+
+msgid "Result"
+msgstr "Результат"
+
+msgid "Saved"
+msgstr "Сохранено"
+
+msgid "Not saved"
+msgstr "Не сохранено"
+
+msgid "Materials in the list"
+msgstr "Сырья в списке"
+
+msgid "New materials"
+msgstr "Нового сырья"
+
+msgid "New opening balances"
+msgstr "Новых начальных остатков"
+
+msgid "Products in Warehouse"
+msgstr "Продуктов в Warehouse"
+
+msgid "New products"
+msgstr "Новых продуктов"
+
+msgid "New recipes"
+msgstr "Новых рецептур"
+
+msgid "Past production days (history only)"
+msgstr "Прошлых дней выпуска (только история)"
+
+msgid "Recipe materials not found in the stock list:"
+msgstr "Сырьё из рецептур, которого нет в списке остатков:"
+
+msgid "Correct the names in the workbook, or add the materials under Raw materials, then upload again."
+msgstr "Исправьте названия в файле или добавьте сырьё в разделе «Сырьё на складе», затем загрузите снова."
+
+msgid "No recipe in Сбор for:"
+msgstr "Нет рецептуры в «Сбор» для:"
+
+msgid "Enter it on the Recipes page."
+msgstr "Введите её на странице рецептур."
+
+msgid "Files are read once and not kept on the server. Save the workbooks in Excel first, so the formula cells have their values."
+msgstr "Файлы читаются один раз и не хранятся на сервере. Сначала сохраните книги в Excel, чтобы в ячейках с формулами были значения."
+
+msgid "Importing again only adds what is missing: existing materials, recipes and stock are not changed. Day-to-day changes are entered on the Production pages."
+msgstr "Повторный импорт добавляет только недостающее: существующее сырьё, рецептуры и остатки не меняются. Ежедневные изменения вводятся на страницах «Производства»."
+
+#, python-format
+msgid "%(file)s is not a readable .xlsx workbook."
+msgstr "%(file)s — не читаемый файл .xlsx."
+
+#, python-format
+msgid "%(file)s has no sheet “%(sheet)s” (sheets: %(sheets)s)."
+msgstr "В %(file)s нет листа «%(sheet)s» (листы: %(sheets)s)."
+
+msgid "The Сбор sheet has no materials list (column W, “Сырье наименование”)."
+msgstr "На листе «Сбор» нет списка сырья (столбец W, «Сырье наименование»)."
+
+#, python-format
+msgid "The stock list has materials that differ only in spelling: %(names)s"
+msgstr "В списке остатков есть сырьё, отличающееся только написанием: %(names)s"
+
+#, python-format
+msgid "%(user)s: %(role)s."
+msgstr "%(user)s: %(role)s."
+
+msgid "An administrator will give you access to the sections you need. Until then, the data is hidden."
+msgstr "Администратор откроет вам доступ к нужным разделам. До этого данные скрыты."
+
+msgid "Back"
+msgstr "Назад"
+
+msgid "Can import production data from Excel"
+msgstr "Может импортировать производственные данные из Excel"
+
+msgid "Can sign in"
+msgstr "Может входить"
+
+msgid "Can sign in but sees no data. New sign-ups start here."
+msgstr "Может войти, но не видит данных. Так начинают все новые регистрации."
+
+msgid "Cash desks, bank statements, handbooks and counterparties. Production and stock: view only."
+msgstr "Кассы, банковские выписки, справочники и контрагенты. Производство и склад — только просмотр."
+
+msgid "Cash desks, bank, handbooks, production, warehouse and the Excel import."
+msgstr "Кассы, банк, справочники, производство, склад и импорт из Excel."
+
+msgid "Everything, including users and their roles, cash desk setup and the admin site."
+msgstr "Всё, включая пользователей и их роли, настройку касс и админ-панель."
+
+msgid "Finance planner"
+msgstr "Финансовый планировщик"
+
+msgid "Last sign-in"
+msgstr "Последний вход"
+
+msgid "Manager"
+msgstr "Менеджер"
+
+msgid "Name, username or email"
+msgstr "Имя, логин или email"
+
+msgid "No access"
+msgstr "Нет доступа"
+
+msgid "No role"
+msgstr "Без роли"
+
+msgid "No users found."
+msgstr "Пользователи не найдены."
+
+msgid "Role"
+msgstr "Роль"
+
+msgid "Superuser"
+msgstr "Суперпользователь"
+
+msgid "That's you"
+msgstr "Это вы"
+
+msgid "To the dashboard"
+msgstr "На главную"
+
+msgid "User"
+msgstr "Пользователь"
+
+msgid "Users and roles"
+msgstr "Пользователи и роли"
+
+msgid "You can't change your own role or access."
+msgstr "Нельзя изменить собственную роль или доступ."
+
+msgid "Your account is waiting for a role."
+msgstr "Ваша учётная запись ожидает назначения роли."
+
+#, python-format
+msgid "Your role (%(role)s) doesn't allow this page or action. Ask an administrator if you need it."
+msgstr "Ваша роль (%(role)s) не даёт доступа к этой странице или действию. Если он нужен, обратитесь к администратору."
+
+#, python-format
+msgid "%(count)s sales imported."
+msgstr "Импортировано продаж: %(count)s."
+
+msgid "A changed sale updates finished-goods stock and the client's debt. A wrong sale isn't deleted: cancel it on the day's page."
+msgstr "Изменённая продажа обновляет остаток готовой продукции и долг клиента. Ошибочная продажа не удаляется: отмените её на странице дня."
+
+msgid "A sheet like “Plan 2026”: blocks “план реализации” and “план производства” by month."
+msgstr "Лист вида «Plan 2026»: блоки «план реализации» и «план производства» по месяцам."
+
+msgid "An identical sale is already recorded for that day."
+msgstr "Такая же продажа за этот день уже записана."
+
+msgid "Bank payer"
+msgstr "Плательщик в банке"
+
+msgid "By product"
+msgstr "По продуктам"
+
+msgid "Can import sales and plans from Excel"
+msgstr "Может импортировать продажи и планы из Excel"
+
+msgid "Cancel sale"
+msgstr "Отменить продажу"
+
+msgid "Cancel this sale? It will no longer count in stock and debts."
+msgstr "Отменить продажу? Она перестанет учитываться в остатках и долгах."
+
+msgid "Channel"
+msgstr "Канал"
+
+msgid "Choose a file to upload."
+msgstr "Выберите файл для загрузки."
+
+msgid "Client"
+msgstr "Клиент"
+
+msgid "Client / payer"
+msgstr "Клиент / плательщик"
+
+msgid "Client or payer"
+msgstr "Клиент или плательщик"
+
+msgid "Clients"
+msgstr "Клиенты"
+
+msgid "Clients are added with their first sale, by hand or from SmartUp."
+msgstr "Клиенты добавляются с первой продажей — вручную или из SmartUp."
+
+msgid "Columns Дата отгрузки, Название проекта, ТМЦ, Клиент, Количество продажи, Сумма."
+msgstr "Столбцы: Дата отгрузки, Название проекта, ТМЦ, Клиент, Количество продажи, Сумма."
+
+#, python-format
+msgid "Counted from %(date)s."
+msgstr "Считается с %(date)s."
+
+#, python-format
+msgid "Counted from the first recorded sale, %(date)s: shipments minus bank payments."
+msgstr "Считается с первой записанной продажи, %(date)s: отгрузки минус оплаты по банку."
+
+msgid "Creditors"
+msgstr "Кредиторы"
+
+msgid "Daily sales"
+msgstr "Продажи за день"
+
+msgid "Days"
+msgstr "Дни"
+
+msgid "Debtors"
+msgstr "Дебиторы"
+
+msgid "Debtors and creditors"
+msgstr "Дебиторы и кредиторы"
+
+msgid "Duplicates skipped"
+msgstr "Пропущено дубликатов"
+
+msgid "Each cell: the plan in units, below it what was produced (Daily production) and the share of the plan."
+msgstr "В ячейке: план в штуках, под ним — фактический выпуск (Выпуск за день) и процент выполнения."
+
+msgid "Each cell: the plan in units, below it what was sold (sales recorded here) and the share of the plan."
+msgstr "В ячейке: план в штуках, под ним — фактические продажи и процент выполнения."
+
+msgid "Edit client"
+msgstr "Изменить клиента"
+
+msgid "Edit plan"
+msgstr "Редактировать план"
+
+msgid "Edit sale"
+msgstr "Изменить продажу"
+
+msgid "Entered by hand"
+msgstr "Введено вручную"
+
+msgid "Excel (SmartUp export)"
+msgstr "Excel (выгрузка SmartUp)"
+
+msgid "Fact"
+msgstr "Факт"
+
+msgid "Figures"
+msgstr "Значений"
+
+msgid "Last shipment"
+msgstr "Последняя отгрузка"
+
+msgid "Lines in the file"
+msgstr "Строк в файле"
+
+msgid "Link payers"
+msgstr "Указать плательщиков"
+
+msgid "Link them to their bank payers on the Clients page, so payments settle their debts."
+msgstr "Укажите их плательщиков в банке на странице «Клиенты», чтобы оплаты закрывали долги."
+
+msgid "New clients"
+msgstr "Новые клиенты"
+
+msgid "New sale"
+msgstr "Новая продажа"
+
+msgid "New sales"
+msgstr "Новых продаж"
+
+msgid "Next year"
+msgstr "Следующий год"
+
+msgid "No bank payer"
+msgstr "Нет плательщика"
+
+msgid "No bank payer is linked, so payments aren't counted. Link one on the client's page."
+msgstr "Плательщик в банке не указан, поэтому оплаты не учитываются. Укажите его на странице клиента."
+
+msgid "No clients found."
+msgstr "Клиенты не найдены."
+
+msgid "No debts: nothing shipped yet."
+msgstr "Долгов нет: отгрузок ещё не было."
+
+msgid "No plan sheet found: expected a block titled “Всего план реализации на … год”."
+msgstr "Лист плана не найден: ожидается блок «Всего план реализации на … год»."
+
+msgid "No sales recorded for this day."
+msgstr "За этот день продаж нет."
+
+msgid "No sheet with the SmartUp columns (Дата отгрузки, ТМЦ, Клиент, Количество, Сумма) was found."
+msgstr "Не найден лист со столбцами SmartUp (Дата отгрузки, ТМЦ, Клиент, Количество, Сумма)."
+
+msgid "No shipments or payments yet."
+msgstr "Отгрузок и оплат пока нет."
+
+msgid "One file per day or several days at once. A line is skipped as a duplicate when the same product was already recorded for the same client, day and total price. New clients and channels are added; an unknown product stops the import so nothing half-loads."
+msgstr "Один файл за день или за несколько дней сразу. Строка пропускается как дубликат, если тот же продукт уже записан для того же клиента, дня и суммы. Новые клиенты и каналы добавляются; неизвестный продукт останавливает загрузку, чтобы ничего не загрузилось наполовину."
+
+msgid "Opening"
+msgstr "Начальный"
+
+msgid "Operation"
+msgstr "Операция"
+
+msgid "Owed before the first recorded sale; negative if the client had paid in advance."
+msgstr "Долг до первой записанной продажи; отрицательный, если клиент платил вперёд."
+
+msgid "Owed to us (debtors)"
+msgstr "Нам должны (дебиторы)"
+
+msgid "Owes us"
+msgstr "Должен нам"
+
+msgid "Paid"
+msgstr "Оплачено"
+
+msgid "Paid in advance"
+msgstr "Оплачено вперёд"
+
+msgid "Paid in advance (creditors)"
+msgstr "Предоплата (кредиторы)"
+
+msgid "Payment"
+msgstr "Оплата"
+
+#, python-format
+msgid "Payments: bank lines from %(name)s."
+msgstr "Оплаты: строки банковской выписки от %(name)s."
+
+msgid "Pick a client, or type a new client's name."
+msgstr "Выберите клиента или введите имя нового."
+
+msgid "Plan"
+msgstr "План"
+
+#, python-format
+msgid "Plan for %(year)s imported."
+msgstr "План на %(year)s импортирован."
+
+msgid "Plan for the year"
+msgstr "План на год"
+
+#, python-format
+msgid "Plan saved (%(count)s figures changed)."
+msgstr "План сохранён (изменено значений: %(count)s)."
+
+msgid "Plan workbook (.xlsx)"
+msgstr "Файл плана (.xlsx)"
+
+msgid "Previous year"
+msgstr "Предыдущий год"
+
+msgid "Production plan"
+msgstr "План производства"
+
+msgid "Products not found — add them as product aliases, then upload again:"
+msgstr "Продукты не найдены — добавьте их как синонимы продуктов и загрузите снова:"
+
+msgid "Products not found:"
+msgstr "Продукты не найдены:"
+
+msgid "Refund"
+msgstr "Возврат"
+
+#, python-format
+msgid "Row %(row)s: %(sale)s"
+msgstr "Строка %(row)s: %(sale)s"
+
+#, python-format
+msgid "Row %(row)s: check %(fields)s."
+msgstr "Строка %(row)s: проверьте %(fields)s."
+
+msgid "Rows that couldn't be read:"
+msgstr "Строки, которые не удалось прочитать:"
+
+msgid "Sale added."
+msgstr "Продажа добавлена."
+
+msgid "Sale cancelled."
+msgstr "Продажа отменена."
+
+msgid "Sale restored."
+msgstr "Продажа восстановлена."
+
+msgid "Sale updated."
+msgstr "Продажа изменена."
+
+msgid "Sales (SmartUp export)"
+msgstr "Продажи (выгрузка SmartUp)"
+
+msgid "Sales from Excel"
+msgstr "Продажи из Excel"
+
+msgid "Sales plan"
+msgstr "План продаж"
+
+msgid "Shipped"
+msgstr "Отгружено"
+
+msgid "SmartUp"
+msgstr "SmartUp"
+
+msgid "SmartUp export (.xlsx)"
+msgstr "Выгрузка SmartUp (.xlsx)"
+
+msgid "The bank counterparty whose payments settle this client's shipments."
+msgstr "Контрагент из банковских выписок, чьи оплаты закрывают отгрузки этому клиенту."
+
+msgid "The bank payer is the counterparty in the bank statements that pays for this client. Its payments settle the client's shipments; clients with the same payer (e.g. a chain's shops) owe together."
+msgstr "Плательщик — это контрагент в банковских выписках, который платит за этого клиента. Его оплаты закрывают отгрузки клиенту; клиенты с одним плательщиком (например, магазины одной сети) считаются вместе."
+
+msgid "The line's ID in SmartUp, once integrated."
+msgstr "ID строки в SmartUp (после интеграции)."
+
+msgid "The opening balance is what the client owed before the first sale recorded here."
+msgstr "Начальный остаток — долг клиента до первой продажи, записанной здесь."
+
+msgid "The sales and production plan replace that year's figures; you can also edit them on the Sales plan page."
+msgstr "План продаж и производства заменяет значения этого года; их также можно изменить на странице «План продаж»."
+
+msgid "Total price"
+msgstr "Сумма"
+
+msgid "Units"
+msgstr "Штук"
+
+msgid "Upload from Excel"
+msgstr "Загрузить из Excel"
+
+msgid "Year"
+msgstr "Год"
+
+msgid "channel"
+msgstr "канал"
+
+msgid "client"
+msgstr "клиент"
+
+msgid "clients"
+msgstr "клиенты"
+
+msgid "e.g. SmartUp"
+msgstr "например, SmartUp"
+
+msgid "export"
+msgstr "экспорт"
+
+msgid "external ID"
+msgstr "внешний ID"
+
+msgid "month"
+msgstr "месяц"
+
+msgid "opening balance"
+msgstr "начальный остаток"
+
+msgid "payer"
+msgstr "плательщик"
+
+msgid "plan"
+msgstr "план"
+
+msgid "plans"
+msgstr "планы"
+
+msgid "product alias"
+msgstr "синоним продукта"
+
+msgid "product aliases"
+msgstr "синонимы продуктов"
+
+msgid "sale"
+msgstr "продажа"
+
+msgid "sales"
+msgstr "продажи"
+
+msgid "sales channel"
+msgstr "канал продаж"
+
+msgid "sales channels"
+msgstr "каналы продаж"
+
+msgid "shipment date"
+msgstr "дата отгрузки"
+
+msgid "total price"
+msgstr "сумма"
+
+msgid "year"
+msgstr "год"
+
+#, python-format
+msgid "%(counter)s client has no bank payer yet, so its payments aren't counted."
+msgid_plural "%(counter)s clients have no bank payer yet, so their payments aren't counted."
+msgstr[0] "%(counter)s клиент без плательщика в банке — его оплаты не учитываются."
+msgstr[1] "%(counter)s клиента без плательщика в банке — их оплаты не учитываются."
+msgstr[2] "%(counter)s клиентов без плательщика в банке — их оплаты не учитываются."
+msgstr[3] ""
+
+#, python-format
+msgid "%(counter)s client"
+msgid_plural "%(counter)s clients"
+msgstr[0] "%(counter)s клиент"
+msgstr[1] "%(counter)s клиента"
+msgstr[2] "%(counter)s клиентов"
+msgstr[3] ""
+
+#, python-format
+msgid "%(counter)s product"
+msgid_plural "%(counter)s products"
+msgstr[0] "%(counter)s продукт"
+msgstr[1] "%(counter)s продукта"
+msgstr[2] "%(counter)s продуктов"
+msgstr[3] ""
+
+msgid "- Select an option -"
+msgstr "— Выберите —"
+
+#, python-format
+msgid "%(month)s: plan and fact to %(date)s"
+msgstr "%(month)s: план и факт по %(date)s"
+
+#, python-format
+msgid "%(progress)s%% of the month gone"
+msgstr "прошло %(progress)s%% месяца"
+
+#, python-format
+msgid "%(progress)s%% of the month has passed: a share above it is ahead of plan."
+msgstr "Прошло %(progress)s%% месяца: процент выше этого — опережение плана."
+
+#, python-format
+msgid "%(units)s units to %(clients)s clients"
+msgstr "%(units)s шт. для %(clients)s клиентов"
+
+#, python-format
+msgid "%(uzs)s UZS and %(usd)s USD"
+msgstr "%(uzs)s UZS и %(usd)s USD"
+
+msgid "A rate applies from its date until the next one, so days without a rate (weekends) use the last one. The dashboard uses it to show USD cash in UZS."
+msgstr "Курс действует со своей даты до следующего, поэтому дни без курса (выходные) используют последний. Панель по нему пересчитывает доллары в сумы."
+
+msgid "Accounts"
+msgstr "Счета"
+
+msgid "Cash desks and bank. Transfers between accounts, opening balances and corrections are left out; the USD column is in USD and counted in the total at the rate."
+msgstr "Кассы и банк. Переводы между счетами, начальные остатки и корректировки не учитываются; столбец USD — в долларах, в итог входит по курсу."
+
+msgid "Cash flow by article"
+msgstr "Движение денег по статьям"
+
+msgid "Cash plan"
+msgstr "План ДДС"
+
+msgid "Collections by region"
+msgstr "Поступления по регионам"
+
+msgid "Day"
+msgstr "День"
+
+msgid "Each cell: the plan, and under it what actually came in or went out (cash desks and bank). Transfers between accounts and opening balances are not counted."
+msgstr "В ячейке: план, под ним — фактическое поступление или расход (кассы и банк). Переводы между счетами и начальные остатки не учитываются."
+
+msgid "End"
+msgstr "Конец"
+
+msgid "Exchange rates"
+msgstr "Курсы валют"
+
+msgid "Finished goods in stock"
+msgstr "Готовая продукция на складе"
+
+msgid "In"
+msgstr "Приход"
+
+msgid "In: fact"
+msgstr "Приход: факт"
+
+msgid "In: plan"
+msgstr "Приход: план"
+
+msgid "Largest debtors"
+msgstr "Крупнейшие дебиторы"
+
+msgid "Money at the end"
+msgstr "Деньги на конец"
+
+msgid "Money in"
+msgstr "Поступления"
+
+msgid "Money in and out by day"
+msgstr "Поступления и расходы по дням"
+
+msgid "Money in and out by month"
+msgstr "Поступления и расходы по месяцам"
+
+msgid "Money in minus money out"
+msgstr "Поступления минус расходы"
+
+msgid "Money out"
+msgstr "Расходы"
+
+msgid "Net cash flow"
+msgstr "Чистый денежный поток"
+
+msgid "Next week"
+msgstr "Следующая неделя"
+
+msgid "No collections or plans in this period."
+msgstr "За этот период нет ни поступлений, ни плана."
+
+msgid "No materials are short."
+msgstr "Нехватки сырья нет."
+
+msgid "No plan for the period"
+msgstr "Плана на период нет"
+
+msgid "No plan or fact for this month."
+msgstr "За этот месяц нет ни плана, ни факта."
+
+msgid "No rates yet."
+msgstr "Курсов пока нет."
+
+msgid "No regions yet. Add them on the Counterparties page."
+msgstr "Регионов пока нет. Добавьте их на странице «Контрагенты»."
+
+msgid "Nobody owes us."
+msgstr "Нам никто не должен."
+
+msgid "Open"
+msgstr "Открыть"
+
+msgid "Out"
+msgstr "Расход"
+
+msgid "Out: fact"
+msgstr "Расход: факт"
+
+msgid "Out: plan"
+msgstr "Расход: план"
+
+msgid "Owed to us"
+msgstr "Нам должны"
+
+#, python-format
+msgid "Plan %(plan)s · received %(fact)s"
+msgstr "План %(plan)s · поступило %(fact)s"
+
+msgid "Planning"
+msgstr "Планирование"
+
+msgid "Previous week"
+msgstr "Предыдущая неделя"
+
+#, python-format
+msgid "Production plan, %(month)s"
+msgstr "План производства, %(month)s"
+
+msgid "Rate saved."
+msgstr "Курс сохранён."
+
+msgid "Rate updated."
+msgstr "Курс обновлён."
+
+msgid "Received"
+msgstr "Поступило"
+
+msgid "Received: bank receipts from counterparties of the region (set a counterparty's region on the Counterparties page)."
+msgstr "Поступило: оплаты по банку от контрагентов региона (регион контрагента задаётся на странице «Контрагенты»)."
+
+#, python-format
+msgid "Sales plan, %(month)s"
+msgstr "План продаж, %(month)s"
+
+msgid "Sold"
+msgstr "Продано"
+
+msgid "Start"
+msgstr "Начало"
+
+msgid "This month"
+msgstr "Этот месяц"
+
+msgid "This quarter"
+msgstr "Этот квартал"
+
+msgid "This week"
+msgstr "Эта неделя"
+
+msgid "This year"
+msgstr "Этот год"
+
+msgid "Today"
+msgstr "Сегодня"
+
+msgid "Total money in"
+msgstr "Итого поступления"
+
+msgid "Total money out"
+msgstr "Итого расходы"
+
+msgid "Total, UZS"
+msgstr "Итого, UZS"
+
+#, python-format
+msgid "USD cash at %(rate)s"
+msgstr "USD по курсу %(rate)s"
+
+#, python-format
+msgid "USD rate %(rate)s"
+msgstr "курс USD %(rate)s"
+
+msgid "UZS per 1 USD"
+msgstr "Сумов за 1 USD"
+
+msgid "Untick for bookkeeping entries such as opening balances and balance corrections."
+msgstr "Снимите для учётных записей, таких как начальные остатки и корректировки."
+
+msgid "Warehouse"
+msgstr "Склад"
+
+msgid "Week"
+msgstr "Неделя"
+
+#, python-format
+msgid "Week %(start)s–%(end)s: plan and fact"
+msgstr "Неделя %(start)s–%(end)s: план и факт"
+
+msgid "Weekly cash plan"
+msgstr "План ДДС на неделю"
+
+msgid "cash plan"
+msgstr "план ДДС"
+
+msgid "cash plans"
+msgstr "планы ДДС"
+
+msgid "collection plan"
+msgstr "план поступлений"
+
+msgid "collection plans"
+msgstr "планы поступлений"
+
+msgid "counts in cash flow"
+msgstr "входит в ДДС"
+
+msgid "e.g. TDM2"
+msgstr "например, TDM2"
+
+msgid "exchange rates"
+msgstr "курсы валют"
+
+msgid "rate"
+msgstr "курс"
+
+msgid "sales manager"
+msgstr "менеджер по продажам"
+
+msgid "units"
+msgstr "шт."
+
+msgid "updated by"
+msgstr "изменил"
+
+#, python-format
+msgid "%(counter)s material is short"
+msgid_plural "%(counter)s materials are short"
+msgstr[0] "Не хватает %(counter)s позиции сырья"
+msgstr[1] "Не хватает %(counter)s позиций сырья"
+msgstr[2] "Не хватает %(counter)s позиций сырья"
+msgstr[3] ""
+
+msgid "Cash desks"
+msgstr "Кассы"
+
+#, python-format
+msgid "incl. %(usd)s USD"
+msgstr "в т.ч. %(usd)s USD"
+
+msgid "Full screen"
+msgstr "Полный экран"
+
+#, python-format
+msgid "Paid in advance: %(amount)s"
+msgstr "Оплачено вперёд: %(amount)s"
+
+#, python-format
+msgid "Plan %(plan)s"
+msgstr "План %(plan)s"
+
+msgid "USD cash counted at the rate"
+msgstr "Доллары наличными по курсу"
+
+#, python-format
+msgid "%(usd)s USD"
+msgstr "%(usd)s USD"
+
+msgid "Close menu"
+msgstr "Закрыть меню"
+
+msgid "Code from Telegram"
+msgstr "Код из Telegram"
+
+msgid "Continue"
+msgstr "Продолжить"
+
+msgid "Enter the code"
+msgstr "Введите код"
+
+msgid "Enter the code from Telegram first."
+msgstr "Сначала введите код из Telegram."
+
+msgid "Enter your username. We'll send a code to the Telegram account linked to it."
+msgstr "Введите имя пользователя. Код придёт в Telegram, привязанный к этой учётной записи."
+
+msgid "Get a link to connect Telegram"
+msgstr "Получить ссылку для подключения Telegram"
+
+msgid "If the account is linked to Telegram, a code has been sent there."
+msgstr "Если учётная запись привязана к Telegram, код отправлен туда."
+
+msgid "Link Telegram to reset your password by a code sent to you there."
+msgstr "Привяжите Telegram, чтобы сбрасывать пароль кодом, который придёт туда."
+
+msgid "Linked. Password reset codes are sent here."
+msgstr "Привязано. Коды для сброса пароля приходят сюда."
+
+msgid "Main menu"
+msgstr "Главное меню"
+
+msgid "Open in Telegram"
+msgstr "Открыть в Telegram"
+
+msgid "Open this link and press Start in the bot. The link works for 15 minutes."
+msgstr "Откройте ссылку и нажмите Start в боте. Ссылка действует 15 минут."
+
+msgid "Send /start from the link on the site's profile page to link your account."
+msgstr "Чтобы привязать учётную запись, откройте ссылку на странице профиля на сайте и нажмите Start."
+
+msgid "Send Code to Telegram"
+msgstr "Отправить код в Telegram"
+
+msgid "Send a new code"
+msgstr "Отправить новый код"
+
+msgid "Start again: enter your username or Telegram username."
+msgstr "Начните заново: введите имя пользователя или Telegram-имя."
+
+msgid "Telegram"
+msgstr "Telegram"
+
+msgid "Telegram chat"
+msgstr "Чат Telegram"
+
+msgid "Telegram is not set up yet. Ask an administrator."
+msgstr "Telegram пока не настроен. Обратитесь к администратору."
+
+msgid "Telegram is unlinked. Password reset will be unavailable until you link it again."
+msgstr "Telegram отвязан. Сброс пароля будет недоступен, пока вы не привяжете его снова."
+
+msgid "Telegram username"
+msgstr "Имя пользователя Telegram"
+
+msgid "The code is wrong or has expired. Check Telegram, or start again."
+msgstr "Код неверный или истёк. Проверьте Telegram или начните заново."
+
+msgid "To link your account, open the Telegram link on the site's profile page and press Start there."
+msgstr "Чтобы привязать учётную запись, откройте ссылку Telegram на странице профиля на сайте и нажмите Start."
+
+msgid "Unlink Telegram"
+msgstr "Отвязать Telegram"
+
+msgid "Username or Telegram username"
+msgstr "Имя пользователя или Telegram-имя"
+
+msgid "We sent a 6-digit code to your Telegram. It is valid for 10 minutes."
+msgstr "Мы отправили 6-значный код в ваш Telegram. Он действует 10 минут."
+
+#, python-format
+msgid "Your account %(user)s is linked. Password reset codes will come here."
+msgstr "Учётная запись %(user)s привязана. Коды для сброса пароля будут приходить сюда."
+
+msgid "Your password has been changed. Sign in with the new password."
+msgstr "Пароль изменён. Войдите с новым паролем."
+
+#, python-format
+msgid ""
+"Your password reset code: %(code)s\n"
+"It is valid for 10 minutes. If this was not you, ignore this message."
+msgstr ""
+"Код для сброса пароля: %(code)s\n"
+"Код действует 10 минут. Если это были не вы, проигнорируйте сообщение."
+
+msgid "Your site username, or the Telegram username you linked (with or without @)."
+msgstr "Имя пользователя на сайте или привязанное Telegram-имя (с @ или без)."
+
+msgid "No code? The code is sent only to an account linked to the Telegram bot: sign in, open Profile, and link Telegram there first. Then try again."
+msgstr "Нет кода? Код отправляется только на учётную запись, привязанную к боту Telegram: войдите, откройте профиль и сначала привяжите Telegram. Затем попробуйте снова."
+
+msgid "A Telegram username has 5–32 letters, digits or underscores, e.g. @Otabek33."
+msgstr "Имя в Telegram — это 5–32 латинские буквы, цифры или _, например @Otabek33."
+
+#, python-format
+msgid "After signing up, open @%(bot)s in Telegram and press Start: password reset codes come from this bot."
+msgstr "После регистрации откройте @%(bot)s в Telegram и нажмите Start: коды для сброса пароля приходят от этого бота."
+
+#, python-format
+msgid "No code? Open @%(bot)s in Telegram and press Start (once), then request a new code."
+msgstr "Нет кода? Откройте @%(bot)s в Telegram и нажмите Start (один раз), затем запросите новый код."
+
+#, python-format
+msgid "Open @%(bot)s from Telegram account @%(username)s and press Start."
+msgstr "Откройте @%(bot)s с Telegram-аккаунта @%(username)s и нажмите Start."
+
+msgid "Open the bot"
+msgstr "Открыть бота"
+
+msgid "Password reset codes come to this Telegram account, e.g. @Otabek33."
+msgstr "Коды для сброса пароля приходят на этот Telegram-аккаунт, например @Otabek33."
+
+msgid "Press /start to link your account to this bot."
+msgstr "Нажмите /start, чтобы привязать учётную запись к этому боту."
+
+msgid "This Telegram username is already used by another account."
+msgstr "Это имя Telegram уже используется другой учётной записью."
+
+msgid "Welcome! Your account has been created. Open the Telegram bot and press Start to receive reset codes."
+msgstr "Добро пожаловать! Учётная запись создана. Откройте бота в Telegram и нажмите Start, чтобы получать коды для сброса пароля."
+
+msgid "Your Telegram has no username. Open the link from the site's Profile page and press Start."
+msgstr "У вашего Telegram нет имени пользователя. Откройте ссылку со страницы профиля на сайте и нажмите Start."
+
+#, python-format
+msgid "No account uses the Telegram username @%(username)s. Enter it on the site (sign-up or Profile), then press /start here again."
+msgstr "Нет учётной записи с Telegram-именем @%(username)s. Укажите его на сайте (при регистрации или в профиле), затем снова нажмите /start здесь."
+
+msgid "bn"
+msgstr "млрд"
+
+msgid "mln"
+msgstr "млн"
+
+#, python-format
+msgid "(incl. %(usd)s USD)"
+msgstr "(в т.ч. %(usd)s USD)"
+
+msgid "Daily report"
+msgstr "Ежедневная сводка"
+
+#, python-format
+msgid "Rate: %(rate)s UZS per USD"
+msgstr "Курс: %(rate)s сум за 1 USD"
+
+msgid "Money at day end"
+msgstr "Деньги на конец дня"
+
+#, python-format
+msgid ", %(percent)s%% of plan"
+msgstr ", %(percent)s%% плана"
+
+#, python-format
+msgid "%(quantity)s units to %(clients)s clients"
+msgstr "%(quantity)s шт. для %(clients)s клиентов"
+
+#, python-format
+msgid "(%(count)s debtors)"
+msgstr "(дебиторов: %(count)s)"
+
+#, python-format
+msgid "Sales plan for %(month)s"
+msgstr "План продаж за %(month)s"
+
+#, python-format
+msgid "(%(progress)s%% of the month gone)"
+msgstr "(прошло %(progress)s%% месяца)"
+
+#, python-format
+msgid "fact %(fact)s / plan %(plan)s"
+msgstr "факт %(fact)s / план %(plan)s"
+
+msgid "fact / plan"
+msgstr "факт / план"
+
+#, python-format
+msgid "…and %(count)s more"
+msgstr "…и ещё %(count)s"
+
+#, python-format
+msgid "%(month)s: plan and fact"
+msgstr "%(month)s: план и факт"
+
+msgid "made"
+msgstr "произв."
+
+msgid "sold"
+msgstr "продано"
+
+#, python-format
+msgid "Materials short: %(count)s"
+msgstr "Не хватает сырья: %(count)s"
+
+#, python-format
+msgid "Finished goods: %(units)s units"
+msgstr "Готовая продукция: %(units)s шт."
+
+msgid "Your role has no dashboard data to show."
+msgstr "Для вашей роли нет данных на главной странице."
+
+msgid "Open the dashboard"
+msgstr "Открыть главную"
+
+msgid "The report could not be built. Please try again later."
+msgstr "Не удалось подготовить сводку. Попробуйте позже."
+
+msgid "Send /report for today's dashboard summary."
+msgstr "Отправьте /report, чтобы получить сводку за сегодня."
+
+msgid "Daily report in Telegram"
+msgstr "Ежедневная сводка в Telegram"
+
+msgid "Send at"
+msgstr "Время отправки"
+
+msgid "Enter the time as HH:MM, e.g. 17:30."
+msgstr "Укажите время в формате ЧЧ:ММ, например 17:30."
+
+msgid "Today's report has been sent to your Telegram."
+msgstr "Сводка за сегодня отправлена в ваш Telegram."
+
+msgid "The report could not be sent. Check that Telegram is linked."
+msgstr "Не удалось отправить сводку. Проверьте, что Telegram привязан."
+
+#, python-format
+msgid "The daily report will come to Telegram at %(time)s."
+msgstr "Ежедневная сводка будет приходить в Telegram в %(time)s."
+
+msgid "The daily report is turned off."
+msgstr "Ежедневная сводка отключена."
+
+msgid "Today's money, sales, debts, plans and warehouse, as on the home page. Also on demand: send /report to the bot."
+msgstr "Деньги, продажи, долги, планы и склад за сегодня — как на главной. Также по запросу: отправьте боту /report."
+
+msgid "Send now"
+msgstr "Отправить сейчас"
+
+msgid "and"
+msgstr "и"
+
+#, python-format
+msgid "at start %(opening)s · in +%(in)s · out −%(out)s"
+msgstr "на начало %(opening)s · приход +%(in)s · расход −%(out)s"
+
+msgid "No operations this day."
+msgstr "Операций за день нет."
+
+msgid "Transfers between accounts"
+msgstr "Переводы между счетами"
+
+#, python-format
+msgid "%(count)s op."
+msgstr "%(count)s опер."
+
+#, python-format
+msgid "…and %(count)s more for %(amount)s"
+msgstr "…и ещё %(count)s опер. на %(amount)s"
+
+msgid "Open the cash desk"
+msgstr "Открыть кассу"
+
+msgid "Then each cash desk's day: balances and every income, expense and transfer."
+msgstr "Затем день каждой кассы: остатки и все приходы, расходы и переводы."
+
+
+# --- Cash desk: Excel upload of the finance workbook
+# -------------------------------------------------------------------
+msgid "Upload Excel"
+msgstr "Загрузить Excel"
+
+msgid "Finance workbook (.xlsx)"
+msgstr "Финансовая книга (.xlsx)"
+
+msgid "Sheet «%(name)s» not found. The workbook has: %(sheets)s."
+msgstr "Лист «%(name)s» не найден. В книге есть: %(sheets)s."
+
+msgid "New counterparties"
+msgstr "Новые контрагенты"
+
+msgid ""
+"Add them automatically. Their lines go to “Не распределено” until you give "
+"them an article."
+msgstr ""
+"Добавить автоматически. Их строки попадут в «Не распределено», пока вы не "
+"укажете статью."
+
+msgid ""
+"Don't add them: I will create them myself first. Their lines are imported "
+"on the next upload."
+msgstr ""
+"Не добавлять: я сначала создам их сам. Их строки загрузятся при следующей "
+"загрузке."
+
+msgid "The checked workbook is no longer here. Upload it and check it again."
+msgstr "Проверенный файл больше недоступен. Загрузите и проверьте его снова."
+
+msgid "Imported, except the sections with errors below."
+msgstr "Загружено, кроме разделов с ошибками (см. ниже)."
+
+msgid "Workbook imported."
+msgstr "Книга загружена."
+
+msgid "Check"
+msgstr "Проверить"
+
+msgid ""
+"Upload the finance workbook (Situation.xlsx) once: sheets «%(sheets)s» go "
+"to their cash desks. Save it in Excel first, so the formula cells have "
+"their values."
+msgstr ""
+"Загрузите финансовую книгу (Situation.xlsx) один раз: листы «%(sheets)s» "
+"попадут в свои кассы. Сначала сохраните её в Excel, чтобы в ячейках с "
+"формулами были значения."
+
+msgid ""
+"“Check” shows what each section would get, without saving. “Import” then "
+"adds only rows that aren't here yet, so upload the whole workbook every "
+"day: nothing is duplicated."
+msgstr ""
+"«Проверить» показывает, что получит каждый раздел, ничего не сохраняя. "
+"«Загрузить» добавляет только строки, которых здесь ещё нет, поэтому "
+"загружайте всю книгу каждый день: ничего не задвоится."
+
+msgid ""
+"If a row imported before was changed in Excel, or rows were inserted or "
+"deleted above it, that section is not imported and the rows are named. Add "
+"new rows at the bottom of the sheet, and while a desk is kept in Excel "
+"don't also enter its operations here by hand."
+msgstr ""
+"Если ранее загруженную строку изменили в Excel или выше неё вставили или "
+"удалили строки, этот раздел не загружается, а строки указываются. "
+"Добавляйте новые строки в конец листа и, пока касса ведётся в Excel, не "
+"вводите эти же операции здесь вручную."
+
+msgid "Section"
+msgstr "Раздел"
+
+msgid "Added"
+msgstr "Добавлено"
+
+msgid "New"
+msgstr "Новых"
+
+msgid "Already here"
+msgstr "Уже есть"
+
+msgid "sheet"
+msgstr "лист"
+
+msgid "Error"
+msgstr "Ошибка"
+
+msgid "Balance differs"
+msgstr "Остаток расходится"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Nothing new"
+msgstr "Нет новых"
+
+msgid "Nothing was imported for this section."
+msgstr "Этот раздел не загружен."
+
+msgid "%(counter)s row imported before is different in Excel now:"
+msgid_plural "%(counter)s rows imported before are different in Excel now:"
+msgstr[0] "%(counter)s ранее загруженная строка теперь отличается в Excel:"
+msgstr[1] "%(counter)s ранее загруженные строки теперь отличаются в Excel:"
+msgstr[2] "%(counter)s ранее загруженных строк теперь отличаются в Excel:"
+msgstr[3] "%(counter)s ранее загруженных строк теперь отличаются в Excel:"
+
+msgid "row %(row)s: here %(was)s, in Excel %(now)s"
+msgstr "строка %(row)s: здесь %(was)s, в Excel %(now)s"
+
+msgid ""
+"Nothing was imported for this section. Make Excel and the app agree "
+"(correct the row in Excel, or edit the operation here), then upload again."
+msgstr ""
+"Этот раздел не загружен. Приведите Excel и программу в соответствие "
+"(исправьте строку в Excel или операцию здесь) и загрузите снова."
+
+msgid "the %(account)s balance here is %(app)s, in Excel %(sheet)s."
+msgstr "остаток «%(account)s» здесь %(app)s, в Excel %(sheet)s."
+
+msgid ""
+"balance corrections: %(count)s. The balance typed in Excel differs from the "
+"sum of its rows."
+msgstr ""
+"корректировок остатка: %(count)s. Остаток, введённый в Excel, отличается от "
+"суммы строк."
+
+msgid ""
+"operations without an article: %(count)s. They are filed under “Не "
+"распределено” / “Требует проверки” for review."
+msgstr ""
+"операций без статьи: %(count)s. Они записаны в «Не распределено» / "
+"«Требует проверки» для разбора."
+
+msgid ""
+"lines of new counterparties left out: %(count)s. Add the counterparties, "
+"then upload the workbook again."
+msgstr ""
+"строк новых контрагентов пропущено: %(count)s. Добавьте контрагентов и "
+"загрузите книгу снова."
+
+msgid ""
+"New counterparties were added. Give them an article so their lines leave "
+"“Не распределено”."
+msgstr ""
+"Добавлены новые контрагенты. Укажите им статью, чтобы их строки ушли из «Не "
+"распределено»."
+
+msgid "%(counter)s counterparty isn't in the app yet:"
+msgid_plural "%(counter)s counterparties aren't in the app yet:"
+msgstr[0] "%(counter)s контрагента ещё нет в программе:"
+msgstr[1] "%(counter)s контрагентов ещё нет в программе:"
+msgstr[2] "%(counter)s контрагентов ещё нет в программе:"
+msgstr[3] "%(counter)s контрагентов ещё нет в программе:"
+
+msgid "Import"
+msgstr "Загрузить"
+
+msgid "Sections with errors are skipped."
+msgstr "Разделы с ошибками будут пропущены."
+
+msgid "Check result"
+msgstr "Результат проверки"
+
+msgid "Checked, not saved yet"
+msgstr "Проверено, ещё не сохранено"
+
+msgid "In Excel up to"
+msgstr "В Excel до"
+
+msgid "Here up to"
+msgstr "Здесь до"
+
+msgid "Everything in this workbook is already here: there are no new rows to import."
+msgstr "Всё из этой книги уже загружено: новых строк нет."
+
+msgid "The workbook's last rows:"
+msgstr "Последние строки в книге:"
+
+msgid ""
+"If you added operations after these dates, save the workbook in Excel "
+"(Ctrl+S), close it, and upload it again."
+msgstr ""
+"Если вы добавляли операции после этих дат, сохраните книгу в Excel "
+"(Ctrl+S), закройте её и загрузите снова."
+
+msgid "Update these rows from Excel: Excel is the official record."
+msgstr "Обновить эти строки по Excel: Excel — основной учёт."
+
+msgid "Rows changed"
+msgstr "Изменены строки"
+
+msgid "Updated from Excel"
+msgstr "Обновлено по Excel"
+
+msgid ""
+"Until they agree, this section's new rows aren't imported either. Tick "
+"“Update these rows from Excel” below to take Excel's values, or correct "
+"the rows in Excel and check again."
+msgstr ""
+"Пока они не совпадут, новые строки этого раздела тоже не загружаются. "
+"Отметьте ниже «Обновить эти строки по Excel», чтобы взять значения из "
+"Excel, или исправьте строки в Excel и проверьте снова."
+
+msgid "%(counter)s row updated from Excel:"
+msgid_plural "%(counter)s rows updated from Excel:"
+msgstr[0] "%(counter)s строка обновлена по Excel:"
+msgstr[1] "%(counter)s строки обновлены по Excel:"
+msgstr[2] "%(counter)s строк обновлено по Excel:"
+msgstr[3] "%(counter)s строк обновлено по Excel:"
+
+msgid "row %(row)s: was %(was)s, now %(now)s"
+msgstr "строка %(row)s: было %(was)s, стало %(now)s"
+
+msgid ""
+"%(counter)s changed row (listed above) will take the values from Excel. "
+"Without this, that section is skipped."
+msgid_plural ""
+"%(counter)s changed rows (listed above) will take the values from Excel. "
+"Without this, that section is skipped."
+msgstr[0] ""
+"%(counter)s изменённая строка (см. выше) получит значения из Excel. Без "
+"этой отметки раздел будет пропущен."
+msgstr[1] ""
+"%(counter)s изменённые строки (см. выше) получат значения из Excel. Без "
+"этой отметки раздел будет пропущен."
+msgstr[2] ""
+"%(counter)s изменённых строк (см. выше) получат значения из Excel. Без "
+"этой отметки раздел будет пропущен."
+msgstr[3] ""
+"%(counter)s изменённых строк (см. выше) получат значения из Excel. Без "
+"этой отметки раздел будет пропущен."
+
+# --- Cash desk: Excel downloads (handbook, counterparties)
+# -------------------------------------------------------------------
+msgid "Download Excel"
+msgstr "Скачать Excel"
+
+msgid "yes"
+msgstr "да"
+
+msgid "no"
+msgstr "нет"
+
+msgid "Articles and categories"
+msgstr "Статьи и категории"
+
+msgid "Articles"
+msgstr "Статьи"
+
+msgid "Categories"
+msgstr "Категорий"
+
+msgid "Counts in cash flow"
+msgstr "Учитывается в ДДС"
+
+msgid "Article active"
+msgstr "Статья активна"
+
+msgid "Category active"
+msgstr "Категория активна"
+
+msgid "Position"
+msgstr "Порядок"
+
+msgid "Active"
+msgstr "Активна"
+
+msgid "Needs an article"
+msgstr "Нужна статья"
+
+msgid "Sales manager"
+msgstr "Менеджер"
+
+msgid "Bank lines"
+msgstr "Банковских строк"
+
+msgid "Statement reference"
+msgstr "Как в выписке"
+
+# --- Cash desk: loading handbooks from Excel
+# -------------------------------------------------------------------
+msgid "Handbook workbook (.xlsx)"
+msgstr "Файл справочников (.xlsx)"
+
+msgid "Load from Excel"
+msgstr "Загрузить из Excel"
+
+msgid "Load handbooks from Excel"
+msgstr "Загрузка справочников из Excel"
+
+msgid "Handbooks loaded."
+msgstr "Справочники загружены."
+
+msgid "Changed"
+msgstr "Изменено"
+
+msgid "Unchanged"
+msgstr "Без изменений"
+
+msgid "Sheets found:"
+msgstr "Найдены листы:"
+
+msgid "Nothing was saved: correct the rows listed below and upload again."
+msgstr "Ничего не сохранено: исправьте строки, указанные ниже, и загрузите снова."
+
+msgid "Checked: nothing was saved. Untick “Only check” to load."
+msgstr "Проверено, ничего не сохранено. Снимите отметку «Только проверить», чтобы загрузить."
+
+msgid ""
+"For a new server with an empty database: download the handbooks where they "
+"are complete (the “Download Excel” buttons on Handbook and Counterparties, "
+"or manage.py export_handbooks for everything in one file), then load the "
+"file here."
+msgstr ""
+"Для нового сервера с пустой базой: скачайте справочники там, где они "
+"заполнены (кнопки «Скачать Excel» на страницах «Справочник» и "
+"«Контрагенты» или manage.py export_handbooks — всё в одном файле), и "
+"загрузите файл здесь."
+
+msgid ""
+"Sheets read: «Статьи и категории», «Статьи», «Регионы», «Контрагенты» — "
+"whichever the file has. Articles, categories and regions are matched by "
+"name, counterparties by their statement reference, so loading the same file "
+"again changes nothing."
+msgstr ""
+"Читаются листы «Статьи и категории», «Статьи», «Регионы», «Контрагенты» — "
+"какие есть в файле. Статьи, категории и регионы сопоставляются по названию, "
+"контрагенты — по строке из выписки, поэтому повторная загрузка того же "
+"файла ничего не меняет."
+
+msgid ""
+"Existing records take the file's values (type, cash desks, article, region, "
+"active). If any row has an error, nothing is saved."
+msgstr ""
+"Существующие записи получают значения из файла (тип, кассы, статья, регион, "
+"активность). Если в какой-либо строке ошибка, ничего не сохраняется."
+
+msgid "Sheet «%(sheet)s», row %(row)s: %(message)s"
+msgstr "Лист «%(sheet)s», строка %(row)s: %(message)s"
+
+msgid "“%(value)s” is not yes or no."
+msgstr "«%(value)s» — не «да» и не «нет»."
+
+msgid "unknown type “%(value)s” (expected: %(choices)s)."
+msgstr "неизвестный тип «%(value)s» (ожидается: %(choices)s)."
+
+msgid "unknown cash desk “%(name)s”."
+msgstr "неизвестная касса «%(name)s»."
+
+msgid "unknown article “%(name)s”: add it to the handbook first."
+msgstr "неизвестная статья «%(name)s»: сначала добавьте её в справочник."
+
+msgid "Sheet «%(sheet)s» has no column %(columns)s."
+msgstr "На листе «%(sheet)s» нет столбца %(columns)s."
+
+msgid "No handbook sheets found. Expected any of: %(names)s."
+msgstr "Листы справочников не найдены. Ожидается любой из: %(names)s."
+
+# --- Cash desk: counterparties from Excel
+# -------------------------------------------------------------------
+msgid "%(label)s: %(created)s new, %(updated)s changed, %(unchanged)s unchanged"
+msgstr "%(label)s: новых %(created)s, изменено %(updated)s, без изменений %(unchanged)s"
+
+msgid "Nothing was saved: %(errors)s"
+msgstr "Ничего не сохранено: %(errors)s"
+
+msgid "Loaded from «%(sheets)s». %(summary)s."
+msgstr "Загружено с листа «%(sheets)s». %(summary)s."
+
+msgid "Checked «%(sheets)s», nothing was saved. %(summary)s."
+msgstr "Проверен лист «%(sheets)s», ничего не сохранено. %(summary)s."
+
+msgid "Article «%(name)s» is not in the handbook: %(count)s counterparties left without an article."
+msgstr "Статьи «%(name)s» нет в справочнике: контрагентов без статьи — %(count)s."
+
+msgid ""
+"The finance workbook (Situation.xlsx): counterparties with their article and "
+"region are taken from its «Handbook» sheet (columns H:J and Y:AA). Or a "
+"«Download Excel» file of this page or the Handbook. New counterparties are "
+"added and nothing is duplicated. From Situation.xlsx only an empty article "
+"or region is filled in; a download file sets them as the file says."
+msgstr ""
+"Финансовая книга (Situation.xlsx): контрагенты со статьёй и регионом берутся "
+"с её листа «Handbook» (столбцы H:J и Y:AA). Или файл «Скачать Excel» с этой "
+"страницы или со Справочника. Новые контрагенты добавляются, ничего не "
+"задваивается. Из Situation.xlsx заполняются только пустые статья и регион; "
+"файл выгрузки задаёт их так, как в файле."
+
+# --- Production: the calculation of each production (own recipe, defect)
+# -------------------------------------------------------------------
+msgid "allowed loss, %"
+msgstr "допустимая потеря, %"
+
+msgid "Production defect above this share of the use is highlighted."
+msgstr "Производственный брак выше этой доли расхода подсвечивается."
+
+msgid "brewed, units"
+msgstr "сварено, шт"
+
+msgid ""
+"Drink prepared, counted in units (cans). Raw materials are written off by "
+"it; empty means the same as the units produced."
+msgstr ""
+"Приготовлено напитка в штуках (банках). Сырьё списывается по нему; пусто — "
+"столько же, сколько выпущено."
+
+msgid "production run line"
+msgstr "строка рецепта выпуска"
+
+msgid "production run lines"
+msgstr "строки рецепта выпуска"
+
+msgid "production defect"
+msgstr "производственный брак"
+
+msgid ""
+"Scrapped in production, in the material's unit; written off on top of the "
+"norm."
+msgstr ""
+"Испорчено при производстве, в единицах материала; списывается сверх нормы."
+
+msgid "written off"
+msgstr "списано"
+
+msgid "Allowed loss, %"
+msgstr "Допустимая потеря, %"
+
+msgid "Finished product, units"
+msgstr "Готовый продукт, шт"
+
+msgid "Brewed, units"
+msgstr "Сварено, шт"
+
+msgid ""
+"Drink prepared, in units; raw materials are written off by it. Empty: same "
+"as finished."
+msgstr ""
+"Приготовлено напитка в штуках; по нему списывается сырьё. Пусто — как "
+"готовый продукт."
+
+msgid "Norm"
+msgstr "Норма"
+
+msgid "Production defect"
+msgstr "Производственный брак"
+
+msgid "This material is already in the calculation."
+msgstr "Этот материал уже есть в калькуляции."
+
+msgid "Production saved: %(quantity)s units of %(product)s on %(date)s."
+msgstr "Выпуск сохранён: %(product)s — %(quantity)s шт за %(date)s."
+
+msgid "The recipe of %(product)s now has these norms for the next production."
+msgstr "Рецепт %(product)s обновлён: эти нормы будут в следующем выпуске."
+
+msgid "A later production of this product exists, so its recipe was left as it is."
+msgstr "Есть более поздний выпуск этого продукта, поэтому рецепт не изменён."
+
+msgid "Production calculation"
+msgstr "Калькуляция производства"
+
+msgid "Calculation"
+msgstr "Калькуляция"
+
+msgid "Volume"
+msgstr "Объём"
+
+msgid "l"
+msgstr "л"
+
+msgid "Brewed"
+msgstr "Сварено"
+
+msgid "Norm per %(volume)s l"
+msgstr "Норма на %(volume)s л"
+
+msgid "Use by norm"
+msgstr "Расход по норме"
+
+msgid "Write off"
+msgstr "Списать"
+
+msgid "Loss, %%"
+msgstr "Потеря, %"
+
+msgid "Allowed, %%"
+msgstr "Допуст., %"
+
+msgid "Back to the day"
+msgstr "К выпуску за день"
+
+msgid "per 1000 l"
+msgstr "на 1000 л"
+
+msgid "per unit"
+msgstr "на шт"
+
+msgid "Saved: %(quantity)s units"
+msgstr "Сохранено: %(quantity)s шт"
+
+msgid "Not saved yet: the norms come from the product's recipe"
+msgstr "Ещё не сохранено: нормы взяты из рецепта продукта"
+
+msgid ""
+"First set this production's recipe: raw materials per 1000 l of drink, "
+"packaging per unit (a fraction like 1/12 works). Then enter how much was "
+"brewed and how many units came out."
+msgstr ""
+"Сначала задайте рецепт этого выпуска: сырьё — на 1000 л напитка, упаковка — "
+"на штуку (можно дробью, например 1/12). Затем укажите, сколько сварено и "
+"сколько штук выпущено."
+
+msgid ""
+"Raw materials are written off for the drink brewed, packaging for the "
+"finished units; the production defect is written off on top. A loss above "
+"the allowed share is shown in red."
+msgstr ""
+"Сырьё списывается по сваренному напитку, упаковка — по готовой продукции; "
+"производственный брак списывается сверх нормы. Потеря выше допустимой "
+"показывается красным."
+
+msgid "This production keeps its own recipe: later recipe changes don't alter it."
+msgstr "Этот выпуск хранит свой рецепт: последующие изменения рецепта его не меняют."
+
+msgid ""
+"If it is the product's latest production, saving also makes these norms the "
+"product's recipe for the next production."
+msgstr ""
+"Если это последний выпуск продукта, при сохранении эти нормы станут рецептом "
+"продукта для следующего выпуска."
+
+msgid ""
+"Leave empty or 0 for products not made. Materials are written off by each "
+"production's own recipe; open “Calculation” to adjust it, the defect or the "
+"brewed quantity."
+msgstr ""
+"Оставьте пустым или 0, если продукт не выпускали. Материалы списываются по "
+"рецепту каждого выпуска; откройте «Калькуляция», чтобы изменить его, брак "
+"или количество сваренного."
+
+# --- Administration: users, roles and permissions
+# -------------------------------------------------------------------
+msgctxt "role"
+msgid "Finance"
+msgstr "Финансист"
+
+msgctxt "role"
+msgid "Planner"
+msgstr "Планировщик"
+
+msgctxt "role"
+msgid "Technologist"
+msgstr "Технолог"
+
+msgctxt "role"
+msgid "Director"
+msgstr "Руководитель"
+
+msgid "Administration"
+msgstr "Администрирование"
+
+msgid "Users"
+msgstr "Пользователи"
+
+msgid "Roles and permissions"
+msgstr "Роли и права"
+
+msgid "New user"
+msgstr "Новый пользователь"
+
+msgid "Create user"
+msgstr "Создать пользователя"
+
+msgid "All roles"
+msgstr "Все роли"
+
+msgid "Set a new password"
+msgstr "Задать новый пароль"
+
+msgid "Set password"
+msgstr "Задать пароль"
+
+msgid "Joined"
+msgstr "Зарегистрирован"
+
+msgid "Telegram linked"
+msgstr "Telegram привязан"
+
+msgid "What each role can do"
+msgstr "Что может каждая роль"
+
+msgid "Roles and permissions, section by section"
+msgstr "Роли и права по разделам"
+
+msgid "Users with this role"
+msgstr "Пользователей с этой ролью"
+
+msgid "Works"
+msgstr "Работает"
+
+msgid "Views"
+msgstr "Смотрит"
+
+msgid "User %(user)s created: %(role)s. Give them the password; they can change it in their profile."
+msgstr "Пользователь %(user)s создан: %(role)s. Передайте ему пароль — сменить его можно в профиле."
+
+msgid "New password set for %(user)s."
+msgstr "Новый пароль для %(user)s задан."
+
+msgid "%(user)s saved."
+msgstr "%(user)s: сохранено."
+
+msgid "What the user may see and do: see Administration › Roles and permissions."
+msgstr "Что пользователь может видеть и делать: см. Администрирование › Роли и права."
+
+msgid "Give it to the user; they can change it under Profile › Change password."
+msgstr "Передайте его пользователю; сменить его можно в Профиль › Сменить пароль."
+
+msgid "Untick instead of deleting: the user's records keep their author."
+msgstr "Снимите отметку вместо удаления: у записей пользователя сохранится автор."
+
+msgid ""
+"Only when the user can't reset it themselves with a Telegram code. Tell them "
+"the new password; they can change it in their profile."
+msgstr ""
+"Только если пользователь не может сбросить пароль сам кодом из Telegram. "
+"Сообщите ему новый пароль — сменить его можно в профиле."
+
+msgid ""
+"A user has one role. Records are never deleted with a user: untick “Can "
+"sign in” instead, so the history keeps its authors."
+msgstr ""
+"У пользователя одна роль. Записи вместе с пользователем не удаляются: снимите "
+"«Может входить», чтобы в истории сохранились авторы."
+
+msgid ""
+"Roles are part of the program, not settings: every server has exactly the "
+"same ones, and a change is reviewed like any other code change. To change "
+"what a role may do, edit users/roles.py and run manage.py migrate."
+msgstr ""
+"Роли — часть программы, а не настройки: на каждом сервере они одинаковые, а "
+"изменение проверяется как любое изменение кода. Чтобы изменить права роли, "
+"исправьте users/roles.py и выполните manage.py migrate."
+
+msgid ""
+"“Works”: sees the section and enters or changes its data. “Views”: sees it "
+"only. Records are cancelled rather than deleted; only the superuser deletes."
+msgstr ""
+"«Работает» — видит раздел, вносит и меняет данные. «Смотрит» — только видит. "
+"Записи отменяются, а не удаляются; удаляет только суперпользователь."
+
+msgid "Everything, including users, roles and permissions, cash desk setup and the admin site."
+msgstr "Всё, включая пользователей, роли и права, настройку касс и админку."
+
+msgid ""
+"Cash desks and bank, the handbook and counterparties, exchange rates, the "
+"cash plan and collections, sales and clients. Production and stock: view "
+"only."
+msgstr ""
+"Кассы и банк, справочник и контрагенты, курсы валют, план ДДС и поступления, "
+"продажи и клиенты. Производство и склад — только просмотр."
+
+msgid ""
+"The sales and production plan, the cash plan and collections. Cash desks, "
+"sales, production and stock: view only."
+msgstr ""
+"План продаж и производства, план ДДС и поступления. Кассы, продажи, "
+"производство и склад — только просмотр."
+
+msgid ""
+"Recipes and norms, daily production and its calculation, raw materials and "
+"stock, finished goods, the production import and the production plan. "
+"Sales: view only."
+msgstr ""
+"Рецептуры и нормы, выпуск за день и калькуляция, сырьё и склад, готовая "
+"продукция, импорт производства и план производства. Продажи — только "
+"просмотр."
+
+msgid "Every business section, without users and roles."
+msgstr "Все рабочие разделы, кроме пользователей и ролей."
+
+msgid "Can sign in but sees no data. People who sign up themselves start here."
+msgstr "Может войти, но не видит данных. Так начинают те, кто зарегистрировался сам."
+
+msgid "Cash desks and bank"
+msgstr "Кассы и банк"
+
+msgid "Handbook: articles and categories"
+msgstr "Справочник: статьи и категории"
+
+msgid "Counterparties and regions"
+msgstr "Контрагенты и регионы"
+
+msgid "Daily sales and imports"
+msgstr "Продажи за день и импорт"
+
+msgid "Clients, debtors and creditors"
+msgstr "Клиенты, дебиторы и кредиторы"
+
+msgid "Sales and production plan"
+msgstr "План продаж и производства"
+
+msgid "Daily production and calculation"
+msgstr "Выпуск за день и калькуляция"
+
+msgid "Raw materials: receipts, write-offs, counts"
+msgstr "Сырьё: приход, списание, инвентаризация"
+
+msgid "Finished goods and shipments"
+msgstr "Готовая продукция и отгрузки"
+
+msgid "Production import from Excel"
+msgstr "Импорт производства из Excel"
+
+msgid "Users, roles and permissions"
+msgstr "Пользователи, роли и права"
+
+msgctxt "role"
+msgid "Operator"
+msgstr "Оператор"
+
+msgid "Enters the day's sales and the sales import, and corrects them. Clients and debts: view only."
+msgstr "Вносит продажи за день и импорт продаж, исправляет их. Клиенты и долги — только просмотр."
+
+# --- Administration: editing a role's access
+# -------------------------------------------------------------------
+msgid "role"
+msgstr "роль"
+
+msgid "section"
+msgstr "раздел"
+
+msgid "access"
+msgstr "доступ"
+
+msgid "changed by"
+msgstr "кто изменил"
+
+msgid "changed"
+msgstr "изменено"
+
+msgid "was"
+msgstr "было"
+
+msgid "now"
+msgstr "стало"
+
+msgid "role access"
+msgstr "доступ роли"
+
+msgid "role access change"
+msgstr "изменение доступа роли"
+
+msgid "role access changes"
+msgstr "изменения доступа ролей"
+
+msgid "%(role)s: access changed in %(count)s sections. Users with this role have it right away."
+msgstr "%(role)s: доступ изменён в разделах: %(count)s. У пользователей с этой ролью он уже действует."
+
+msgid "Nothing changed."
+msgstr "Ничего не изменилось."
+
+msgid "%(counter)s section changed from the standard"
+msgid_plural "%(counter)s sections changed from the standard"
+msgstr[0] "%(counter)s раздел изменён относительно стандарта"
+msgstr[1] "%(counter)s раздела изменены относительно стандарта"
+msgstr[2] "%(counter)s разделов изменены относительно стандарта"
+msgstr[3] "%(counter)s разделов изменены относительно стандарта"
+
+msgid "Standard access"
+msgstr "Стандартный доступ"
+
+msgid "Access"
+msgstr "Доступ"
+
+msgid "Standard"
+msgstr "Стандарт"
+
+msgid "Superuser only: not given to roles"
+msgstr "Только суперпользователь: ролям не выдаётся"
+
+msgid "Return this role to its standard access?"
+msgstr "Вернуть этой роли стандартный доступ?"
+
+msgid "Reset to standard"
+msgstr "Сбросить к стандартным"
+
+msgid "Back to roles"
+msgstr "К ролям"
+
+msgid ""
+"“Works”: sees the section and enters or changes its data. “Views”: sees it "
+"only. “No access”: the section isn't in the menu and its pages are closed."
+msgstr ""
+"«Работает» — видит раздел, вносит и меняет данные. «Смотрит» — только видит. "
+"«Нет доступа» — раздела нет в меню, его страницы закрыты."
+
+msgid ""
+"Changes apply to everyone with this role at once, stay after program updates "
+"and are recorded below. “Reset to standard” returns the role to the access "
+"the program defines for it."
+msgstr ""
+"Изменения сразу действуют для всех с этой ролью, сохраняются после "
+"обновлений программы и записываются ниже. «Сбросить к стандартным» "
+"возвращает роли доступ, заданный программой."
+
+msgid "Nobody yet."
+msgstr "Пока никого."
+
+msgid "History of changes"
+msgstr "История изменений"
+
+msgid "No changes yet: the role has its standard access."
+msgstr "Изменений нет: у роли стандартный доступ."
+
+msgid "Edit access"
+msgstr "Изменить права"
+
+msgid "%(counter)s change"
+msgid_plural "%(counter)s changes"
+msgstr[0] "%(counter)s изменение"
+msgstr[1] "%(counter)s изменения"
+msgstr[2] "%(counter)s изменений"
+msgstr[3] "%(counter)s изменений"
+
+msgid "Changed from the standard"
+msgstr "Изменено относительно стандарта"
+
+msgid ""
+"Each role has a standard access defined by the program. “Edit access” "
+"changes it section by section; the changes stay after program updates, are "
+"recorded in the role's history, and “Reset to standard” undoes them. Cells "
+"changed from the standard are highlighted."
+msgstr ""
+"У каждой роли есть стандартный доступ, заданный программой. «Изменить права» "
+"меняет его по разделам; изменения сохраняются после обновлений программы, "
+"записываются в историю роли, а «Сбросить к стандартным» отменяет их. "
+"Изменённые ячейки подсвечены."
+
+# --- Cash desk: the project's handbook files (cashbook/seed/)
+# -------------------------------------------------------------------
+msgid "project file"
+msgstr "файл проекта"
+
+msgid "Project file"
+msgstr "Файл из проекта"
+
+msgid "Project files"
+msgstr "Файлы проекта"
+
+msgid "The handbook file kept in the project, to load into a new server"
+msgstr "Файл справочника, хранящийся в проекте, — для загрузки на новый сервер"
+
+msgid "The counterparties file kept in the project, to load into a new server"
+msgstr "Файл контрагентов, хранящийся в проекте, — для загрузки на новый сервер"
+
+msgid "Load the project files"
+msgstr "Загрузить файлы проекта"
+
+msgid ""
+"Kept with the program's code and deployed with it: on a new server they "
+"fill the handbooks in one click, handbook first, then counterparties."
+msgstr ""
+"Хранятся вместе с кодом программы и попадают на сервер при развёртывании: "
+"на новом сервере заполняют справочники в один клик — сначала справочник, "
+"затем контрагенты."
+
+msgid ""
+"The project has no handbook files yet. Write them where the handbooks are "
+"complete with: manage.py export_handbooks --seed"
+msgstr ""
+"В проекте ещё нет файлов справочников. Создайте их там, где справочники "
+"заполнены: manage.py export_handbooks --seed"
+
+msgid "The project has no such file yet. Write it with: manage.py export_handbooks --seed"
+msgstr "В проекте ещё нет такого файла. Создайте его: manage.py export_handbooks --seed"
+
+msgid "Products"
+msgstr "Продукты"
+
+msgid "Materials and packaging"
+msgstr "Сырьё и упаковка"
+
+msgid "Recipes"
+msgstr "Рецептуры"
+
+msgid "Other product names"
+msgstr "Другие названия"
+
+msgid "In use"
+msgstr "Используется"
+
+msgid "Minimum stock"
+msgstr "Минимальный остаток"
+
+msgid "Norm per 1000 l"
+msgstr "Норма на 1000 л"
+
+msgid "Source"
+msgstr "Источник"
+
+msgid "Removed"
+msgstr "Удалено"
+
+#, python-format
+msgid "“%(value)s” is not a number."
+msgstr "«%(value)s» — не число."
+
+#, python-format
+msgid "“%(value)s” is too large."
+msgstr "«%(value)s» — слишком большое число."
+
+#, python-format
+msgid "unknown product “%(name)s”: add it on the «%(sheet)s» sheet."
+msgstr "неизвестный продукт «%(name)s»: добавьте его на лист «%(sheet)s»."
+
+#, python-format
+msgid "unknown material “%(name)s”: add it on the «%(sheet)s» sheet."
+msgstr "неизвестное сырьё «%(name)s»: добавьте его на лист «%(sheet)s»."
+
+msgid "the volume is required."
+msgstr "нужен объём."
+
+msgid "the unit is required."
+msgstr "нужна единица измерения."
+
+#, python-format
+msgid "“%(name)s” is already in this product's recipe."
+msgstr "«%(name)s» уже есть в рецептуре этого продукта."
+
+msgid "the norm is required and must be above zero."
+msgstr "нужна норма больше нуля."
+
+#, python-format
+msgid "No recipe sheets found. Expected any of: %(names)s."
+msgstr "Листы рецептур не найдены. Ожидается любой из: %(names)s."
+
+msgid "Recipes workbook (.xlsx)"
+msgstr "Файл рецептур (.xlsx)"
+
+msgid "The project has no recipes file yet. Write it with: manage.py export_recipes --seed"
+msgstr "В проекте ещё нет файла рецептур. Создайте его командой: manage.py export_recipes --seed"
+
+msgid "Recipes loaded. They apply to production entered from now on."
+msgstr "Рецептуры загружены. Они применяются к производству, вводимому с этого момента."
+
+msgid "Load recipes from Excel"
+msgstr "Загрузка рецептур из Excel"
+
+msgid "Load the project file"
+msgstr "Загрузить файл проекта"
+
+msgid "Kept with the program's code and deployed with it: on a new server it fills products, materials and recipes in one click."
+msgstr "Хранится вместе с кодом программы и разворачивается с ним: на новом сервере заполняет продукты, сырьё и рецептуры одним нажатием."
+
+msgid "The project has no recipes file yet. Write it where the recipes are complete with: manage.py export_recipes --seed"
+msgstr "В проекте ещё нет файла рецептур. Создайте его там, где рецептуры заполнены, командой: manage.py export_recipes --seed"
+
+msgid "Sheets read: «Продукты», «Сырьё и упаковка», «Рецептуры», «Другие названия» — whichever the file has. Products, materials and other names are matched by name, so loading the same file again changes nothing."
+msgstr "Читаются листы «Продукты», «Сырьё и упаковка», «Рецептуры», «Другие названия» — те, что есть в файле. Продукты, сырьё и другие названия сопоставляются по названию, поэтому повторная загрузка того же файла ничего не меняет."
+
+msgid "A product listed on «Рецептуры» gets exactly the file's lines: lines not in the file are removed from its recipe. Products not listed there keep their recipe. Production already entered keeps the norms it was made with."
+msgstr "Продукт, указанный на листе «Рецептуры», получает ровно строки из файла: строки, которых нет в файле, удаляются из его рецептуры. Продукты, которых там нет, сохраняют свою рецептуру. Уже введённое производство сохраняет нормы, по которым оно сделано."
+
+msgid "The norm per unit is what is loaded; the norm per 1000 l is used only where the norm per unit is empty. If any row has an error, nothing is saved."
+msgstr "Загружается норма на 1 шт; норма на 1000 л используется, только если норма на 1 шт пуста. Если в какой-либо строке ошибка, ничего не сохраняется."
+
+msgid "The recipes file kept in the project, to load into a new server"
+msgstr "Файл рецептур, хранящийся в проекте, — для загрузки на новый сервер"
+
+msgid "Opening balances"
+msgstr "Начальные остатки"
+
+msgid "Opening balance from Excel"
+msgstr "Начальный остаток из Excel"
+
+#, python-format
+msgid "The project has no such file yet. Write it with: manage.py %(command)s --seed"
+msgstr "В проекте ещё нет этого файла. Создайте его командой: manage.py %(command)s --seed"
+
+msgid "Materials loaded."
+msgstr "Сырьё загружено."
+
+msgid "Materials workbook (.xlsx)"
+msgstr "Файл сырья (.xlsx)"
+
+msgid "Load the «Остаток» column as opening balances"
+msgstr "Загрузить столбец «Остаток» как начальные остатки"
+
+msgid "Only for materials with no stock movements yet. Tick it only if the file's stock is a real count."
+msgstr "Только для сырья, по которому ещё нет движений. Отмечайте, только если остатки в файле — реальный пересчёт."
+
+msgid "Opening balance date"
+msgstr "Дата начальных остатков"
+
+msgid "Choose a file, or load the project's file."
+msgstr "Выберите файл или загрузите файл проекта."
+
+msgid "Give the date of the stock count."
+msgstr "Укажите дату пересчёта."
+
+msgid "Load materials from Excel"
+msgstr "Загрузка сырья из Excel"
+
+msgid "Kept with the program's code and deployed with it: on a new server it fills the materials in one click."
+msgstr "Хранится вместе с кодом программы и разворачивается с ним: на новом сервере заполняет сырьё одним нажатием."
+
+msgid "The project has no materials file yet. Write it where the materials are complete with: manage.py export_materials --seed"
+msgstr "В проекте ещё нет файла сырья. Создайте его там, где сырьё заполнено, командой: manage.py export_materials --seed"
+
+msgid "Sheet read: «Сырьё и упаковка». Materials are matched by name, so loading the same file again changes nothing; existing materials take the file's unit, type, shelf life, minimum stock and “in use”. If any row has an error, nothing is saved."
+msgstr "Читается лист «Сырьё и упаковка». Сырьё сопоставляется по названию, поэтому повторная загрузка того же файла ничего не меняет; существующее сырьё получает из файла единицу, тип, срок годности, минимальный остаток и «используется». Если в какой-либо строке ошибка, ничего не сохраняется."
+
+msgid "Stock is a ledger of movements, so «Остаток» is loaded only when asked: as an opening balance on the given date, and only for materials with no stock movements yet. On a server already in use, correct stock with a stock count instead."
+msgstr "Остаток складывается из движений, поэтому «Остаток» загружается только по запросу: как начальный остаток на указанную дату и только для сырья, по которому ещё нет движений. На уже работающем сервере исправляйте остатки инвентаризацией."
+
+msgid "Stock not loaded: these materials already have stock movements here (correct them with a stock count):"
+msgstr "Остаток не загружен: по этому сырью здесь уже есть движения (исправьте инвентаризацией):"
+
+msgid "The materials file kept in the project, to load into a new server"
+msgstr "Файл сырья, хранящийся в проекте, — для загрузки на новый сервер"

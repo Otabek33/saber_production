@@ -1,0 +1,4 @@
+{# Plan, fact and share of plan for one product (or the total). #}
+<td class="num text-muted">{{ part.plan|floatformat:"0g" }}</td>
+<td class="num">{{ part.fact|floatformat:"0g" }}</td>
+<td class="num">{% if part.percent is not None %}<span class="badge {% if part.percent >= products.month_progress %}bg-success-subtle text-success{% elif part.percent >= products.month_progress|add:"-15" %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %}">{{ part.percent }}%</span>{% endif %}</td>

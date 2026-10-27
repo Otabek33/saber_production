@@ -1,0 +1,73 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Recipes and norms" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Recipes and norms" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center gap-2">
+      <span class="text-muted">{% translate "Norm per unit of each material. Production written off by these recipes." %}</span>
+      <div class="d-flex flex-wrap gap-2 ms-auto">
+        {% if perms.production.add_product %}
+          <a href="{% url 'production:product_add' %}" class="btn btn-sm bg-primary-subtle text-primary">
+            <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon> {% translate "New product" %}
+          </a>
+        {% endif %}
+        {% if can_load %}
+          <a href="{% url 'production:recipe_import' %}" class="btn btn-sm bg-primary-subtle text-primary">
+            <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Load from Excel" %}
+          </a>
+        {% endif %}
+        <a href="{% url 'production:recipe_export' %}" class="btn btn-sm bg-success-subtle text-success">
+          <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+        </a>
+        {# The recipes file kept with the code, for filling a new server #}
+        <a href="{% url 'production:recipe_seed' %}" class="btn btn-sm bg-secondary-subtle text-secondary" title="{% translate "The recipes file kept in the project, to load into a new server" %}">
+          <iconify-icon icon="solar:archive-down-minimlistic-line-duotone"></iconify-icon> {% translate "Project file" %}
+        </a>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Product" %}</th>
+            <th>{% translate "Sales name" %}</th>
+            <th class="num">{% translate "Volume, l" %}</th>
+            <th class="num">{% translate "Materials" %}</th>
+            <th class="num">{% translate "Stock allows, units" %}</th>
+            <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr{% if not row.product.is_active %} class="opacity-50"{% endif %}>
+              <td><a href="{% url 'production:recipe_edit' row.product.pk %}" class="text-reset fw-semibold">{{ row.product.name }}</a></td>
+              <td class="text-muted">{{ row.product.sales_name }}</td>
+              <td class="num">{{ row.product.volume|floatformat:"-3" }}</td>
+              <td class="num">
+                {% with count=row.product.recipe.all|length %}
+                  {% if count %}{{ count }}{% else %}<span class="badge bg-warning-subtle text-warning">{% translate "No recipe" %}</span>{% endif %}
+                {% endwith %}
+              </td>
+              <td class="num">{{ row.possible|floatformat:"0g" }}</td>
+              <td class="text-end">
+                <a href="{% url 'production:recipe_edit' row.product.pk %}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit recipe" %}" aria-label="{% translate "Edit recipe" %}">
+                  <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No products yet." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

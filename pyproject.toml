@@ -1,0 +1,124 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "finance_saber"
+version = "0.1.0"
+description = "finance saber automation (Django)"
+readme = "README.md"
+authors = [
+  {name = "Otabek Davronov", email = "kebatotabek33@gmail.com"}
+]
+maintainers = [
+  {name = "Otabek Davronov", email = "kebatotabek33@gmail.com"}
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Typing :: Typed",
+]
+license = {text = "MIT"}
+dependencies = [
+  "django>=6.1,<6.2",
+  "django-environ>=0.14",
+  "openpyxl>=3.1",  # reads bank statements and the finance workbook (.xlsx)
+  "whitenoise>=6.12",
+]
+requires-python = ">= 3.12"
+
+[dependency-groups]
+dev = [
+    "django-debug-toolbar>=8.0",
+    "truststore>=0.10",  # Windows certificate store for HTTPS (Telegram) behind a corporate proxy
+    { include-group = "i18n" },
+    { include-group = "lint" },
+    { include-group = "test" },
+    { include-group = "typecheck" },
+]
+# Install on servers: uv sync --no-default-groups --group prod
+prod = [
+    "gunicorn>=23",
+]
+# Add when you switch DATABASE_URL to PostgreSQL: uv sync --group postgres
+postgres = [
+    "psycopg[binary]>=3.2",
+]
+# Compiles locale/*/LC_MESSAGES/django.po without GNU gettext:
+#   pybabel compile -d locale -D django
+i18n = [
+    "babel",
+]
+lint = [
+    "ruff",
+]
+test = [
+    "coverage",
+    "pytest",
+    "pytest-django",
+]
+typecheck = [
+    "ty",
+]
+docs = [
+    "zensical",
+    "mkdocstrings-python",
+]
+
+[project.urls]
+bugs = "https://github.com/Otabek33/finance_saber/issues"
+changelog = "https://github.com/Otabek33/finance_saber/releases"
+documentation = "https://Otabek33.github.io/finance_saber/"
+homepage = "https://github.com/Otabek33/finance_saber"
+
+[tool.ty]
+# All rules are enabled as "error" by default; no need to specify unless overriding.
+# Example override: relax a rule for the entire project (uncomment if needed).
+# rules.TY015 = "warn"  # For invalid-argument-type, warn instead of error.
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["*/migrations/*", "finance_saber/static/matdash"]  # vendored MatDash theme
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "DJ",  # flake8-django
+]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+source = ["config/", "finance_saber/", "tests/"]
+omit = ["*/migrations/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 50
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "@overload",
+    "@typing.overload",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+
+[tool.hatch.build.targets.wheel]
+packages = ["config", "finance_saber"]
+
+[tool.uv]
+package = true
+default-groups = ["dev"]

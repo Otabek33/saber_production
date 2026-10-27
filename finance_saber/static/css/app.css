@@ -1,0 +1,403 @@
+/* Project styles on top of the MatDash theme (static/matdash). Keep theme files unmodified. */
+
+/* Text logo (partials/_brand.html). */
+/* Brand green: dark enough for white text on it (contrast 5:1); lighter in dark mode. */
+:root {
+  --brand-green: #2e7d32;
+}
+[data-bs-theme="dark"] {
+  --brand-green: #4caf50;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--brand-green) !important;
+  text-decoration: none;
+}
+.brand .brand-main {
+  letter-spacing: 0.06em;
+}
+.brand .brand-icon {
+  font-size: 1.6rem;
+  color: var(--brand-green);
+}
+.brand.brand-lg {
+  font-size: 1.6rem;
+}
+.brand.brand-lg .brand-icon {
+  font-size: 2.2rem;
+}
+
+/* Large decorative leaf on the sign-in pages' dark panel. */
+.auth-leaf {
+  position: absolute;
+  right: -60px;
+  bottom: -60px;
+  font-size: 420px;
+  color: var(--bs-primary);
+  opacity: 0.35;
+}
+
+/* Initials avatar for the signed-in user. Set the size with style="--size: 35px". */
+.user-avatar {
+  --size: 40px;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--size);
+  height: var(--size);
+  background-color: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+/*
+ * Small screens (< 1300px, the theme's breakpoint). The MatDash horizontal pages
+ * switch to a second, vertical header and sidebar below this width; this project
+ * only renders the horizontal ones, so keep them visible and turn the menu into
+ * an off-canvas drawer. The hamburger toggles #main-wrapper.show-sidebar, which
+ * the theme already uses to slide the drawer in and dim the page behind it.
+ */
+@media (max-width: 1299.98px) {
+  html[data-layout="horizontal"] .with-horizontal {
+    display: block;
+  }
+
+  /* The drawer lives inside the top bar, so the top bar must sit above the dimmed overlay
+     (.dark-transparent, z-index 10); otherwise taps on the menu land on the overlay. */
+  html[data-layout="horizontal"] .topbar {
+    z-index: 1050;
+  }
+
+  html[data-layout="horizontal"] .left-sidebar.with-horizontal {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    z-index: 11; /* above the .dark-transparent overlay (10) */
+    width: 270px;
+    height: 100%;
+    padding-top: 1rem;
+    overflow-y: auto;
+    background-color: var(--bs-body-bg);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+    transition: left 0.2s ease-in;
+  }
+
+  html[data-layout="horizontal"] #main-wrapper.show-sidebar .left-sidebar.with-horizontal {
+    left: 0;
+  }
+
+  /* Touch-sized rows: at least 44px tall, so the menu is easy to tap on a phone. */
+  html[data-layout="horizontal"] .left-sidebar.with-horizontal .sidebar-link {
+    min-height: 44px;
+    align-items: center;
+    font-size: 15px;
+  }
+  html[data-layout="horizontal"] .left-sidebar.with-horizontal .first-level .sidebar-link {
+    min-height: 42px;
+  }
+  html[data-layout="horizontal"] .left-sidebar.with-horizontal {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html[data-layout="horizontal"] .left-sidebar.with-horizontal .drawer-head .brand {
+    font-size: 1.05rem;
+  }
+}
+
+@media (min-width: 1300px) {
+  .nav-drawer-toggle {
+    display: none !important;
+  }
+}
+
+/* Dense forms for working pages (add class="form-compact" to a <form>): smaller
+   labels and inputs, tighter spacing, help texts hidden (labels say enough). */
+.form-compact .form-label {
+  margin-bottom: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color);
+}
+.form-compact .form-control,
+.form-compact .form-select {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+  font-size: 0.875rem;
+}
+.form-compact .mb-3 {
+  margin-bottom: 0.5rem !important;
+}
+.form-compact .form-text {
+  display: none;
+}
+/* Cash desk toolbar buttons: icon and label side by side. */
+.ledger-toolbar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Searchable selects (Select2) as tall as the compact inputs beside them. */
+.form-compact .select2-container .select2-selection--single {
+  height: 35px;
+  display: flex;
+  align-items: center;
+}
+.form-compact .select2-container .select2-selection__arrow {
+  height: 33px;
+}
+
+/* Buttons in a field row line up with the inputs beside them. */
+.form-compact .row .btn {
+  min-height: 35px;
+}
+
+/* Cash desk ledger: Приход / Расход / Остаток column groups, like the workbook sheet.
+   Compact enough to fit the screen without sideways scrolling: text wraps, numbers don't. */
+.ledger-table { font-size: 0.8125rem; }
+.ledger-table th { white-space: nowrap; vertical-align: middle; }
+.ledger-table td, .ledger-table th { padding: 0.4rem 0.45rem; }
+.ledger-table .num { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ledger-table .ledger-note { min-width: 160px; }
+.ledger-table .ledger-counterparty { min-width: 170px; }
+/* Long bank payment purposes wrap instead of widening the table; the full text is in the tooltip. */
+.ledger-table .ledger-clamp { max-width: 280px; }
+.ledger-table th.ledger-income { background-color: var(--bs-success-bg-subtle); }
+.ledger-table th.ledger-expense { background-color: var(--bs-danger-bg-subtle); }
+.ledger-table th.ledger-balance { background-color: var(--bs-primary-bg-subtle); }
+.ledger-table th.ledger-article { background-color: var(--bs-tertiary-bg); }
+.ledger-table td.ledger-balance-cell { background-color: rgba(var(--bs-primary-rgb), 0.04); }
+/* Opening / carried-over balance row: theme-aware (Bootstrap's table-light stays light in dark mode). */
+.ledger-table tr.ledger-opening {
+  --bs-table-bg: var(--bs-tertiary-bg);
+  --bs-table-color: var(--bs-emphasis-color);
+}
+/* !important: the theme's dark mode dims every table cell with an !important colour. */
+.ledger-table tr.ledger-opening > td {
+  color: var(--bs-emphasis-color) !important;
+}
+.ledger-table .ledger-action { padding: 0.15rem 0.35rem; line-height: 1; }
+.ledger-table tr.ledger-cancelled td:not(:last-child):not(.ledger-status) {
+  color: var(--bs-secondary-color);
+  text-decoration: line-through;
+}
+
+/* Collapsible column groups, like Excel's outline buttons. A group's cells have class
+   g-<group>; when the table has collapse-<group>, they hide and the narrow gp-<group>
+   cells show instead. */
+.ledger-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-inline-start: 0.25rem;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  font-size: 0.75rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+.ledger-toggle:hover { color: var(--bs-primary); }
+.ledger-table [class*="gp-"] { display: none; width: 30px; text-align: center; }
+.ledger-collapsed-label {
+  display: block;
+  margin: 0.4rem auto 0;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-weight: 600;
+}
+.ledger-table.collapse-article .g-article,
+.ledger-table.collapse-income .g-income,
+.ledger-table.collapse-expense .g-expense,
+.ledger-table.collapse-balance .g-balance { display: none; }
+.ledger-table.collapse-article .gp-article,
+.ledger-table.collapse-income .gp-income,
+.ledger-table.collapse-expense .gp-expense,
+.ledger-table.collapse-balance .gp-balance { display: table-cell; }
+
+/* The Sign Out button sits in a form inside the profile dropdown; make it full width like the links. */
+.profile-dropdown form .dropdown-item {
+  width: 100%;
+  text-align: start;
+}
+
+/* Production journal: a month of days side by side, the product column stays put while scrolling. */
+.journal-grid th,
+.journal-grid td {
+  padding: 0.3rem 0.35rem;
+  font-size: 0.78rem;
+}
+.journal-grid .journal-product {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 200px;
+  background: var(--bs-card-bg, var(--bs-body-bg));
+}
+
+/* Sales plan: twelve months side by side; inputs in edit mode stay readable. */
+.plan-grid td { min-width: 76px; }
+.plan-grid input { min-width: 70px; }
+
+/* Dashboard headline cards: an icon and label, one big figure, then the cash / card / bank split as bars. */
+.kpi-card .kpi-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.95rem;
+  background: var(--kpi-tint, rgba(93, 135, 255, 0.12));
+  color: var(--kpi-color, var(--bs-primary));
+}
+.kpi-card .kpi-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+.kpi-card .kpi-progress,
+.kpi-card .kpi-bar {
+  background: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.06));
+}
+.kpi-card .kpi-usd {
+  font-size: 0.68rem;
+}
+.kpi-card .kpi-label {
+  font-size: 0.8rem;
+}
+.kpi-card .kpi-note {
+  font-size: 0.72rem;
+}
+.kpi-card .kpi-row {
+  font-size: 0.74rem;
+}
+.kpi-card .py-half {
+  padding-top: 0.2rem !important;
+  padding-bottom: 0.2rem !important;
+}
+.kpi-card .mt-half {
+  margin-top: 0.15rem !important;
+}
+.kpi-card .kpi-progress,
+.kpi-card .kpi-bar {
+  height: 0.3rem;
+}
+.kpi-channels .kpi-channel-label {
+  font-size: 0.66rem;
+  line-height: 1.2;
+}
+.kpi-channels .kpi-channel-amount {
+  font-size: 0.78rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kpi-primary { --kpi-tint: rgba(93, 135, 255, 0.14); --kpi-color: #5d87ff; }
+.kpi-success { --kpi-tint: rgba(19, 222, 185, 0.16); --kpi-color: #0d9c80; }
+.kpi-danger { --kpi-tint: rgba(250, 137, 107, 0.16); --kpi-color: #e0624a; }
+.kpi-info { --kpi-tint: rgba(73, 190, 255, 0.16); --kpi-color: #1a8fd1; }
+.kpi-warning { --kpi-tint: rgba(255, 174, 31, 0.18); --kpi-color: #c97d00; }
+.kpi-card .progress-bar {
+  background-color: var(--kpi-color, var(--bs-primary));
+}
+.kpi-bar-cash { background-color: #5d87ff !important; }
+.kpi-bar-card { background-color: #ffae1f !important; }
+.kpi-bar-bank { background-color: #49beff !important; }
+
+/* Full screen: the menu hides, the page takes the whole window. Toggled from the top bar. */
+.fullscreen-mode .left-sidebar,
+.fullscreen-mode .nav-drawer-toggle,
+.fullscreen-mode .dark-transparent {
+  display: none !important;
+}
+.fullscreen-mode .body-wrapper,
+.fullscreen-mode .page-wrapper {
+  margin-left: 0 !important;
+  margin-top: 0 !important; /* the theme reserves room for the menu row here */
+  padding-top: 0 !important;
+}
+.fullscreen-toggle[aria-pressed="true"] {
+  color: var(--bs-primary);
+}
+
+
+/*
+ * One row from 1300px up: the brand, the main menu and the controls share the top bar,
+ * so there is no second menu bar below it. Below 1300px the menu stays a drawer.
+ */
+@media (min-width: 1300px) {
+  html[data-layout="horizontal"] .app-header .navbar {
+    min-height: 60px;
+  }
+  html[data-layout="horizontal"] .app-header .navbar .navbar-nav .nav-item .nav-link {
+    line-height: 60px;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu .left-sidebar.with-horizontal {
+    position: static;
+    top: auto;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: none;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnavh.scroll-sidebar {
+    height: auto;
+    padding: 0;
+    overflow: visible;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav {
+    flex-wrap: nowrap;
+    align-items: stretch;
+    height: 60px;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item {
+    min-height: 60px;
+    display: flex;
+    align-items: stretch;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item > .sidebar-link {
+    align-items: center;
+    font-size: 13px;
+    white-space: nowrap;
+    gap: 6px;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item > .sidebar-link {
+    padding: 6px 10px;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item ul {
+    top: calc(60px - 8px);
+  }
+  html[data-layout="horizontal"] .topbar {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  html[data-layout="horizontal"] .app-header .navbar,
+  html[data-layout="horizontal"] .app-header .navbar-nav,
+  html[data-layout="horizontal"] .app-header .navbar-nav .nav-item {
+    height: 60px;
+  }
+  html[data-layout="horizontal"] .app-header .navbar-nav .nav-item {
+    display: flex;
+    align-items: center;
+  }
+  html[data-layout="horizontal"] .app-header .navbar-nav .nav-link {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  html[data-layout="horizontal"] .body-wrapper {
+    margin-top: 60px;
+  }
+}
+
+.app-header .main-menu {
+  min-width: 0;
+}

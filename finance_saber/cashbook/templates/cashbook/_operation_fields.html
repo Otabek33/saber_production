@@ -1,0 +1,98 @@
+{% load i18n %}
+{% comment %}
+  Operation form fields, laid out like a spreadsheet row. Used by the quick-entry
+  form on the cash desk page and by the edit page. js/cashbook.js shows only the
+  categories of the chosen type and the transfer fields for transfers.
+  Optional: title (shown left of the type switch), submit_label (adds the submit
+  button at the end of the row), compact (narrower note field).
+{% endcomment %}
+{% for error in form.non_field_errors %}
+  <div class="alert alert-danger py-2" role="alert">{{ error }}</div>
+{% endfor %}
+
+<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+  {% if title %}<h5 class="card-title mb-0">{{ title }}</h5>{% endif %}
+  <div class="btn-group btn-group-sm" role="radiogroup" aria-label="{% translate "Type" %}">
+    {% for value, label in form.fields.kind.choices %}
+      <input type="radio" class="btn-check" name="kind" id="kind-{{ value }}" value="{{ value }}" autocomplete="off"
+             {% if form.kind.value == value %}checked{% endif %} data-operation-kind>
+      <label class="btn btn-outline-{% if value == 'income' %}success{% elif value == 'expense' %}danger{% else %}primary{% endif %} px-3" for="kind-{{ value }}">
+        {{ label }}
+      </label>
+    {% endfor %}
+  </div>
+  {% for error in form.kind.errors %}<div class="invalid-feedback d-block w-100">{{ error }}</div>{% endfor %}
+</div>
+
+<div class="row g-2 align-items-end">
+  <div class="col-6 col-md-3 col-xl-auto">
+    {% include "forms/_field.html" with field=form.date %}
+  </div>
+  {% if form.instance.desk.is_bank %}
+    {# Bank: choosing a counterparty pre-selects its article (js/cashbook.js) #}
+    <div class="col-12 col-md-5 col-xl-3">
+      <div class="mb-3">
+        <label for="id_counterparty" class="form-label">{{ form.counterparty.label }}</label>
+        <select name="counterparty" id="id_counterparty" class="form-select{% if form.counterparty.errors %} is-invalid{% endif %}" data-counterparty-select data-searchable>
+          <option value="">—</option>
+          {% for counterparty in form.fields.counterparty.queryset %}
+            <option value="{{ counterparty.pk }}" data-article="{{ counterparty.article_id|default:'' }}"
+                    {% if form.counterparty.value|stringformat:"s" == counterparty.pk|stringformat:"s" %}selected{% endif %}>{{ counterparty.name }}</option>
+          {% endfor %}
+        </select>
+        {% for error in form.counterparty.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl-auto">
+      {% include "forms/_field.html" with field=form.document_number %}
+    </div>
+  {% endif %}
+  <div class="col-12 col-md-5 col-xl-2">
+    <div class="mb-3">
+      <label for="id_category" class="form-label">{{ form.category.label }}</label>
+      <select name="category" id="id_category" class="form-select{% if form.category.errors %} is-invalid{% endif %}" required data-category-select data-searchable>
+        <option value="">—</option>
+        {% for article, categories in form.category_groups %}
+          <optgroup label="{{ article.name }}" data-kind="{{ article.kind }}">
+            {% for category in categories %}
+              <option value="{{ category.pk }}" data-kind="{{ article.kind }}" data-article="{{ article.pk }}"
+                      {% if form.category.value|stringformat:"s" == category.pk|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+            {% endfor %}
+          </optgroup>
+        {% endfor %}
+      </select>
+      {% for error in form.category.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+    </div>
+  </div>
+  {% if form.show_account %}
+    <div class="col-6 col-md-4 col-xl-auto">
+      {% include "forms/_field.html" with field=form.account %}
+    </div>
+  {% else %}
+    <input type="hidden" name="account" value="{{ form.account.value }}">
+  {% endif %}
+  <div class="col-6 col-md-4 col-xl-auto">
+    {% include "forms/_field.html" with field=form.amount %}
+  </div>
+  {% if form.instance.desk.allows_transfers %}
+    <div class="col-6 col-md-4 col-xl-auto" data-transfer-only>
+      {% include "forms/_field.html" with field=form.to_account %}
+    </div>
+    <div class="col-6 col-md-4 col-xl-auto" data-transfer-only>
+      {% include "forms/_field.html" with field=form.to_amount %}
+    </div>
+  {% endif %}
+  {% if form.show_rate %}
+    <div class="col-6 col-md-3 col-xl-1">
+      {% include "forms/_field.html" with field=form.rate %}
+    </div>
+  {% endif %}
+  <div class="col-12 {% if compact %}col-md col-xl{% else %}col-xl-6{% endif %}">
+    {% include "forms/_field.html" with field=form.note %}
+  </div>
+  {% if submit_label %}
+    <div class="col-12 col-md-auto mb-3">
+      <button type="submit" class="btn btn-primary btn-sm px-4 w-100">{{ submit_label }}</button>
+    </div>
+  {% endif %}
+</div>

@@ -1,0 +1,71 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Load recipes from Excel" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Load recipes from Excel" as page_title %}
+  {% translate "Recipes and norms" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-5">
+      {% if can_load %}
+        <div class="card">
+          <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data" novalidate class="form-compact">
+              {% csrf_token %}
+              {% include "forms/_fields.html" %}
+              <button type="submit" class="btn btn-primary">
+                <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Upload" %}
+              </button>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+      {# The project's file: one click fills a new server's recipes #}
+      <div class="card">
+        <div class="px-4 py-3 border-bottom">
+          <h5 class="card-title mb-0">{% translate "Project file" %}</h5>
+        </div>
+        <div class="card-body p-4">
+          {% if seed_file %}
+            <div class="d-flex justify-content-between gap-2 mb-3">
+              <a href="{% url 'production:recipe_seed' %}">{% translate "Recipes" %} <span class="text-muted fs-2">({{ seed_file.path.name }})</span></a>
+              <span class="text-muted fs-2 text-nowrap">{{ seed_file.modified|date:"d.m.Y" }} · {{ seed_file.size|filesizeformat }}</span>
+            </div>
+            {% if can_load %}
+              <form method="post" class="form-compact">
+                {% csrf_token %}
+                <input type="hidden" name="use_seed" value="1">
+                <div class="form-check mb-3">
+                  <input type="checkbox" name="dry_run" id="seed-dry-run" class="form-check-input"{% if seed_dry_run %} checked{% endif %}>
+                  <label class="form-check-label" for="seed-dry-run">{% translate "Only check, don't save" %}</label>
+                </div>
+                <button type="submit" class="btn bg-success-subtle text-success">
+                  <iconify-icon icon="solar:database-line-duotone"></iconify-icon> {% translate "Load the project file" %}
+                </button>
+              </form>
+            {% endif %}
+            <p class="text-muted fs-2 mb-0 mt-3">{% translate "Kept with the program's code and deployed with it: on a new server it fills products, materials and recipes in one click." %}</p>
+          {% else %}
+            <p class="text-muted mb-0">{% translate "The project has no recipes file yet. Write it where the recipes are complete with: manage.py export_recipes --seed" %}</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-2">{% translate "Sheets read: «Продукты», «Сырьё и упаковка», «Рецептуры», «Другие названия» — whichever the file has. Products, materials and other names are matched by name, so loading the same file again changes nothing." %}</p>
+          <p class="mb-2">{% translate "A product listed on «Рецептуры» gets exactly the file's lines: lines not in the file are removed from its recipe. Products not listed there keep their recipe. Production already entered keeps the norms it was made with." %}</p>
+          <p class="mb-0">{% translate "The norm per unit is what is loaded; the norm per 1000 l is used only where the norm per unit is empty. If any row has an error, nothing is saved." %}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      {% if report %}{% include "production/_excel_result.html" %}{% endif %}
+    </div>
+  </div>
+{% endblock %}

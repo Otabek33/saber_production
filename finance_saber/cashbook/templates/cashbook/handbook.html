@@ -1,0 +1,82 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Handbook" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Handbook" as page_title %}
+  {% translate "Cash desk" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="d-flex flex-wrap gap-2 mb-4">
+{% if perms.cashbook.add_article %}    <a href="{% url 'cashbook:article_add' %}" class="btn btn-primary">{% translate "New article" %}</a>{% endif %}
+{% if perms.cashbook.add_category %}    <a href="{% url 'cashbook:category_add' %}" class="btn bg-primary-subtle text-primary">{% translate "New category" %}</a>{% endif %}
+    {% if perms.cashbook.add_article and perms.cashbook.add_counterparty %}
+      <a href="{% url 'cashbook:handbook_import' %}" class="btn bg-primary-subtle text-primary ms-auto">
+        <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Load from Excel" %}
+      </a>
+    {% endif %}
+    <a href="{% url 'cashbook:handbook_export' %}" class="btn bg-success-subtle text-success{% if not perms.cashbook.add_article or not perms.cashbook.add_counterparty %} ms-auto{% endif %}">
+      <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+    </a>
+    {# The handbook file kept with the code, for filling a new server #}
+    <a href="{% url 'cashbook:handbook_seed' %}" class="btn bg-secondary-subtle text-secondary" title="{% translate "The handbook file kept in the project, to load into a new server" %}">
+      <iconify-icon icon="solar:archive-down-minimlistic-line-duotone"></iconify-icon> {% translate "Project file" %}
+    </a>
+  </div>
+
+  <div class="row">
+    {% for kind, articles in groups %}
+      <div class="col-md-6 col-xxl-3">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <span class="badge {% if kind == 'income' %}bg-success-subtle text-success{% elif kind == 'expense' %}bg-danger-subtle text-danger{% elif kind == 'both' %}bg-warning-subtle text-warning{% else %}bg-primary-subtle text-primary{% endif %}">{{ kind.label }}</span>
+            <span class="text-muted fs-2">{% blocktranslate count counter=articles|length %}{{ counter }} article{% plural %}{{ counter }} articles{% endblocktranslate %}</span>
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for article in articles %}
+              <li class="list-group-item px-4 py-3{% if not article.is_active %} opacity-50{% endif %}">
+                <div class="d-flex align-items-center justify-content-between gap-2">
+                  <h6 class="mb-0">
+                    {{ article.name }}
+                    {% if not article.is_active %}<span class="badge bg-secondary-subtle text-secondary ms-1">{% translate "inactive" %}</span>{% endif %}
+                    <span class="d-block fs-2 fw-normal text-muted mt-1">
+                      {% for desk in article.desks.all %}{{ desk.name }}{% if not forloop.last %}, {% endif %}{% empty %}{% translate "All cash desks" %}{% endfor %}
+                    </span>
+                  </h6>
+                  <div class="d-flex gap-1 flex-shrink-0">
+                    {% if perms.cashbook.add_category %}
+                      <a href="{% url 'cashbook:category_add' %}?article={{ article.pk }}" class="btn btn-sm bg-primary-subtle text-primary" title="{% translate "New category" %}" aria-label="{% translate "New category" %}">
+                        <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon>
+                      </a>
+                    {% endif %}
+                    {% if perms.cashbook.change_article %}
+                      <a href="{% url 'cashbook:article_edit' article.pk %}" class="btn btn-sm bg-primary-subtle text-primary" title="{% translate "Edit article" %}" aria-label="{% translate "Edit article" %}">
+                        <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                  {% for category in article.categories.all %}
+                    {% if perms.cashbook.change_category %}
+                      <a href="{% url 'cashbook:category_edit' category.pk %}" class="badge text-decoration-none {% if category.is_active %}bg-body-tertiary text-body-emphasis{% else %}bg-secondary-subtle text-secondary text-decoration-line-through{% endif %}">{{ category.name }}</a>
+                    {% else %}
+                      <span class="badge {% if category.is_active %}bg-body-tertiary text-body-emphasis{% else %}bg-secondary-subtle text-secondary text-decoration-line-through{% endif %}">{{ category.name }}</span>
+                    {% endif %}
+                  {% empty %}
+                    <span class="text-muted fs-2">{% translate "No categories yet." %}</span>
+                  {% endfor %}
+                </div>
+              </li>
+            {% empty %}
+              <li class="list-group-item px-4 py-3 text-muted">{% translate "No articles yet." %}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% load i18n %}
+{# A card's figure split into cash desks, card and bank (in UZS; USD cash also shown as typed). #}
+<ul class="list-unstyled mb-0 mt-2 pt-2 border-top fs-2">
+  {% for channel in channels %}
+    <li class="d-flex align-items-center gap-1 py-1">
+      <iconify-icon icon="{{ channel.icon }}" class="text-muted"></iconify-icon>
+      <span class="text-muted">{{ channel.label }}</span>
+      <span class="ms-auto fw-semibold text-nowrap{% if signed and channel.amount < 0 %} text-danger{% elif signed and channel.amount > 0 %} text-success{% endif %}">{{ channel.amount|floatformat:"0g" }}</span>
+    </li>
+    {% if channel.usd %}
+      <li class="text-end text-muted fs-1 mt-n1">{% blocktranslate with usd=channel.usd|floatformat:"-2g" %}incl. {{ usd }} USD{% endblocktranslate %}</li>
+    {% endif %}
+  {% endfor %}
+</ul>

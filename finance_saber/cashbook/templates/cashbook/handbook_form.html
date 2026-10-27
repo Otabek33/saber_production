@@ -1,0 +1,42 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Form page for handbook entries: articles and categories (back to the Handbook),
+  or counterparties and regions (views pass section_url: back to Counterparties).
+{% endcomment %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_header %}
+  {% if section_url %}{% translate "Counterparties" as section %}{% else %}{% translate "Handbook" as section %}{% endif %}
+  {% include "partials/_page_header.html" with section=section %}
+{% endblock %}
+
+{% block content %}
+  {% url 'cashbook:handbook' as handbook_url %}
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body p-4">
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {% include "forms/_fields.html" %}
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">{% translate "Save Changes" %}</button>
+              <a href="{{ section_url|default:handbook_url }}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% if not section_url %}
+      <div class="col-lg-6">
+        <div class="card bg-info-subtle shadow-none">
+          <div class="card-body p-4">
+            <p class="mb-0">{% translate "Articles and categories in use can't be deleted, so past operations keep their meaning. Untick “Active” to hide one from new operations instead." %}</p>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

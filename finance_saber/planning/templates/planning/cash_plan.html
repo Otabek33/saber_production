@@ -1,0 +1,76 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Weekly cash plan" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Weekly cash plan" as page_title %}
+  {% translate "Finance" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {% if rate %}{% blocktranslate with rate=rate|floatformat:"0g" asvar rate_note %}USD cash at {{ rate }}{% endblocktranslate %}{% endif %}
+  {% include "planning/_week_toolbar.html" with can_edit=perms.planning.change_cashplan extra=rate_note %}
+
+  <div class="card">
+    <form method="post" action="?date={{ days.0.isoformat }}">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 ledger-table journal-grid plan-grid">
+          <thead>
+            <tr>
+              <th class="journal-product">{% translate "Article" %}</th>
+              {% for day in days %}
+                <th class="num{% if day == today %} bg-primary-subtle{% endif %}{% if day.weekday == 6 %} text-danger{% endif %}">{{ day|date:"D d.m" }}</th>
+              {% endfor %}
+              <th class="num">{% translate "Week" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="ledger-opening"><td colspan="9" class="fw-semibold">{% translate "Money in" %}</td></tr>
+            {% for row in income_rows %}
+              <tr>
+                <td class="journal-product">{{ row.article.name }}</td>
+                {% for cell in row.cells %}{% include "planning/_cell.html" with key=row.article.pk label=row.article.name %}{% endfor %}
+                <td class="num fw-semibold"><span class="d-block">{{ row.plan|floatformat:"0g" }}</span>{% if row.fact %}<span class="d-block fs-1 text-muted">{{ row.fact|floatformat:"0g" }}</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+            <tr class="fw-semibold">
+              <td class="journal-product">{% translate "Total money in" %}</td>
+              {% for day in totals.income.days %}<td class="num"><span class="d-block">{{ day.plan|floatformat:"0g" }}</span><span class="d-block fs-1 text-muted">{{ day.fact|floatformat:"0g" }}</span></td>{% endfor %}
+              <td class="num"><span class="d-block">{{ totals.income.plan|floatformat:"0g" }}</span><span class="d-block fs-1 text-muted">{{ totals.income.fact|floatformat:"0g" }}</span></td>
+            </tr>
+            <tr class="ledger-opening"><td colspan="9" class="fw-semibold">{% translate "Money out" %}</td></tr>
+            {% for row in expense_rows %}
+              <tr>
+                <td class="journal-product">{{ row.article.name }}</td>
+                {% for cell in row.cells %}{% include "planning/_cell.html" with key=row.article.pk label=row.article.name %}{% endfor %}
+                <td class="num fw-semibold"><span class="d-block">{{ row.plan|floatformat:"0g" }}</span>{% if row.fact %}<span class="d-block fs-1 text-muted">{{ row.fact|floatformat:"0g" }}</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+            <tr class="fw-semibold">
+              <td class="journal-product">{% translate "Total money out" %}</td>
+              {% for day in totals.expense.days %}<td class="num"><span class="d-block">{{ day.plan|floatformat:"0g" }}</span><span class="d-block fs-1 text-muted">{{ day.fact|floatformat:"0g" }}</span></td>{% endfor %}
+              <td class="num"><span class="d-block">{{ totals.expense.plan|floatformat:"0g" }}</span><span class="d-block fs-1 text-muted">{{ totals.expense.fact|floatformat:"0g" }}</span></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="fw-semibold">
+              <td class="journal-product">{% translate "Net cash flow" %}</td>
+              {% for day in net %}<td class="num"><span class="d-block">{{ day.plan|floatformat:"0g" }}</span><span class="d-block fs-1 {% if day.fact < 0 %}text-danger{% else %}text-success{% endif %}">{{ day.fact|floatformat:"0g" }}</span></td>{% endfor %}
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2 px-4 py-3 border-top">
+        {% if editing %}
+          <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+          <a href="?date={{ days.0.isoformat }}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+        {% endif %}
+        <span class="text-muted fs-2">{% translate "Each cell: the plan, and under it what actually came in or went out (cash desks and bank). Transfers between accounts and opening balances are not counted." %}</span>
+      </div>
+    </form>
+  </div>
+{% endblock %}

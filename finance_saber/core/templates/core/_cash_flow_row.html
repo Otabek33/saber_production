@@ -1,0 +1,8 @@
+{# One article (or a total) of the cash flow table: plan, each account, total in UZS, share of plan. #}
+<tr{% if total_row %} class="fw-semibold"{% endif %}>
+  <td>{% if total_row %}{{ label }}{% else %}{{ row.article.name }}{% endif %}</td>
+  <td class="num text-muted">{% if row.plan %}{{ row.plan|floatformat:"0g" }}{% endif %}</td>
+  {% for amount in row.accounts %}<td class="num">{% if amount %}{{ amount|floatformat:"0g" }}{% endif %}</td>{% endfor %}
+  <td class="num fw-semibold">{{ row.total|floatformat:"0g" }}</td>
+  <td class="num">{% if row.percent is not None %}<span class="badge {% if row.percent >= 100 %}bg-success-subtle text-success{% elif row.percent >= 80 %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}">{{ row.percent }}%</span>{% endif %}</td>
+</tr>

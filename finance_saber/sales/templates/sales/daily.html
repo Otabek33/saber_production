@@ -1,0 +1,169 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Daily sales" %}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Daily sales" as page_title %}
+  {% translate "Sales" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {# Toolbar: the day, its totals, and the entry and upload buttons #}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <a href="?date={{ previous_day.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Previous day" %}">‹</a>
+        <form method="get" class="form-compact">
+          <input type="date" name="date" value="{{ date.isoformat }}" class="form-control form-control-sm" aria-label="{% translate "Date" %}" onchange="this.form.submit()">
+        </form>
+        <a href="?date={{ next_day.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Next day" %}">›</a>
+        <span class="ms-2 fs-5 fw-semibold">{{ date|date:"l, j E Y" }}</span>
+        <span class="ms-auto text-muted text-nowrap">{% translate "Units" %}: <strong class="text-body">{{ total_quantity|floatformat:"0g" }}</strong></span>
+        <span class="text-muted text-nowrap">{% translate "Amount" %}: <strong class="text-body">{{ total_amount|floatformat:"2g" }}</strong></span>
+        <span class="text-muted text-nowrap">{% translate "Clients" %}: <strong class="text-body">{{ clients }}</strong></span>
+        {% if perms.sales.add_sale %}
+          <button type="button" class="btn btn-sm bg-success-subtle text-success" data-bs-toggle="collapse" data-bs-target="#entry" aria-expanded="{{ entry_open|yesno:'true,false' }}" aria-controls="entry">
+            <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon> {% translate "New sale" %}
+          </button>
+        {% endif %}
+        {% if perms.sales.import_sales %}
+          <a href="{% url 'sales:import' %}" class="btn btn-sm bg-primary-subtle text-primary">
+            <iconify-icon icon="solar:upload-minimalistic-line-duotone"></iconify-icon> {% translate "Upload from Excel" %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if perms.sales.add_sale %}
+    <div class="collapse{% if entry_open %} show{% endif %}" id="entry">
+      <div class="card mb-3">
+        <div class="card-body py-3 px-4">
+          <form method="post" action="?date={{ date.isoformat }}" novalidate class="form-compact">
+            {% csrf_token %}
+            {% for error in form.non_field_errors %}<div class="alert alert-danger py-2" role="alert">{{ error }}</div>{% endfor %}
+            <div class="row g-2 align-items-start">
+              <div class="col-6 col-md-2">{% include "forms/_field.html" with field=form.date %}</div>
+              <div class="col-12 col-md-4">{% include "forms/_field.html" with field=form.client %}</div>
+              <div class="col-12 col-md-3">{% include "forms/_field.html" with field=form.product %}</div>
+              <div class="col-6 col-md-3">{% include "forms/_field.html" with field=form.channel %}</div>
+              <div class="col-6 col-md-2">{% include "forms/_field.html" with field=form.quantity %}</div>
+              <div class="col-6 col-md-3">{% include "forms/_field.html" with field=form.amount %}</div>
+              <div class="col-12 col-md-5">{% include "forms/_field.html" with field=form.note %}</div>
+              <div class="col-12 col-md-2 d-flex align-items-end" style="padding-top: 1.9rem">
+                <button type="submit" class="btn btn-primary w-100">{% translate "Add" %}</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="row">
+    {# The day's shipment lines #}
+    <div class="col-xl-8">
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Client" %}</th>
+                <th>{% translate "Product" %}</th>
+                <th>{% translate "Channel" %}</th>
+                <th class="num">{% translate "Quantity" %}</th>
+                <th class="num">{% translate "Total price" %}</th>
+                <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sale in sales %}
+                <tr{% if sale.is_cancelled %} class="ledger-cancelled"{% endif %}>
+                  <td>
+                    {{ sale.client.name }}
+                    {% if sale.note %}<span class="d-block fs-1 text-muted">{{ sale.note }}</span>{% endif %}
+                  </td>
+                  <td>{{ sale.product.name }}</td>
+                  <td class="text-muted">{{ sale.channel|default:"" }}</td>
+                  <td class="num">{{ sale.quantity|floatformat:"0g" }}</td>
+                  <td class="num fw-semibold">{{ sale.amount|floatformat:"2g" }}</td>
+                  <td class="text-end text-nowrap">
+                    {% if sale.source != "manual" %}<span class="badge bg-secondary-subtle text-secondary" title="{{ sale.get_source_display }}">{{ sale.source|capfirst }}</span>{% endif %}
+                    {% if perms.sales.change_sale %}
+                      {% if not sale.is_cancelled %}
+                        <a href="{% url 'sales:sale_edit' sale.pk %}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}">
+                          <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                        </a>
+                      {% endif %}
+                      <form method="post" action="{% url 'sales:sale_cancel' sale.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        {% if sale.is_cancelled %}
+                          <button type="submit" class="btn btn-sm bg-success-subtle text-success ledger-action" title="{% translate "Restore" %}" aria-label="{% translate "Restore" %}">
+                            <iconify-icon icon="solar:restart-line-duotone"></iconify-icon>
+                          </button>
+                        {% else %}
+                          <button type="submit" class="btn btn-sm bg-danger-subtle text-danger ledger-action" title="{% translate "Cancel sale" %}" aria-label="{% translate "Cancel sale" %}" onclick="return confirm('{% translate "Cancel this sale? It will no longer count in stock and debts." %}')">
+                            <iconify-icon icon="solar:close-circle-line-duotone"></iconify-icon>
+                          </button>
+                        {% endif %}
+                      </form>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No sales recorded for this day." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# Totals by product #}
+    <div class="col-xl-4">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "By product" %}</h5></div>
+        <table class="table table-sm align-middle mb-0 ledger-table">
+          <thead>
+            <tr>
+              <th>{% translate "Product" %}</th>
+              <th class="num">{% translate "Quantity" %}</th>
+              <th class="num">{% translate "Amount" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in by_product %}
+              <tr>
+                <td>{{ row.product.name }}</td>
+                <td class="num">{{ row.quantity|floatformat:"0g" }}</td>
+                <td class="num">{{ row.amount|floatformat:"0g" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted py-4">—</td></tr>
+            {% endfor %}
+          </tbody>
+          {% if by_product %}
+            <tfoot>
+              <tr class="fw-semibold">
+                <td>{% translate "Total" %}</td>
+                <td class="num">{{ total_quantity|floatformat:"0g" }}</td>
+                <td class="num">{{ total_amount|floatformat:"0g" }}</td>
+              </tr>
+            </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

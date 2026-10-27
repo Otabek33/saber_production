@@ -1,0 +1,226 @@
+{% extends "layouts/app.html" %}
+{% load cashbook i18n %}
+
+{% block title %}{% translate "Upload Excel" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Upload Excel" as page_title %}
+  {% translate "Cash desk" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    {# Step 1: upload and check #}
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data" novalidate class="form-compact">
+            {% csrf_token %}
+            {% include "forms/_field.html" with field=upload_form.file %}
+            <button type="submit" name="check" class="btn btn-primary">
+              <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Check" %}
+            </button>
+          </form>
+        </div>
+      </div>
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-2">
+            {% blocktranslate with sheets=sheets|join:"», «" %}Upload the finance workbook (Situation.xlsx) once: sheets «{{ sheets }}» go to their cash desks. Save it in Excel first, so the formula cells have their values.{% endblocktranslate %}
+          </p>
+          <p class="mb-2">{% translate "“Check” shows what each section would get, without saving. “Import” then adds only rows that aren't here yet, so upload the whole workbook every day: nothing is duplicated." %}</p>
+          <p class="mb-0">{% translate "If a row imported before was changed in Excel, or rows were inserted or deleted above it, that section is not imported and the rows are named. Add new rows at the bottom of the sheet, and while a desk is kept in Excel don't also enter its operations here by hand." %}</p>
+        </div>
+      </div>
+    </div>
+
+    {# Step 2: what the workbook brings, then import #}
+    <div class="col-lg-7">
+      {% if report %}
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0">{% if result %}{% translate "Result" %}{% else %}{% translate "Check result" %}{% endif %}</h5>
+            {% if result %}
+              <span class="badge bg-success-subtle text-success">{% translate "Saved" %}</span>
+            {% else %}
+              <span class="badge bg-info-subtle text-info">{% translate "Checked, not saved yet" %}</span>
+            {% endif %}
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-4">{% translate "Section" %}</th>
+                  <th class="text-end">{% if result %}{% translate "Added" %}{% else %}{% translate "New" %}{% endif %}</th>
+                  <th class="text-end">{% translate "Already here" %}</th>
+                  <th class="text-nowrap">{% translate "In Excel up to" %}</th>
+                  <th class="text-nowrap">{% translate "Here up to" %}</th>
+                  <th class="pe-4">{% translate "Status" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in report.results %}
+                  <tr>
+                    <td class="ps-4">
+                      {% if result %}<a href="{{ row.url }}">{{ row.desk.name }}</a>{% else %}{{ row.desk.name }}{% endif %}
+                      <div class="text-muted fs-2">{% translate "sheet" %} «{{ row.sheet }}»</div>
+                    </td>
+                    <td class="text-end">
+                      {% if row.error %}—{% else %}{{ row.created }}{% endif %}
+                      {% if not row.error and row.period %}
+                        <div class="text-muted fs-2 text-nowrap">{{ row.period.0|date:"d.m" }}{% if row.period.1 != row.period.0 %}–{{ row.period.1|date:"d.m" }}{% endif %}</div>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">{% if row.error %}—{% else %}{{ row.skipped }}{% endif %}</td>
+                    <td class="text-nowrap">{{ row.last_date_in_file|date:"d.m.Y"|default:"—" }}</td>
+                    <td class="text-nowrap">{{ row.last_date_here|date:"d.m.Y"|default:"—" }}</td>
+                    <td class="pe-4">
+                      {% if row.error %}
+                        <span class="badge bg-danger-subtle text-danger">{% translate "Error" %}</span>
+                      {% elif row.conflicts %}
+                        <span class="badge bg-warning-subtle text-warning">{% translate "Rows changed" %}</span>
+                      {% elif row.updated %}
+                        <span class="badge bg-info-subtle text-info">{% translate "Updated from Excel" %}</span>
+                      {% elif row.balance_differences %}
+                        <span class="badge bg-warning-subtle text-warning">{% translate "Balance differs" %}</span>
+                      {% elif row.created %}
+                        <span class="badge bg-success-subtle text-success">{% translate "OK" %}</span>
+                      {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary">{% translate "Nothing new" %}</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="p-3">
+            {% for row in report.results %}
+              {% if row.error %}
+                <div class="alert alert-danger" role="alert">
+                  <strong>{{ row.desk.name }}:</strong> {{ row.error }}
+                  {% translate "Nothing was imported for this section." %}
+                </div>
+              {% endif %}
+              {% if row.conflicts %}
+                <div class="alert alert-danger" role="alert">
+                  <p class="mb-1">
+                    <strong>{{ row.desk.name }}:</strong>
+                    {% blocktranslate count counter=row.conflicts|length %}{{ counter }} row imported before is different in Excel now:{% plural %}{{ counter }} rows imported before are different in Excel now:{% endblocktranslate %}
+                  </p>
+                  <ul class="mb-1">
+                    {% for conflict in row.conflicts|slice:":10" %}
+                      <li>{% blocktranslate with row=conflict.row was=conflict.operation|movement now=conflict.sheet|movement %}row {{ row }}: here {{ was }}, in Excel {{ now }}{% endblocktranslate %}</li>
+                    {% endfor %}
+                  </ul>
+                  {% if result %}
+                    <p class="mb-0">{% translate "Nothing was imported for this section. Make Excel and the app agree (correct the row in Excel, or edit the operation here), then upload again." %}</p>
+                  {% else %}
+                    <p class="mb-0">{% translate "Until they agree, this section's new rows aren't imported either. Tick “Update these rows from Excel” below to take Excel's values, or correct the rows in Excel and check again." %}</p>
+                  {% endif %}
+                </div>
+              {% endif %}
+              {% if row.updated %}
+                <div class="alert alert-info" role="alert">
+                  <p class="mb-1">
+                    <strong>{{ row.desk.name }}:</strong>
+                    {% blocktranslate count counter=row.updated|length %}{{ counter }} row updated from Excel:{% plural %}{{ counter }} rows updated from Excel:{% endblocktranslate %}
+                  </p>
+                  <ul class="mb-0">
+                    {% for change in row.updated|slice:":10" %}
+                      <li>{% blocktranslate with row=change.row was=change.operation|movement now=change.sheet|movement %}row {{ row }}: was {{ was }}, now {{ now }}{% endblocktranslate %}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+              {% if row.ok %}
+                {% for account, values in row.balance_differences.items %}
+                  <div class="alert alert-warning" role="alert">
+                    <strong>{{ row.desk.name }}:</strong>
+                    {% blocktranslate with app=values.0|floatformat:"2g" sheet=values.1|floatformat:"2g" %}the {{ account }} balance here is {{ app }}, in Excel {{ sheet }}.{% endblocktranslate %}
+                  </div>
+                {% endfor %}
+                {% if row.adjustments %}
+                  <div class="alert alert-warning" role="alert">
+                    <strong>{{ row.desk.name }}:</strong>
+                    {% blocktranslate with count=row.adjustments %}balance corrections: {{ count }}. The balance typed in Excel differs from the sum of its rows.{% endblocktranslate %}
+                  </div>
+                {% endif %}
+                {% if row.unsorted %}
+                  <div class="alert alert-warning" role="alert">
+                    <strong>{{ row.desk.name }}:</strong>
+                    {% blocktranslate with count=row.unsorted %}operations without an article: {{ count }}. They are filed under “Не распределено” / “Требует проверки” for review.{% endblocktranslate %}
+                  </div>
+                {% endif %}
+                {% if result and row.skipped_unknown %}
+                  <div class="alert alert-info" role="alert">
+                    <strong>{{ row.desk.name }}:</strong>
+                    {% blocktranslate with count=row.skipped_unknown %}lines of new counterparties left out: {{ count }}. Add the counterparties, then upload the workbook again.{% endblocktranslate %}
+                    <a href="{% url 'cashbook:counterparty_add' %}">{% translate "New counterparty" %}</a>
+                  </div>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+
+            {% if result %}
+              {% if result.new_counterparties and result.add_counterparties %}
+                <div class="alert alert-info mb-0" role="alert">
+                  {% translate "New counterparties were added. Give them an article so their lines leave “Не распределено”." %}
+                  <a href="{% url 'cashbook:counterparties' %}?status=unclassified">{% translate "Classify" %}</a>
+                </div>
+              {% endif %}
+            {% elif preview.has_new %}
+              <form method="post" novalidate>
+                {% csrf_token %}
+                {% if preview.new_counterparties %}
+                  <div class="border rounded p-3 mb-3">
+                    <p class="fw-semibold mb-1">
+                      {% blocktranslate count counter=preview.new_counterparties|length %}{{ counter }} counterparty isn't in the app yet:{% plural %}{{ counter }} counterparties aren't in the app yet:{% endblocktranslate %}
+                    </p>
+                    <p class="text-muted fs-2 mb-2">
+                      {{ preview.new_counterparties|slice:":30"|join:"; " }}{% if preview.new_counterparties|length > 30 %}; …{% endif %}
+                    </p>
+                    {% for choice in confirm_form.counterparties %}
+                      <div class="form-check">
+                        {{ choice.tag }}
+                        <label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% if preview.conflicts %}
+                  <div class="border border-warning rounded p-3 mb-3">
+                    <div class="form-check mb-0">
+                      {{ confirm_form.update_changed }}
+                      <label class="form-check-label fw-semibold" for="{{ confirm_form.update_changed.id_for_label }}">{{ confirm_form.update_changed.label }}</label>
+                    </div>
+                    <p class="text-muted fs-2 mb-0 mt-1">
+                      {% blocktranslate count counter=preview.conflicts %}{{ counter }} changed row (listed above) will take the values from Excel. Without this, that section is skipped.{% plural %}{{ counter }} changed rows (listed above) will take the values from Excel. Without this, that section is skipped.{% endblocktranslate %}
+                    </p>
+                  </div>
+                {% endif %}
+                <button type="submit" name="import" class="btn btn-success">
+                  <iconify-icon icon="solar:download-minimalistic-line-duotone"></iconify-icon> {% translate "Import" %}
+                </button>
+                {% if preview.has_errors %}
+                  <span class="text-muted fs-2 ms-2">{% translate "Sections with errors are skipped." %}</span>
+                {% endif %}
+              </form>
+            {% elif not preview.has_errors %}
+              <div class="alert alert-success mb-0" role="alert">
+                <p class="fw-semibold mb-1">{% translate "Everything in this workbook is already here: there are no new rows to import." %}</p>
+                <p class="mb-1">
+                  {% translate "The workbook's last rows:" %}
+                  {% for row in preview.results %}{{ row.desk.name }} — {{ row.last_date_in_file|date:"d.m.Y"|default:"—" }}{% if not forloop.last %}; {% endif %}{% endfor %}.
+                </p>
+                <p class="mb-0">{% translate "If you added operations after these dates, save the workbook in Excel (Ctrl+S), close it, and upload it again." %}</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

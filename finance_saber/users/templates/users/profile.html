@@ -1,0 +1,101 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "My Profile" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "My Profile" as page_title %}
+  {% include "partials/_page_header.html" with title=page_title %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <span class="user-avatar rounded-circle fs-8 mb-3" style="--size: 96px">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</span>
+          <h5 class="mb-1">{{ user.get_full_name|default:user.username }}</h5>
+          <p class="text-muted mb-0">@{{ user.username }}</p>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">{% translate "Member since" %}</span>
+            <span>{{ user.date_joined|date:"DATE_FORMAT" }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">{% translate "Last sign in" %}</span>
+            <span>{{ user.last_login|date:"DATETIME_FORMAT"|default:"—" }}</span>
+          </li>
+        </ul>
+        <div class="card-body">
+          <a href="{% url 'users:password_change' %}" class="btn bg-primary-subtle text-primary w-100">{% translate "Change Password" %}</a>
+        </div>
+      </div>
+
+      {# Telegram: where password reset codes are sent #}
+      <div class="card">
+        <div class="px-4 py-3 border-bottom">
+          <h5 class="card-title mb-0">{% translate "Telegram" %}</h5>
+        </div>
+        <div class="card-body">
+          {% if user.telegram_chat_id %}
+            <p class="mb-2">{% translate "Linked. Password reset codes are sent here." %}</p>
+            {% if user.telegram_username %}<p class="text-muted mb-3">@{{ user.telegram_username }}</p>{% endif %}
+            {# Daily dashboard summary sent by the bot #}
+            <form method="post" action="{% url 'users:telegram_report' %}" class="border rounded p-3 mb-3">
+              {% csrf_token %}
+              {% include "forms/_field.html" with field=report_form.daily_report %}
+              {% include "forms/_field.html" with field=report_form.daily_report_time %}
+              <p class="fs-2 text-muted">{% translate "Today's money, sales, debts, plans and warehouse, as on the home page. Also on demand: send /report to the bot." %} {% translate "Then each cash desk's day: balances and every income, expense and transfer." %}</p>
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill">{% translate "Save" %}</button>
+                <button type="submit" name="send_now" value="1" class="btn bg-primary-subtle text-primary flex-fill">{% translate "Send now" %}</button>
+              </div>
+            </form>
+            <form method="post" action="{% url 'users:telegram_unlink' %}">
+              {% csrf_token %}
+              <button type="submit" class="btn bg-danger-subtle text-danger w-100">{% translate "Unlink Telegram" %}</button>
+            </form>
+          {% else %}
+            <p class="mb-3">{% translate "Link Telegram to reset your password by a code sent to you there." %}</p>
+            {% if telegram_bot_url and user.telegram_username %}
+              <p class="mb-2">{% blocktranslate with bot=telegram_bot username=user.telegram_username %}Open @{{ bot }} from Telegram account @{{ username }} and press Start.{% endblocktranslate %}</p>
+              <a href="{{ telegram_bot_url }}" class="btn btn-primary w-100 mb-3" target="_blank" rel="noopener">{% translate "Open the bot" %}</a>
+            {% endif %}
+            {% if telegram_link %}
+              <p class="mb-2">{% translate "Open this link and press Start in the bot. The link works for 15 minutes." %}</p>
+              <a href="{{ telegram_link }}" class="btn btn-primary w-100 mb-2" target="_blank" rel="noopener">{% translate "Open in Telegram" %}</a>
+            {% endif %}
+            <form method="post" action="{% url 'users:telegram_link' %}">
+              {% csrf_token %}
+              <button type="submit" class="btn bg-primary-subtle text-primary w-100">{% translate "Get a link to connect Telegram" %}</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom">
+          <h4 class="card-title mb-0">{% translate "Personal details" %}</h4>
+        </div>
+        <div class="card-body p-4">
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {% for error in form.non_field_errors %}
+              <div class="alert alert-danger" role="alert">{{ error }}</div>
+            {% endfor %}
+            <div class="row">
+              <div class="col-md-6">{% include "forms/_field.html" with field=form.first_name %}</div>
+              <div class="col-md-6">{% include "forms/_field.html" with field=form.last_name %}</div>
+            </div>
+            {% include "forms/_field.html" with field=form.email %}
+            {% include "forms/_field.html" with field=form.telegram_username %}
+            <button type="submit" class="btn btn-primary">{% translate "Save Changes" %}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

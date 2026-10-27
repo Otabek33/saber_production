@@ -1,0 +1,65 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Load materials from Excel" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Load materials from Excel" as page_title %}
+  {% translate "Raw materials" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-5">
+      {% if can_load %}
+        {# One form: an uploaded file ("Upload") or the project's file ("Load the project file") #}
+        <div class="card">
+          <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data" novalidate class="form-compact">
+              {% csrf_token %}
+              {% include "forms/_fields.html" %}
+              <div class="d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-primary">
+                  <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Upload" %}
+                </button>
+                {% if seed_file %}
+                  <button type="submit" name="use_seed" value="1" class="btn bg-success-subtle text-success">
+                    <iconify-icon icon="solar:database-line-duotone"></iconify-icon> {% translate "Load the project file" %}
+                  </button>
+                {% endif %}
+              </div>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+      {# The project's file: one click fills a new server's materials #}
+      <div class="card">
+        <div class="px-4 py-3 border-bottom">
+          <h5 class="card-title mb-0">{% translate "Project file" %}</h5>
+        </div>
+        <div class="card-body p-4">
+          {% if seed_file %}
+            <div class="d-flex justify-content-between gap-2">
+              <a href="{% url 'production:material_seed' %}">{% translate "Materials and packaging" %} <span class="text-muted fs-2">({{ seed_file.path.name }})</span></a>
+              <span class="text-muted fs-2 text-nowrap">{{ seed_file.modified|date:"d.m.Y" }} · {{ seed_file.size|filesizeformat }}</span>
+            </div>
+            <p class="text-muted fs-2 mb-0 mt-3">{% translate "Kept with the program's code and deployed with it: on a new server it fills the materials in one click." %}</p>
+          {% else %}
+            <p class="text-muted mb-0">{% translate "The project has no materials file yet. Write it where the materials are complete with: manage.py export_materials --seed" %}</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-2">{% translate "Sheet read: «Сырьё и упаковка». Materials are matched by name, so loading the same file again changes nothing; existing materials take the file's unit, type, shelf life, minimum stock and “in use”. If any row has an error, nothing is saved." %}</p>
+          <p class="mb-0">{% translate "Stock is a ledger of movements, so «Остаток» is loaded only when asked: as an opening balance on the given date, and only for materials with no stock movements yet. On a server already in use, correct stock with a stock count instead." %}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      {% if report %}{% include "production/_excel_result.html" %}{% endif %}
+    </div>
+  </div>
+{% endblock %}

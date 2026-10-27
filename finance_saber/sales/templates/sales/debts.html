@@ -1,0 +1,93 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Debtors and creditors" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Debtors and creditors" as page_title %}
+  {% translate "Sales" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {# Totals #}
+  <div class="row">
+    <div class="col-md-6">
+      <a href="?status=debtors" class="card text-decoration-none{% if status == 'debtors' %} border border-danger{% endif %}">
+        <div class="card-body py-3 px-4">
+          <span class="text-muted">{% translate "Owed to us (debtors)" %} · {{ debtor_count }}</span>
+          <h4 class="mb-0 mt-1 text-danger">{{ receivable|floatformat:"2g" }}</h4>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-6">
+      <a href="?status=creditors" class="card text-decoration-none{% if status == 'creditors' %} border border-success{% endif %}">
+        <div class="card-body py-3 px-4">
+          <span class="text-muted">{% translate "Paid in advance (creditors)" %} · {{ creditor_count }}</span>
+          <h4 class="mb-0 mt-1 text-success">{{ payable|floatformat:"2g" }}</h4>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="d-flex flex-wrap align-items-center gap-2 form-compact">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" style="max-width: 280px" placeholder="{% translate "Client or payer" %}" aria-label="{% translate "Search" %}">
+        <select name="status" class="form-select form-select-sm" style="max-width: 200px" aria-label="{% translate "Status" %}">
+          <option value="">{% translate "All" %}</option>
+          <option value="debtors"{% if status == "debtors" %} selected{% endif %}>{% translate "Debtors" %}</option>
+          <option value="creditors"{% if status == "creditors" %} selected{% endif %}>{% translate "Creditors" %}</option>
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+        {% if request.GET.q or status %}<a href="{% url 'sales:debts' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>{% endif %}
+        {% if since %}<span class="ms-auto text-muted fs-2">{% blocktranslate with date=since|date:"d.m.Y" %}Counted from the first recorded sale, {{ date }}: shipments minus bank payments.{% endblocktranslate %}</span>{% endif %}
+      </form>
+      {% if unlinked %}
+        <div class="alert alert-warning py-2 mt-2 mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+          <span>{% blocktranslate count counter=unlinked %}{{ counter }} client has no bank payer yet, so its payments aren't counted.{% plural %}{{ counter }} clients have no bank payer yet, so their payments aren't counted.{% endblocktranslate %}</span>
+          <a href="{% url 'sales:clients' %}?status=unlinked" class="btn btn-sm btn-warning">{% translate "Link payers" %}</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Client / payer" %}</th>
+            <th class="num">{% translate "Opening" %}</th>
+            <th class="num">{% translate "Shipped" %}</th>
+            <th class="num">{% translate "Paid" %}</th>
+            <th class="num">{% translate "Balance" context "ledger" %}</th>
+            <th>{% translate "Last shipment" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in page_obj %}
+            <tr>
+              <td>
+                <a href="{% if row.payer %}{% url 'sales:statement' 'payer' row.payer.pk %}{% else %}{% url 'sales:statement' 'client' row.clients.0.pk %}{% endif %}" class="fw-semibold text-reset">{{ row.name }}</a>
+                {% if row.payer %}
+                  <span class="d-block fs-1 text-muted">{% blocktranslate count counter=row.clients|length %}{{ counter }} client{% plural %}{{ counter }} clients{% endblocktranslate %}{% if row.payer.inn %} · {% translate "INN" %} {{ row.payer.inn }}{% endif %}</span>
+                {% else %}
+                  <span class="d-block fs-1 text-warning">{% translate "No bank payer" %}</span>
+                {% endif %}
+              </td>
+              <td class="num text-muted">{% if row.opening %}{{ row.opening|floatformat:"2g" }}{% endif %}</td>
+              <td class="num">{{ row.shipped|floatformat:"2g" }}</td>
+              <td class="num">{{ row.paid|floatformat:"2g" }}</td>
+              <td class="num fw-semibold {% if row.balance > 0 %}text-danger{% elif row.balance < 0 %}text-success{% endif %}">{{ row.balance|floatformat:"2g" }}</td>
+              <td class="text-muted text-nowrap">{{ row.last_sale|date:"d.m.Y"|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No debts: nothing shipped yet." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/_pagination.html" %}
+  </div>
+{% endblock %}

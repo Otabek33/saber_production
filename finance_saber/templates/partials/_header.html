@@ -1,0 +1,105 @@
+{% load i18n %}
+{# Top bar: brand on the left, the menu button (small screens only) and account controls on the right. #}
+<header class="topbar">
+  <div class="app-header with-horizontal">
+    <nav class="navbar navbar-expand-xl container-fluid p-0">
+      <ul class="navbar-nav flex-row align-items-center">
+        {# Opens the menu drawer below 1300px; see css/app.css #}
+        <li class="nav-item d-flex nav-drawer-toggle">
+          <a class="nav-link sidebartoggler nav-icon-hover-bg rounded-circle" id="sidebarCollapse" href="javascript:void(0)" aria-label="{% translate "Toggle menu" %}">
+            <iconify-icon icon="solar:hamburger-menu-line-duotone" class="fs-7"></iconify-icon>
+          </a>
+        </li>
+        <li class="nav-item d-flex align-items-center">
+          {% include "partials/_brand.html" with class="nav-link" %}
+        </li>
+      </ul>
+
+      {# The main menu: in this row on wide screens, a drawer below 1300px (css/app.css) #}
+      <div class="main-menu flex-grow-1 min-w-0">
+        {% include "partials/_navigation.html" %}
+      </div>
+
+      <a class="navbar-toggler nav-icon-hover p-0 border-0 nav-icon-hover-bg rounded-circle ms-auto d-xl-none" href="javascript:void(0)" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="{% translate "Toggle toolbar" %}">
+        <span class="p-2"><i class="ti ti-dots fs-7"></i></span>
+      </a>
+
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav flex-row align-items-center ms-auto gap-1">
+          {# Light / dark mode; the choice is remembered by js/app.js #}
+          <li class="nav-item">
+            <a class="nav-link nav-icon-hover-bg rounded-circle moon dark-layout" href="javascript:void(0)" aria-label="{% translate "Dark mode" %}">
+              <iconify-icon icon="solar:moon-line-duotone" class="moon fs-6"></iconify-icon>
+            </a>
+            <a class="nav-link nav-icon-hover-bg rounded-circle sun light-layout" href="javascript:void(0)" style="display: none" aria-label="{% translate "Light mode" %}">
+              <iconify-icon icon="solar:sun-2-line-duotone" class="sun fs-6"></iconify-icon>
+            </a>
+          </li>
+
+          {# Full screen: hides the menu so the page fills the window; Esc or this button leaves it #}
+          <li class="nav-item d-none d-md-block">
+            <a class="nav-link nav-icon-hover-bg rounded-circle fullscreen-toggle" href="javascript:void(0)" role="button" aria-pressed="false" aria-label="{% translate "Full screen" %}" title="{% translate "Full screen" %}">
+              <iconify-icon icon="solar:maximize-square-line-duotone" class="fs-6 fullscreen-on"></iconify-icon>
+              <iconify-icon icon="solar:minimize-square-line-duotone" class="fs-6 fullscreen-off" style="display: none"></iconify-icon>
+            </a>
+          </li>
+
+          {% include "partials/_language_switcher.html" %}
+
+          {# Notifications: empty until the app has something to notify about #}
+          <li class="nav-item dropdown">
+            <a class="nav-link nav-icon-hover-bg rounded-circle position-relative" href="javascript:void(0)" id="notificationsDropdown" aria-expanded="false" aria-label="{% translate "Notifications" %}">
+              <iconify-icon icon="solar:bell-bing-line-duotone" class="fs-6"></iconify-icon>
+            </a>
+            <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="notificationsDropdown">
+              <div class="d-flex align-items-center justify-content-between py-3 px-7">
+                <h5 class="mb-0 fs-5 fw-semibold">{% translate "Notifications" %}</h5>
+              </div>
+              <div class="text-center py-6 px-7">
+                <iconify-icon icon="solar:bell-off-line-duotone" class="fs-9 text-muted"></iconify-icon>
+                <p class="mb-0 mt-2 text-muted">{% translate "You're all caught up." %}</p>
+              </div>
+            </div>
+          </li>
+
+          {# Account: name, role, and the account links #}
+          <li class="nav-item dropdown">
+            <a class="nav-link" href="javascript:void(0)" id="profileDropdown" aria-expanded="false" aria-label="{% translate "Account menu" %}">
+              <div class="d-flex align-items-center gap-2 lh-base">
+                <span class="user-avatar rounded-circle" style="--size: 35px">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</span>
+                <iconify-icon icon="solar:alt-arrow-down-bold" class="fs-2"></iconify-icon>
+              </div>
+            </a>
+            <div class="dropdown-menu profile-dropdown dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="profileDropdown">
+              <div class="position-relative px-4 pt-3 pb-2">
+                <div class="d-flex align-items-center mb-3 pb-3 border-bottom gap-6">
+                  <span class="user-avatar rounded-circle fs-6" style="--size: 56px">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</span>
+                  <div>
+                    <h5 class="mb-0 fs-12">{{ user.get_full_name|default:user.username }}</h5>
+                    {% if user.email %}<p class="mb-0 text-dark">{{ user.email }}</p>{% endif %}
+                    <span class="badge bg-primary-subtle text-primary mt-1">{{ user_role_label }}</span>
+                  </div>
+                </div>
+                <div class="message-body">
+                  <a href="{% url 'users:profile' %}" class="p-2 dropdown-item h6 rounded-1">{% translate "My Profile" %}</a>
+                  <a href="{% url 'users:password_change' %}" class="p-2 dropdown-item h6 rounded-1">{% translate "Change Password" %}</a>
+                  {% if perms.users.change_user %}
+                    <a href="{% url 'users:list' %}" class="p-2 dropdown-item h6 rounded-1">{% translate "Users and roles" %}</a>
+                  {% endif %}
+                  {% if user.is_staff %}
+                    <a href="{% url 'admin:index' %}" class="p-2 dropdown-item h6 rounded-1">{% translate "Admin" %}</a>
+                  {% endif %}
+                  {# Logging out must be a POST so other sites can't sign users out with a link #}
+                  <form method="post" action="{% url 'users:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="p-2 dropdown-item h6 rounded-1">{% translate "Sign Out" %}</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </div>
+</header>

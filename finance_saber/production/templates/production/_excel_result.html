@@ -1,0 +1,53 @@
+{% load i18n %}
+{# The result of loading a recipes or materials workbook (recipe_excel.RecipeImport) #}
+<div class="card">
+  <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+    <h5 class="card-title mb-0">{% translate "Result" %}</h5>
+    {% if report.saved %}
+      <span class="badge bg-success-subtle text-success">{% translate "Saved" %}</span>
+    {% elif report.errors %}
+      <span class="badge bg-danger-subtle text-danger">{% translate "Not saved" %}</span>
+    {% else %}
+      <span class="badge bg-info-subtle text-info">{% translate "Checked, not saved yet" %}</span>
+    {% endif %}
+  </div>
+  <p class="text-muted fs-2 px-4 pt-3 mb-2">{% translate "Sheets found:" %} {{ report.sheets|join:", " }}</p>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr>
+          <th class="ps-4"></th>
+          <th class="text-end">{% translate "New" %}</th>
+          <th class="text-end">{% translate "Changed" %}</th>
+          <th class="text-end">{% translate "Unchanged" %}</th>
+          <th class="text-end pe-4">{% translate "Removed" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for label, created, updated, unchanged, removed in report.rows %}
+          <tr>
+            <td class="ps-4">{{ label }}</td>
+            <td class="text-end">{{ created }}</td>
+            <td class="text-end">{{ updated }}</td>
+            <td class="text-end">{{ unchanged }}</td>
+            <td class="text-end pe-4">{{ removed }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if report.stock_kept %}
+    <div class="alert alert-warning m-3" role="alert">
+      {% translate "Stock not loaded: these materials already have stock movements here (correct them with a stock count):" %}
+      {{ report.stock_kept|join:", " }}
+    </div>
+  {% endif %}
+  {% if report.errors %}
+    <div class="alert alert-danger m-3" role="alert">
+      <ul class="mb-0">
+        {% for error in report.errors|slice:":50" %}<li>{{ error }}</li>{% endfor %}
+      </ul>
+      {% if report.errors|length > 50 %}<p class="mb-0 mt-1">…</p>{% endif %}
+    </div>
+  {% endif %}
+</div>

@@ -1,0 +1,76 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Sales from Excel" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Sales from Excel" as page_title %}
+  {% translate "Sales" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    {# SmartUp export #}
+    <div class="col-xl-6">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Sales (SmartUp export)" %}</h5></div>
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data" novalidate class="form-compact">
+            {% csrf_token %}
+            {% include "forms/_fields.html" with form=sales_form %}
+            <button type="submit" class="btn btn-primary">
+              <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Upload" %}
+            </button>
+          </form>
+          <p class="text-muted fs-2 mt-3 mb-0">
+            {% translate "One file per day or several days at once. A line is skipped as a duplicate when the same product was already recorded for the same client, day and total price. New clients and channels are added; an unknown product stops the import so nothing half-loads." %}
+          </p>
+        </div>
+        {% if sales_report %}
+          {% include "sales/_import_report.html" with report=sales_report %}
+        {% endif %}
+      </div>
+    </div>
+
+    {# Yearly plan #}
+    <div class="col-xl-6">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Plan for the year" %}</h5></div>
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data" novalidate class="form-compact">
+            {% csrf_token %}
+            {% include "forms/_fields.html" with form=plan_form %}
+            <button type="submit" class="btn btn-primary">
+              <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Upload" %}
+            </button>
+          </form>
+          <p class="text-muted fs-2 mt-3 mb-0">{% translate "The sales and production plan replace that year's figures; you can also edit them on the Sales plan page." %}</p>
+        </div>
+        {% if plan_report %}
+          <div class="border-top">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <tbody>
+                <tr><td>{% translate "Year" %}</td><td class="num">{{ plan_report.year|default:"—" }}</td></tr>
+                {% for kind, count in plan_report.products.items %}
+                  <tr><td>{% if kind == "sales" %}{% translate "Sales plan" %}{% else %}{% translate "Production plan" %}{% endif %}</td><td class="num">{% blocktranslate count counter=count %}{{ counter }} product{% plural %}{{ counter }} products{% endblocktranslate %}</td></tr>
+                {% endfor %}
+                <tr><td>{% translate "Figures" %}</td><td class="num">{{ plan_report.values }}</td></tr>
+                <tr>
+                  <td>{% translate "Result" %}</td>
+                  <td class="num">{% if plan_report.saved %}<span class="badge bg-success-subtle text-success">{% translate "Saved" %}</span>{% else %}<span class="badge bg-warning-subtle text-warning">{% translate "Not saved" %}</span>{% endif %}</td>
+                </tr>
+              </tbody>
+            </table>
+            {% if plan_report.unknown_products %}
+              <div class="alert alert-danger m-3" role="alert">
+                <p class="mb-1 fw-semibold">{% translate "Products not found:" %}</p>
+                <ul class="mb-0">{% for name in plan_report.unknown_products %}<li>{{ name }}</li>{% endfor %}</ul>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

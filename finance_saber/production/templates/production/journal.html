@@ -1,0 +1,69 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Production journal" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Production journal" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <a href="?month={{ previous_month|date:'Y-m' }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Previous month" %}">‹</a>
+        <form method="get" class="form-compact">
+          <input type="month" name="month" value="{{ month|date:'Y-m' }}" class="form-control form-control-sm" aria-label="{% translate "Month" %}" onchange="this.form.submit()">
+        </form>
+        <a href="?month={{ next_month|date:'Y-m' }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Next month" %}">›</a>
+        <span class="ms-2 fs-5 fw-semibold text-capitalize">{{ month|date:"F Y" }}</span>
+        <span class="ms-auto text-muted">{% translate "Total for the month" %}: <strong class="text-body">{{ grand_total|floatformat:"0g" }}</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table journal-grid">
+        <thead>
+          <tr>
+            <th class="journal-product">{% translate "Product" %}</th>
+            {% for day in days %}
+              <th class="num{% if day == today %} bg-primary-subtle{% endif %}{% if day.weekday == 6 %} text-danger{% endif %}">
+                <a href="{% url 'production:daily' %}?date={{ day.isoformat }}" class="text-reset" title="{{ day|date:'l, j E' }}">{{ day.day }}</a>
+              </th>
+            {% endfor %}
+            <th class="num">{% translate "Total" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td class="journal-product" title="{{ row.product.sales_name }}">{{ row.product.name }}</td>
+              {% for cell in row.cells %}
+                <td class="num">{% if cell %}{{ cell|floatformat:"0g" }}{% endif %}</td>
+              {% endfor %}
+              <td class="num fw-semibold">{{ row.total|floatformat:"0g" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="{{ days|length|add:2 }}" class="text-center text-muted py-6">{% translate "No products yet." %}</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if rows %}
+          <tfoot>
+            <tr class="fw-semibold">
+              <td class="journal-product">{% translate "Total" %}</td>
+              {% for total in day_totals %}
+                <td class="num">{% if total %}{{ total|floatformat:"0g" }}{% endif %}</td>
+              {% endfor %}
+              <td class="num">{{ grand_total|floatformat:"0g" }}</td>
+            </tr>
+          </tfoot>
+        {% endif %}
+      </table>
+    </div>
+    <div class="px-4 py-2 border-top text-muted fs-2">{% translate "Click a day to fill in or correct its production." %}</div>
+  </div>
+{% endblock %}

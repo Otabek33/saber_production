@@ -1,0 +1,5 @@
+{# Text logo. Usage: {% include "partials/_brand.html" with class="nav-link" %} (add "brand-lg" for the sign-in pages) #}
+<a href="{% url 'core:home' %}" class="brand text-nowrap {{ class }}">
+  <iconify-icon icon="solar:leaf-bold-duotone" class="brand-icon"></iconify-icon>
+  <span class="brand-main">{{ company_name }}</span>
+</a>

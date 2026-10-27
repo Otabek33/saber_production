@@ -1,0 +1,12 @@
+# Runs send_daily_reports every 5 minutes; it never sends a report twice. Install:
+#   sudo cp deploy/systemd/finance_saber-daily-reports.* /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now finance_saber-daily-reports.timer
+[Unit]
+Description=Run finance_saber daily Telegram reports every 5 minutes
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,115 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Load handbooks from Excel" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Load handbooks from Excel" as page_title %}
+  {% translate "Handbook" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data" novalidate class="form-compact">
+            {% csrf_token %}
+            {% include "forms/_fields.html" %}
+            <button type="submit" class="btn btn-primary">
+              <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Upload" %}
+            </button>
+          </form>
+        </div>
+      </div>
+      {# The project's files: one click fills a new server's handbooks #}
+      <div class="card">
+        <div class="px-4 py-3 border-bottom">
+          <h5 class="card-title mb-0">{% translate "Project files" %}</h5>
+        </div>
+        <div class="card-body p-4">
+          {% if seed_files %}
+            <ul class="list-unstyled mb-3">
+              {% for file in seed_files %}
+                <li class="d-flex justify-content-between gap-2">
+                  <span>{{ forloop.counter }}. {{ file.name }} <span class="text-muted fs-2">({{ file.path.name }})</span></span>
+                  <span class="text-muted fs-2 text-nowrap">{{ file.modified|date:"d.m.Y" }} · {{ file.size|filesizeformat }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+            <form method="post" class="form-compact">
+              {% csrf_token %}
+              <input type="hidden" name="use_seed" value="1">
+              <div class="form-check mb-3">
+                <input type="checkbox" name="dry_run" id="seed-dry-run" class="form-check-input"{% if seed_dry_run %} checked{% endif %}>
+                <label class="form-check-label" for="seed-dry-run">{% translate "Only check, don't save" %}</label>
+              </div>
+              <button type="submit" class="btn bg-success-subtle text-success">
+                <iconify-icon icon="solar:database-line-duotone"></iconify-icon> {% translate "Load the project files" %}
+              </button>
+            </form>
+            <p class="text-muted fs-2 mb-0 mt-3">{% translate "Kept with the program's code and deployed with it: on a new server they fill the handbooks in one click, handbook first, then counterparties." %}</p>
+          {% else %}
+            <p class="text-muted mb-0">{% translate "The project has no handbook files yet. Write them where the handbooks are complete with: manage.py export_handbooks --seed" %}</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-2">{% translate "For a new server with an empty database: download the handbooks where they are complete (the “Download Excel” buttons on Handbook and Counterparties, or manage.py export_handbooks for everything in one file), then load the file here." %}</p>
+          <p class="mb-2">{% translate "Sheets read: «Статьи и категории», «Статьи», «Регионы», «Контрагенты» — whichever the file has. Articles, categories and regions are matched by name, counterparties by their statement reference, so loading the same file again changes nothing." %}</p>
+          <p class="mb-0">{% translate "Existing records take the file's values (type, cash desks, article, region, active). If any row has an error, nothing is saved." %}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      {% if report %}
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0">{% translate "Result" %}</h5>
+            {% if report.saved %}
+              <span class="badge bg-success-subtle text-success">{% translate "Saved" %}</span>
+            {% elif report.errors %}
+              <span class="badge bg-danger-subtle text-danger">{% translate "Not saved" %}</span>
+            {% else %}
+              <span class="badge bg-info-subtle text-info">{% translate "Checked, not saved yet" %}</span>
+            {% endif %}
+          </div>
+          <p class="text-muted fs-2 px-4 pt-3 mb-2">{% translate "Sheets found:" %} {{ report.sheets|join:", " }}</p>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-4"></th>
+                  <th class="text-end">{% translate "New" %}</th>
+                  <th class="text-end">{% translate "Changed" %}</th>
+                  <th class="text-end pe-4">{% translate "Unchanged" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for label, created, updated, unchanged in report.rows %}
+                  <tr>
+                    <td class="ps-4">{{ label }}</td>
+                    <td class="text-end">{{ created }}</td>
+                    <td class="text-end">{{ updated }}</td>
+                    <td class="text-end pe-4">{{ unchanged }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if report.errors %}
+            <div class="alert alert-danger m-3" role="alert">
+              <ul class="mb-0">
+                {% for error in report.errors|slice:":50" %}<li>{{ error }}</li>{% endfor %}
+              </ul>
+              {% if report.errors|length > 50 %}<p class="mb-0 mt-1">…</p>{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

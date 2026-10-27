@@ -1,0 +1,44 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+
+{% block title %}{{ object.name }}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Clients" as section %}
+  {% include "partials/_page_header.html" with title=object.name section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body p-4">
+          <form method="post" novalidate class="form-compact">
+            {% csrf_token %}
+            {% include "forms/_fields.html" %}
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">{% translate "Save Changes" %}</button>
+              <a href="{{ back_url }}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-2">{% translate "The bank payer is the counterparty in the bank statements that pays for this client. Its payments settle the client's shipments; clients with the same payer (e.g. a chain's shops) owe together." %}</p>
+          <p class="mb-0">{% translate "The opening balance is what the client owed before the first sale recorded here." %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

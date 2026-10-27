@@ -1,0 +1,123 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Stock movements" %}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Stock movements" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {# Materials / finished goods switch and filters #}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <ul class="nav nav-pills mb-3 gap-2">
+        <li class="nav-item">
+          <a class="nav-link py-1 px-3{% if target != 'products' %} active{% endif %}" href="?target=materials">{% translate "Raw materials" %}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link py-1 px-3{% if target == 'products' %} active{% endif %}" href="?target=products">{% translate "Finished goods" %}</a>
+        </li>
+      </ul>
+      <form method="get" class="row g-2 align-items-end form-compact">
+        <input type="hidden" name="target" value="{{ target }}">
+        <div class="col-12 col-md-4">
+          <label for="item" class="form-label">{% if target == "products" %}{% translate "Product" %}{% else %}{% translate "Material" %}{% endif %}</label>
+          <select name="item" id="item" class="form-select" data-searchable>
+            <option value="">{% translate "All" %}</option>
+            {% for choice in choices %}
+              <option value="{{ choice.pk }}"{% if request.GET.item == choice.pk|stringformat:"s" %} selected{% endif %}>{{ choice.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="kind" class="form-label">{% translate "Type" %}</label>
+          <select name="kind" id="kind" class="form-select">
+            <option value="">{% translate "All" %}</option>
+            {% for value, label in kinds %}
+              <option value="{{ value }}"{% if request.GET.kind == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="from" class="form-label">{% translate "From" %}</label>
+          <input type="date" name="from" id="from" value="{{ request.GET.from }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="to" class="form-label">{% translate "To" %}</label>
+          <input type="date" name="to" id="to" value="{{ request.GET.to }}" class="form-control">
+        </div>
+        <div class="col-12 col-md-auto d-flex gap-2 mb-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+          <a href="?target={{ target }}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Date" %}</th>
+            <th>{% if target == "products" %}{% translate "Product" %}{% else %}{% translate "Material" %}{% endif %}</th>
+            <th>{% translate "Type" %}</th>
+            <th class="num">{% translate "Quantity" %}</th>
+            <th>{% translate "Note" %}</th>
+            <th>{% translate "Author" %}</th>
+            <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for move in page_obj %}
+            <tr{% if move.is_cancelled %} class="text-decoration-line-through opacity-50"{% endif %}>
+              <td class="text-nowrap">
+                {% if move.run_id %}<a href="{% url 'production:daily' %}?date={{ move.date.isoformat }}" class="text-reset">{{ move.date|date:"d.m.Y" }}</a>{% else %}{{ move.date|date:"d.m.Y" }}{% endif %}
+              </td>
+              <td>{% if target == "products" %}{{ move.product.name }}{% else %}{{ move.material.name }} <span class="text-muted fs-1">{{ move.material.unit }}</span>{% endif %}</td>
+              <td>{{ move.get_kind_display }}</td>
+              <td class="num fw-semibold {% if move.quantity < 0 %}text-danger{% else %}text-success{% endif %}">
+                {% if move.quantity > 0 %}+{% endif %}{{ move.quantity|floatformat:"-3g" }}
+              </td>
+              <td class="text-muted">
+                {{ move.note }}
+                {% if move.counted is not None %}<span class="d-block fs-1">{% translate "Counted" %}: {{ move.counted|floatformat:"-3g" }}</span>{% endif %}
+              </td>
+              <td class="text-muted">{{ move.created_by|default:"" }}</td>
+              <td class="text-end">
+                {% if not move.made_by_document and can_cancel %}
+                  <form method="post" action="{% url 'production:move_cancel' target move.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    {% if move.is_cancelled %}
+                      <button type="submit" class="btn btn-sm bg-success-subtle text-success ledger-action" title="{% translate "Restore" %}" aria-label="{% translate "Restore" %}">
+                        <iconify-icon icon="solar:restart-line-duotone"></iconify-icon>
+                      </button>
+                    {% else %}
+                      <button type="submit" class="btn btn-sm bg-danger-subtle text-danger ledger-action" title="{% translate "Cancel movement" %}" aria-label="{% translate "Cancel movement" %}" onclick="return confirm('{% translate "Cancel this movement? Stock will be recalculated." %}')">
+                        <iconify-icon icon="solar:close-circle-line-duotone"></iconify-icon>
+                      </button>
+                    {% endif %}
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-6">{% translate "No movements found." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/_pagination.html" %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

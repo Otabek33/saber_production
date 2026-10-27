@@ -1,0 +1,18 @@
+# Sends the daily Telegram reports that are due. Started by finance_saber-daily-reports.timer.
+[Unit]
+Description=finance_saber daily Telegram reports
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=finance_saber
+Group=finance_saber
+WorkingDirectory=/srv/finance_saber
+Environment=DJANGO_SETTINGS_MODULE=config.settings.production
+ExecStart=/srv/finance_saber/.venv/bin/python manage.py send_daily_reports
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

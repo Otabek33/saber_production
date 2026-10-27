@@ -1,0 +1,50 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Exchange rates" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Exchange rates" as page_title %}
+  {% translate "Finance" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+            <thead><tr><th>{% translate "Date" %}</th><th class="num">{% translate "UZS per 1 USD" %}</th></tr></thead>
+            <tbody>
+              {% for rate in page_obj %}
+                <tr><td>{{ rate.date|date:"d.m.Y, l" }}</td><td class="num fw-semibold">{{ rate.rate|floatformat:"2g" }}</td></tr>
+              {% empty %}
+                <tr><td colspan="2" class="text-center text-muted py-6">{% translate "No rates yet." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% include "partials/_pagination.html" %}
+      </div>
+    </div>
+    <div class="col-lg-5">
+      {% if perms.cashbook.add_exchangerate %}
+        <div class="card">
+          <div class="card-body p-4">
+            <form method="post" novalidate class="form-compact">
+              {% csrf_token %}
+              {% include "forms/_fields.html" %}
+              <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-0">{% translate "A rate applies from its date until the next one, so days without a rate (weekends) use the last one. The dashboard uses it to show USD cash in UZS." %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

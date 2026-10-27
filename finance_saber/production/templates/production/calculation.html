@@ -1,0 +1,144 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Production calculation" %} · {{ product.name }}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Production calculation" as page_title %}
+  {% translate "Daily production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="form-compact" data-calculation data-volume="{{ product.volume|stringformat:'s' }}"
+        data-basis-raw="{% translate "per 1000 l" %}" data-basis-unit="{% translate "per unit" %}">
+    {% csrf_token %}
+    {{ materials|json_script:"calc-materials" }}
+
+    {# What and when; how much was brewed and produced #}
+    <div class="card mb-3">
+      <div class="card-body py-3 px-4">
+        <div class="row g-3 align-items-end">
+          <div class="col-12 col-lg">
+            <div class="text-muted fs-2">{{ date|date:"l, j E Y" }}</div>
+            <h5 class="mb-0">{{ product.name }}</h5>
+            <div class="text-muted fs-2">{% translate "Volume" %}: {{ product.volume|floatformat:"-3" }} {% translate "l" %}</div>
+          </div>
+          <div class="col-6 col-lg-auto" style="min-width: 190px">
+            {% include "forms/_field.html" with field=form.quantity %}
+          </div>
+          <div class="col-6 col-lg-auto" style="min-width: 190px">
+            {% include "forms/_field.html" with field=form.batch_quantity %}
+          </div>
+          <div class="col-12 col-lg-auto mb-3 text-muted fs-2">
+            {% translate "Brewed" %}: <strong class="text-body" data-calc-out="litres">—</strong> {% translate "l" %}
+          </div>
+        </div>
+        {% for error in form.non_field_errors %}<div class="alert alert-danger mb-0">{{ error }}</div>{% endfor %}
+      </div>
+    </div>
+
+    {# The recipe of this production, laid out like the calculation sheet #}
+    <div class="card">
+      {{ formset.management_form }}
+      {% for error in formset.non_form_errors %}<div class="alert alert-danger m-3 mb-0">{{ error }}</div>{% endfor %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0 ledger-table">
+          <thead>
+            <tr>
+              <th style="width: 40px">№</th>
+              <th style="min-width: 220px">{% translate "Material" %}</th>
+              <th class="num" style="min-width: 130px">{% translate "Norm" %}</th>
+              <th class="num">{% blocktranslate with volume=product.volume|floatformat:"-3" %}Norm per {{ volume }} l{% endblocktranslate %}</th>
+              <th class="num">{% translate "Use by norm" %}</th>
+              <th class="num" style="min-width: 110px; width: 120px">{% translate "Production defect" %}</th>
+              <th class="num">{% translate "Write off" %}</th>
+              <th class="num">{% translate "Loss, %" %}</th>
+              <th class="num" style="min-width: 80px; width: 90px">{% translate "Allowed, %" %}</th>
+              <th class="text-center" style="width: 60px">{% translate "Delete" %}</th>
+            </tr>
+          </thead>
+          <tbody data-calc-lines>
+            {% for line in formset %}
+              <tr data-calc-line>
+                <td class="text-muted" data-calc-out="number">{{ forloop.counter }}</td>
+                <td>
+                  {{ line.material }}
+                  {% for error in line.material.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  {% for error in line.non_field_errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
+                <td>
+                  {{ line.norm }}
+                  <div class="fs-1 text-muted text-end" data-calc-out="basis"></div>
+                  {% for error in line.norm.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
+                <td class="num text-muted" data-calc-out="per-unit"></td>
+                <td class="num" data-calc-out="use"></td>
+                <td>
+                  {{ line.defect }}
+                  {% for error in line.defect.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
+                <td class="num fw-semibold" data-calc-out="total"></td>
+                <td class="num" data-calc-out="loss"></td>
+                <td>
+                  {{ line.allowed_loss }}
+                  {% for error in line.allowed_loss.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
+                <td class="text-center">{{ line.DELETE }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <template id="calc-empty-line">
+        <tr data-calc-line>
+          <td class="text-muted" data-calc-out="number"></td>
+          <td>{{ formset.empty_form.material }}</td>
+          <td>{{ formset.empty_form.norm }}<div class="fs-1 text-muted text-end" data-calc-out="basis"></div></td>
+          <td class="num text-muted" data-calc-out="per-unit"></td>
+          <td class="num" data-calc-out="use"></td>
+          <td>{{ formset.empty_form.defect }}</td>
+          <td class="num fw-semibold" data-calc-out="total"></td>
+          <td class="num" data-calc-out="loss"></td>
+          <td>{{ formset.empty_form.allowed_loss }}</td>
+          <td class="text-center">{{ formset.empty_form.DELETE }}</td>
+        </tr>
+      </template>
+      <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+        {% if can_edit %}
+          <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+          <button type="button" class="btn bg-success-subtle text-success" data-calc-add-line>
+            <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon> {% translate "Add a line" %}
+          </button>
+        {% endif %}
+        <a href="{% url 'production:daily' %}?date={{ date.isoformat }}" class="btn bg-primary-subtle text-primary">{% translate "Back to the day" %}</a>
+        {% if run %}
+          <span class="badge bg-success-subtle text-success align-self-center ms-auto">
+            {% blocktranslate with quantity=run.quantity|floatformat:"0g" %}Saved: {{ quantity }} units{% endblocktranslate %}
+          </span>
+        {% else %}
+          <span class="badge bg-secondary-subtle text-secondary align-self-center ms-auto">{% translate "Not saved yet: the norms come from the product's recipe" %}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card bg-info-subtle shadow-none">
+      <div class="card-body p-4">
+        <p class="mb-2">{% translate "First set this production's recipe: raw materials per 1000 l of drink, packaging per unit (a fraction like 1/12 works). Then enter how much was brewed and how many units came out." %}</p>
+        <p class="mb-2">{% translate "Raw materials are written off for the drink brewed, packaging for the finished units; the production defect is written off on top. A loss above the allowed share is shown in red." %}</p>
+        <p class="mb-0">
+          {% translate "This production keeps its own recipe: later recipe changes don't alter it." %}
+          {% if can_change_recipe %}{% translate "If it is the product's latest production, saving also makes these norms the product's recipe for the next production." %}{% endif %}
+        </p>
+      </div>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

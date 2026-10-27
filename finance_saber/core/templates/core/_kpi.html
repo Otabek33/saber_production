@@ -1,0 +1,39 @@
+{% load i18n %}
+{# A headline card: label and icon, the figure, a short note, and optionally the cash / card / bank split as bars. #}
+<div class="col-sm-6 col-xl-3 mb-3">
+  <div class="card h-100 kpi-card kpi-{{ tone|default:'primary' }}">
+    <div class="card-body p-3 d-flex flex-column">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="kpi-icon d-inline-flex align-items-center justify-content-center rounded-circle">
+          <iconify-icon icon="{{ icon }}"></iconify-icon>
+        </span>
+        <span class="kpi-label fw-semibold text-body-secondary">{{ label }}</span>
+        {% if href %}<a href="{{ href }}" class="ms-auto text-muted small" aria-label="{% translate "Open" %}"><iconify-icon icon="solar:alt-arrow-right-line-duotone"></iconify-icon></a>{% endif %}
+      </div>
+      <div class="kpi-value{% if negative %} text-danger{% endif %}">{{ value }}{% if unit %} <span class="fs-3 fw-normal text-muted">{{ unit }}</span>{% endif %}</div>
+      {% if note %}<div class="text-muted kpi-note mt-1">{{ note }}</div>{% endif %}
+      {% if progress is not None %}
+        <div class="progress kpi-progress mt-2" role="progressbar" aria-label="{{ label }}" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar" style="width: {% if progress > 100 %}100{% else %}{{ progress }}{% endif %}%"></div>
+        </div>
+        {% if progress_label %}<div class="text-muted kpi-note mt-1">{{ progress_label }}</div>{% endif %}
+      {% endif %}
+      {% if channels %}
+        <div class="kpi-channels row g-1 mt-auto pt-2">
+          {% for channel in channels %}
+            <div class="col">
+              <div class="kpi-channel-label text-muted text-truncate" title="{{ channel.label }}">
+                <iconify-icon icon="{{ channel.icon }}"></iconify-icon> {{ channel.label }}
+              </div>
+              <div class="kpi-channel-amount fw-semibold text-nowrap{% if signed and channel.amount < 0 %} text-danger{% elif signed and channel.amount > 0 %} text-success{% endif %}" title="{{ channel.amount|floatformat:'0g' }}">{{ channel.amount|floatformat:"0g" }}</div>
+              <div class="progress kpi-bar mt-half" aria-hidden="true">
+                <div class="progress-bar kpi-bar-{{ channel.key }}" style="width: {{ channel.share }}%"></div>
+              </div>
+              {% if channel.usd %}<div class="text-muted kpi-usd text-truncate">{% blocktranslate with usd=channel.usd|floatformat:"-2g" %}{{ usd }} USD{% endblocktranslate %}</div>{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>

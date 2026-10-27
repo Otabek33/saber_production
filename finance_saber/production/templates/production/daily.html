@@ -1,0 +1,122 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Daily production" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Daily production" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {# Toolbar: day picker with previous / next day, the day's total, link to the month #}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <a href="?date={{ previous_day.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Previous day" %}">‹</a>
+        <form method="get" class="form-compact">
+          <input type="date" name="date" value="{{ date.isoformat }}" class="form-control form-control-sm" aria-label="{% translate "Date" %}" onchange="this.form.submit()">
+        </form>
+        <a href="?date={{ next_day.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Next day" %}">›</a>
+        <span class="ms-2 fs-5 fw-semibold">{{ date|date:"l, j E Y" }}</span>
+        <span class="ms-auto text-muted">
+          {% translate "Produced this day" %}: <strong class="text-body">{{ total|floatformat:"0g" }}</strong>
+        </span>
+        <a href="{% url 'production:journal' %}?month={{ date|date:'Y-m' }}" class="btn btn-sm bg-secondary-subtle text-secondary">
+          <iconify-icon icon="solar:calendar-line-duotone"></iconify-icon> {% translate "Month" %}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    {# Quantities per product, like one day's column in the Warehouse sheet #}
+    <div class="col-xl-7">
+      <div class="card">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead>
+                <tr>
+                  <th>{% translate "Product" %}</th>
+                  <th class="num">{% translate "Stock allows" %}</th>
+                  <th class="num" style="width: 160px">{% translate "Produced, units" %}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for product, field, possible in rows %}
+                  <tr>
+                    <td>
+                      <label for="{{ field.id_for_label }}" class="fw-semibold mb-0">{{ product.name }}</label>
+                      {% if product.sales_name %}<span class="d-block fs-1 text-muted">{{ product.sales_name }}</span>{% endif %}
+                    </td>
+                    <td class="num text-muted" title="{% translate "How many units the current material stock allows" %}">
+                      {{ possible|floatformat:"0g" }}
+                    </td>
+                    <td>
+                      {{ field }}
+                      {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </td>
+                    <td class="text-end">
+                      {# The day's calculation: this production's own recipe, defect and quantities #}
+                      <a href="{% url 'production:calculation' date=date.isoformat product_pk=product.pk %}" class="btn btn-sm bg-primary-subtle text-primary text-nowrap" title="{% translate "Production calculation" %}">
+                        <iconify-icon icon="solar:calculator-minimalistic-line-duotone"></iconify-icon> {% translate "Calculation" %}
+                      </a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted py-6">{% translate "No products yet." %} {% if perms.production.add_product %}<a href="{% url 'production:product_add' %}">{% translate "Add a product" %}</a>{% endif %}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if can_edit %}
+          <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+            {% if shortage and request.method == "POST" %}
+              <button type="submit" name="confirm" value="1" class="btn btn-warning">{% translate "Save anyway" %}</button>
+              <a href="?date={{ date.isoformat }}" class="btn bg-primary-subtle text-primary">{% translate "Cancel" %}</a>
+            {% else %}
+              <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+            {% endif %}
+            <span class="text-muted fs-2 align-self-center">{% translate "Leave empty or 0 for products not made. Materials are written off by each production's own recipe; open “Calculation” to adjust it, the defect or the brewed quantity." %}</span>
+          </div>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    {# Materials this day uses, and the stock left #}
+    <div class="col-xl-5">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom">
+          <h5 class="card-title mb-0">{% translate "Materials used" %}</h5>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Material" %}</th>
+                <th class="num">{% translate "Used" %}</th>
+                <th class="num">{% translate "Stock after" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for need in needs %}
+                <tr{% if need.is_short %} class="table-danger"{% endif %}>
+                  <td>{{ need.material.name }} <span class="text-muted fs-1">{{ need.material.unit }}</span></td>
+                  <td class="num">{{ need.needed|floatformat:"-3g" }}</td>
+                  <td class="num{% if need.is_short %} text-danger fw-semibold{% endif %}">{{ need.stock_after|floatformat:"-3g" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="3" class="text-center text-muted py-6">{% translate "Nothing produced this day yet." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

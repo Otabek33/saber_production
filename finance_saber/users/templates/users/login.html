@@ -1,0 +1,31 @@
+{% extends "layouts/auth.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Sign In" %}{% endblock %}
+{% block heading %}{% translate "Sign In" %}{% endblock %}
+{% block subheading %}{% blocktranslate with site=company_name %}Sign in to your {{ site }} account{% endblocktranslate %}{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for error in form.non_field_errors %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endfor %}
+    {% include "forms/_field.html" with field=form.username %}
+    {% include "forms/_field.html" with field=form.password %}
+    <input type="hidden" name="next" value="{{ next }}">
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+      <div class="form-check">
+        {{ form.remember_me }}
+        <label class="form-check-label text-dark" for="{{ form.remember_me.id_for_label }}">{{ form.remember_me.label }}</label>
+      </div>
+      <a class="text-primary fw-medium" href="{% url 'users:password_reset' %}">{% translate "Forgot Password?" %}</a>
+    </div>
+    <button type="submit" class="btn btn-primary w-100 py-8 mb-4 rounded-2">{% translate "Sign In" %}</button>
+    <div class="d-flex align-items-center justify-content-center">
+      <p class="fs-4 mb-0 fw-medium">{% blocktranslate with site=company_name %}New to {{ site }}?{% endblocktranslate %}</p>
+      <a class="text-primary fw-medium ms-2" href="{% url 'users:register' %}">{% translate "Create an account" %}</a>
+    </div>
+  </form>
+{% endblock %}

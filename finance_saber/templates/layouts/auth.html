@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% comment %}
+  Signed-out pages (sign in, sign up, password reset): form on the left,
+  brand panel on the right. Blocks: heading, subheading and content.
+{% endcomment %}
+
+{% block body %}
+  <div id="main-wrapper">
+    <div class="position-relative overflow-hidden radial-gradient min-vh-100 w-100">
+      <div class="position-relative z-index-5">
+        <div class="row gx-0">
+          <div class="col-lg-6 col-xl-5 col-xxl-4">
+            <div class="min-vh-100 bg-body row justify-content-center align-items-center p-5">
+              <div class="col-12 auth-card">
+                {% include "partials/_brand.html" with class="brand-lg" %}
+                <h2 class="mb-2 mt-4 fs-7 fw-bolder">{% block heading %}{% endblock %}</h2>
+                <p class="mb-9">{% block subheading %}{% endblock %}</p>
+
+                {% include "partials/_messages.html" %}
+                {% block content %}{% endblock %}
+                {% include "partials/_language_switcher.html" with inline=True %}
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 col-xl-7 col-xxl-8 position-relative overflow-hidden bg-dark d-none d-lg-block">
+            <div class="circle-top"></div>
+            <iconify-icon icon="solar:leaf-bold-duotone" class="auth-leaf" aria-hidden="true"></iconify-icon>
+            <div class="d-lg-flex align-items-center z-index-5 position-relative h-n80">
+              <div class="row justify-content-center w-100">
+                <div class="col-lg-6">
+                  <h2 class="text-white fs-10 mb-3 lh-sm">{% translate "Welcome to" %}<br>{{ company_name }}</h2>
+                  <span class="opacity-75 fs-4 text-white d-block">
+                    {% translate "Accounts, sales, purchases and reporting for your business, in one place." %}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

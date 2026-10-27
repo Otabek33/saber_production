@@ -1,0 +1,78 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Roles and permissions" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Roles and permissions" as page_title %}
+  {% translate "Administration" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {# The roles: what each is for, and how many people have it #}
+  <div class="row">
+    {% for column in columns %}
+      <div class="col-md-6 col-xxl">
+        <div class="card">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">{{ column.label }}</h6>
+              <span class="badge bg-primary-subtle text-primary" title="{% translate "Users with this role" %}">{{ column.count }}</span>
+            </div>
+            <p class="text-muted fs-2 mb-2">{{ column.description }}</p>
+            {% if column.value != "superuser" %}
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <a href="{% url 'users:role_edit' role=column.value %}" class="btn btn-sm bg-primary-subtle text-primary">
+                  <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon> {% translate "Edit access" %}
+                </a>
+                {% if column.changed %}
+                  <span class="badge bg-warning-subtle text-warning">{% blocktranslate count counter=column.changed %}{{ counter }} change{% plural %}{{ counter }} changes{% endblocktranslate %}</span>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# Section by section: who can change it, who can only look #}
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="ps-4">{% translate "Section" %}</th>
+            {% for column in columns %}<th class="text-center">{{ column.label }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td class="ps-4">{{ row.label }}</td>
+              {% for cell in row.cells %}
+                <td class="text-center{% if cell.changed %} table-warning{% endif %}"{% if cell.changed %} title="{% translate "Changed from the standard" %}"{% endif %}>
+                  {% if cell.level == "edit" %}
+                    <span class="badge bg-success-subtle text-success">{% translate "Works" %}</span>
+                  {% elif cell.level == "view" %}
+                    <span class="badge bg-info-subtle text-info">{% translate "Views" %}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card bg-info-subtle shadow-none">
+    <div class="card-body p-4">
+      <p class="mb-2">{% translate "Each role has a standard access defined by the program. “Edit access” changes it section by section; the changes stay after program updates, are recorded in the role's history, and “Reset to standard” undoes them. Cells changed from the standard are highlighted." %}</p>
+      <p class="mb-0">{% translate "“Works”: sees the section and enters or changes its data. “Views”: sees it only. Records are cancelled rather than deleted; only the superuser deletes." %}</p>
+    </div>
+  </div>
+{% endblock %}

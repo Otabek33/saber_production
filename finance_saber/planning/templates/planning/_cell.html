@@ -1,0 +1,12 @@
+{% load i18n %}
+{# One day of a plan grid: the plan (an input while editing) and the fact under it. #}
+<td class="num{% if cell.date == today %} bg-primary-subtle{% endif %}">
+  {% if editing %}
+    <input type="text" inputmode="decimal" name="plan-{{ key }}-{{ cell.date.isoformat }}" value="{% if cell.plan is not None %}{{ cell.plan|floatformat:'-2' }}{% endif %}" class="form-control form-control-sm text-end px-1" aria-label="{{ label }} {{ cell.date|date:'d.m' }}">
+  {% else %}
+    <span class="d-block">{% if cell.plan %}{{ cell.plan|floatformat:"0g" }}{% else %}<span class="text-muted">—</span>{% endif %}</span>
+  {% endif %}
+  {% if cell.fact %}
+    <span class="d-block fs-1 {% if not cell.plan or cell.fact >= cell.plan %}text-success{% else %}text-warning{% endif %}" title="{% translate "Fact" %}">{{ cell.fact|floatformat:"0g" }}</span>
+  {% endif %}
+</td>

@@ -1,0 +1,302 @@
+{% extends "layouts/app.html" %}
+{% load cashbook i18n static %}
+
+{% block title %}{{ desk.name }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Cash desk" as section %}
+  {% include "partials/_page_header.html" with title=desk.name section=section %}
+{% endblock %}
+
+{% block content %}
+  {% if desks|length > 1 %}
+    <ul class="nav nav-pills mb-3">
+      {% for other in desks %}
+        <li class="nav-item">
+          <a class="nav-link{% if other == desk %} active{% endif %}" href="{{ other.get_absolute_url }}"{% if other == desk %} aria-current="page"{% endif %}>{{ other.name }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {# Toolbar: balances on the left; buttons open the upload, entry and filter panels below. #}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex flex-wrap align-items-center gap-3 gap-lg-5">
+        <span class="text-muted fs-2 text-nowrap">
+          {% blocktranslate with date=filters.date_to|date:"SHORT_DATE_FORMAT" %}Balance on {{ date }}{% endblocktranslate %}
+        </span>
+        {% for account in accounts %}
+          {% include "cashbook/_balance_card.html" with label=account.label value=ledger.closing|get:account.value color=account.color icon=account.icon currency=account.currency %}
+        {% endfor %}
+        <div class="ms-auto d-flex flex-wrap gap-2 ledger-toolbar">
+          {% if perms.cashbook.add_operation %}
+            {# One workbook for every desk: see the "Upload Excel" page #}
+            <a href="{% url 'cashbook:workbook_import' %}" class="btn btn-sm bg-primary-subtle text-primary">
+              <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon>{% translate "Upload Excel" %}
+            </a>
+          {% endif %}
+          {% if desk.is_bank and perms.cashbook.add_operation %}
+            <button type="button" class="btn btn-sm bg-primary-subtle text-primary" data-bs-toggle="collapse" data-bs-target="#panel-upload" aria-expanded="false" aria-controls="panel-upload">
+              <iconify-icon icon="solar:upload-minimalistic-line-duotone"></iconify-icon>{% translate "Upload statement" %}
+            </button>
+          {% endif %}
+          {% if perms.cashbook.add_operation %}
+            <button type="button" class="btn btn-sm bg-success-subtle text-success" data-bs-toggle="collapse" data-bs-target="#entry" aria-expanded="{{ entry_open|yesno:'true,false' }}" aria-controls="entry">
+              <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon>{% translate "New operation" %}
+            </button>
+          {% endif %}
+          <button type="button" class="btn btn-sm bg-secondary-subtle text-secondary" data-bs-toggle="collapse" data-bs-target="#panel-filters" aria-expanded="{{ filters_open|yesno:'true,false' }}" aria-controls="panel-filters">
+            <iconify-icon icon="solar:filter-line-duotone"></iconify-icon>{% translate "Filters" %}
+            {% if active_filters %}<span class="badge rounded-pill bg-secondary ms-1">{{ active_filters }}</span>{% endif %}
+          </button>
+        </div>
+      </div>
+      {% if unclassified_count %}
+        <div class="alert alert-warning py-2 mt-3 mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+          <span>
+            {% blocktranslate count counter=unclassified_count %}{{ counter }} counterparty needs an article.{% plural %}{{ counter }} counterparties need an article.{% endblocktranslate %}
+          </span>
+          <a href="{% url 'cashbook:counterparties' %}?status=unclassified" class="btn btn-sm btn-warning">{% translate "Classify" %}</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if desk.is_bank and perms.cashbook.add_operation %}
+    {# Bank: upload the day's statement; lines already recorded are skipped #}
+    <div class="collapse" id="panel-upload">
+      <div class="card mb-3">
+        <div class="card-body py-3 px-4">
+          <form method="post" action="{% url 'cashbook:statement_upload' desk=desk.slug %}" enctype="multipart/form-data"
+                class="row g-2 align-items-end form-compact">
+            {% csrf_token %}
+            <div class="col-12 col-md">
+              {% include "forms/_field.html" with field=upload_form.file %}
+            </div>
+            <div class="col-12 col-md-auto mb-3">
+              <button type="submit" class="btn btn-primary btn-sm px-4 w-100">{% translate "Upload" %}</button>
+            </div>
+          </form>
+          <p class="text-muted fs-2 mb-0">
+            {% translate "The bank's daily .xlsx export (columns Дата, Счет/ИНН, № док, Оборот Дебет, Оборот Кредит, Назначение платежа). Lines already recorded are skipped, and known counterparties are classified automatically." %}
+          </p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {# Quick entry #}
+  {% if perms.cashbook.add_operation %}
+  <div class="collapse{% if entry_open %} show{% endif %}" id="entry">
+    <div class="card mb-3">
+      <div class="card-body py-3 px-4">
+        <form method="post" novalidate data-operation-form class="form-compact">
+          {% csrf_token %}
+          {% translate "New operation" as entry_title %}
+          {% include "cashbook/_operation_fields.html" with form=entry_form compact=True title=entry_title submit_label=_("Add") %}
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# Filters #}
+  <div class="collapse{% if filters_open %} show{% endif %}" id="panel-filters">
+    <div class="card mb-3">
+      <div class="card-body py-3 px-4">
+        <form method="get" class="row g-2 align-items-end form-compact">
+          {% for error in filter_form.non_field_errors %}
+            <div class="col-12"><div class="alert alert-danger py-2 mb-0" role="alert">{{ error }}</div></div>
+          {% endfor %}
+          <div class="col-6 col-md-3 col-xl-auto">{% include "forms/_field.html" with field=filter_form.date_from %}</div>
+          <div class="col-6 col-md-3 col-xl-auto">{% include "forms/_field.html" with field=filter_form.date_to %}</div>
+          <div class="col-6 col-md-3 col-xl-auto">{% include "forms/_field.html" with field=filter_form.kind %}</div>
+          <div class="col-6 col-md-3 col-xl-2">{% include "forms/_field.html" with field=filter_form.article %}</div>
+          {% if filter_form.show_account %}
+            <div class="col-6 col-md-3 col-xl-auto">{% include "forms/_field.html" with field=filter_form.account %}</div>
+          {% endif %}
+          {% if filter_form.region %}
+            <div class="col-6 col-md-3 col-xl-auto">{% include "forms/_field.html" with field=filter_form.region %}</div>
+          {% endif %}
+          <div class="col-6 col-md-3 col-xl">{% include "forms/_field.html" with field=filter_form.q %}</div>
+          <div class="col-12 col-md-auto d-flex gap-2 mb-2">
+            <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+            <a href="{{ desk.get_absolute_url }}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# Ledger, laid out like the workbook. Column groups collapse like Excel's outline (+ / −), see js/cashbook.js. #}
+  {% translate "Article" as article_label %}
+  {% translate "Income" context "ledger" as income_label %}
+  {% translate "Expense" context "ledger" as expense_label %}
+  {% translate "Balance" context "ledger" as balance_label %}
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 ledger-table" data-ledger>
+          <thead>
+            <tr>
+              {% include "cashbook/_group_header.html" with group="article" label=article_label %}
+              {% if desk.is_bank %}
+                <th rowspan="2">{% translate "Counterparty" %}</th>
+                <th rowspan="2">{% translate "Region" %}</th>
+                <th rowspan="2">{% translate "Date" %}</th>
+                <th rowspan="2">{% translate "Doc. no." %}</th>
+                <th rowspan="2">{% translate "Payment purpose" %}</th>
+              {% else %}
+                <th rowspan="2">{% translate "Category" %}</th>
+                <th rowspan="2">{% translate "Date" %}</th>
+                <th rowspan="2">{% translate "Note" %}</th>
+              {% endif %}
+              <th rowspan="2">{% translate "Status" %}</th>
+              {% include "cashbook/_group_header.html" with group="income" label=income_label span=accounts|length %}
+              {% include "cashbook/_group_header.html" with group="expense" label=expense_label span=accounts|length %}
+              {% include "cashbook/_group_header.html" with group="balance" label=balance_label span=accounts|length %}
+              <th rowspan="2"><span class="visually-hidden">{% translate "Actions" %}</span></th>
+            </tr>
+            <tr>
+              {% for account in accounts %}<th class="num ledger-income g-income">{{ account.short }}</th>{% endfor %}
+              {% for account in accounts %}<th class="num ledger-expense g-expense">{{ account.short }}</th>{% endfor %}
+              {% for account in accounts %}<th class="num ledger-balance g-balance">{{ account.short }}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="ledger-opening fw-semibold">
+              <td class="g-article"></td><td class="gp-article"></td>
+              <td colspan="{% if desk.is_bank %}6{% else %}4{% endif %}">
+                {% if page.number == 1 %}
+                  {% blocktranslate with date=filters.date_from|date:"SHORT_DATE_FORMAT" %}Opening balance on {{ date }}{% endblocktranslate %}
+                {% else %}
+                  {% translate "Balance carried over from the previous page" %}
+                {% endif %}
+              </td>
+              {% include "cashbook/_amount_cells.html" with group="income" values=None %}
+              {% include "cashbook/_amount_cells.html" with group="expense" values=None %}
+              {% include "cashbook/_amount_cells.html" with group="balance" values=page_opening %}
+              <td></td>
+            </tr>
+            {% for row in page.object_list %}
+              {% with op=row.operation %}
+                <tr{% if op.is_cancelled %} class="ledger-cancelled"{% endif %}>
+                  <td class="g-article">{{ op.category.article.name }}</td><td class="gp-article"></td>
+                  {% if desk.is_bank %}
+                    <td class="ledger-counterparty">
+                      {% if op.counterparty %}
+                        {% if perms.cashbook.change_counterparty %}
+                          <a href="{% url 'cashbook:counterparty_edit' op.counterparty.pk %}?next={{ request.get_full_path|urlencode }}" class="text-reset">{{ op.counterparty.name }}</a>
+                        {% else %}
+                          {{ op.counterparty.name }}
+                        {% endif %}
+                        {% if op.counterparty.inn %}<span class="d-block fs-1 text-muted">{{ op.counterparty.inn }}</span>{% endif %}
+                      {% endif %}
+                    </td>
+                    <td>{{ op.counterparty.region|default:"" }}</td>
+                    <td class="num">{{ op.date|date:"SHORT_DATE_FORMAT" }}</td>
+                    <td class="num">{{ op.document_number }}</td>
+                    <td class="ledger-note"><div class="ledger-clamp" title="{{ op.note }}">{{ op.note|truncatechars:140 }}</div></td>
+                  {% else %}
+                    <td>{{ op.category.name }}</td>
+                    <td class="num">{{ op.date|date:"SHORT_DATE_FORMAT" }}</td>
+                    <td class="ledger-note">{{ op.note }}</td>
+                  {% endif %}
+                  <td class="ledger-status">
+                    {% if op.is_cancelled %}
+                      <span class="badge bg-secondary-subtle text-secondary">{% translate "Cancelled" %}</span>
+                    {% else %}
+                      <span class="badge {% if op.kind == 'income' %}bg-success-subtle text-success{% elif op.kind == 'expense' %}bg-danger-subtle text-danger{% else %}bg-primary-subtle text-primary{% endif %}">{{ op.get_kind_display }}</span>
+                    {% endif %}
+                  </td>
+                  {% include "cashbook/_amount_cells.html" with group="income" values=row.income %}
+                  {% include "cashbook/_amount_cells.html" with group="expense" values=row.expense %}
+                  {% include "cashbook/_amount_cells.html" with group="balance" values=row.balance %}
+                  <td class="text-end">
+                    {% if perms.cashbook.change_operation %}
+                    <div class="d-flex gap-1 justify-content-end">
+                      <a href="{% url 'cashbook:operation_edit' desk=desk.slug pk=op.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}">
+                        <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                      </a>
+                      <form method="post" action="{% url 'cashbook:operation_cancel' desk=desk.slug pk=op.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        {% if op.is_cancelled %}
+                          <button type="submit" class="btn btn-sm bg-success-subtle text-success ledger-action" title="{% translate "Restore" %}" aria-label="{% translate "Restore" %}">
+                            <iconify-icon icon="solar:restart-line-duotone"></iconify-icon>
+                          </button>
+                        {% else %}
+                          <button type="submit" class="btn btn-sm bg-danger-subtle text-danger ledger-action" title="{% translate "Cancel operation" %}" aria-label="{% translate "Cancel operation" %}"
+                                  data-confirm="{% translate "Cancel this operation? It will stay in the list but no longer count towards the balance." %}">
+                            <iconify-icon icon="solar:close-circle-line-duotone"></iconify-icon>
+                          </button>
+                        {% endif %}
+                      </form>
+                    </div>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endwith %}
+            {% empty %}
+              <tr>
+                <td colspan="25" class="text-center text-muted py-6">{% translate "No operations for this period." %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="fw-semibold">
+              <td class="g-article"></td><td class="gp-article"></td>
+              <td colspan="{% if desk.is_bank %}6{% else %}4{% endif %}">{% translate "Total for the period" %}</td>
+              {% include "cashbook/_amount_cells.html" with group="income" values=ledger.income_total %}
+              {% include "cashbook/_amount_cells.html" with group="expense" values=ledger.expense_total %}
+              {% include "cashbook/_amount_cells.html" with group="balance" values=ledger.closing %}
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {% if page.paginator.count %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-4 py-3 border-top">
+          <span class="text-muted fs-2">
+            {% blocktranslate with start=page.start_index end=page.end_index total=page.paginator.count %}Rows {{ start }}–{{ end }} of {{ total }}{% endblocktranslate %}
+          </span>
+          {% if page.has_other_pages %}
+            <nav aria-label="{% translate "Pages" %}">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item{% if not page.has_previous %} disabled{% endif %}">
+                  <a class="page-link" href="{% if page.has_previous %}{% querystring page=page.previous_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Previous page" %}">‹</a>
+                </li>
+                {% for number in page_range %}
+                  {% if number == page.paginator.ELLIPSIS %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                  {% elif number == page.number %}
+                    <li class="page-item active" aria-current="page"><span class="page-link">{{ number }}</span></li>
+                  {% else %}
+                    <li class="page-item"><a class="page-link" href="{% querystring page=number %}">{{ number }}</a></li>
+                  {% endif %}
+                {% endfor %}
+                <li class="page-item{% if not page.has_next %} disabled{% endif %}">
+                  <a class="page-link" href="{% if page.has_next %}{% querystring page=page.next_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Next page" %}">›</a>
+                </li>
+              </ul>
+            </nav>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block scripts %}
+  {# jQuery (the theme's vendor bundle) and Select2: searchable counterparty and article lists #}
+  <script src="{% static 'matdash/js/vendor.min.js' %}"></script>
+  <script src="{% static 'matdash/libs/select2/dist/js/select2.min.js' %}"></script>
+  <script src="{% static 'matdash/libs/select2/dist/js/i18n/ru.js' %}"></script>
+  <script src="{% static 'js/cashbook.js' %}"></script>
+{% endblock %}

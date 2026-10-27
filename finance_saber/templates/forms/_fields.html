@@ -1,0 +1,12 @@
+{% comment %}
+  Renders a form's errors and fields in the MatDash style.
+  Usage: {% include "forms/_fields.html" %}   (uses the "form" context variable)
+  Widgets get their Bootstrap classes from finance_saber.core.forms.BootstrapFormMixin.
+{% endcomment %}
+{% for error in form.non_field_errors %}
+  <div class="alert alert-danger" role="alert">{{ error }}</div>
+{% endfor %}
+{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+{% for field in form.visible_fields %}
+  {% include "forms/_field.html" %}
+{% endfor %}

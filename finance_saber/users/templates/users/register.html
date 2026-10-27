@@ -1,0 +1,24 @@
+{% extends "layouts/auth.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Sign Up" %}{% endblock %}
+{% block heading %}{% translate "Sign Up" %}{% endblock %}
+{% block subheading %}{% blocktranslate with site=company_name %}Create your {{ site }} account{% endblocktranslate %}{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "forms/_fields.html" %}
+    {% if telegram_bot_url %}
+      <div class="alert alert-info py-2 fs-2" role="note">
+        {% blocktranslate with bot=telegram_bot %}After signing up, open @{{ bot }} in Telegram and press Start: password reset codes come from this bot.{% endblocktranslate %}
+        <a href="{{ telegram_bot_url }}" target="_blank" rel="noopener" class="fw-semibold">@{{ telegram_bot }}</a>
+      </div>
+    {% endif %}
+    <button type="submit" class="btn btn-primary w-100 py-8 mb-4 rounded-2">{% translate "Sign Up" %}</button>
+    <div class="d-flex align-items-center">
+      <p class="fs-4 mb-0 text-dark">{% translate "Already have an account?" %}</p>
+      <a class="text-primary fw-medium ms-2" href="{% url 'users:login' %}">{% translate "Sign In" %}</a>
+    </div>
+  </form>
+{% endblock %}

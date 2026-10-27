@@ -1,0 +1,64 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Administration" as section %}
+  {% include "partials/_page_header.html" with title=title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    {# The user's details, role and access #}
+    <div class="col-xl-7">
+      <div class="card">
+        <div class="card-body p-4">
+          <form method="post" novalidate class="form-compact">
+            {% csrf_token %}
+            {% include "forms/_fields.html" with form=form %}
+            <div class="d-flex flex-wrap gap-2">
+              <button type="submit" class="btn btn-primary">{% if person %}{% translate "Save Changes" %}{% else %}{% translate "Create user" %}{% endif %}</button>
+              <a href="{% url 'users:list' %}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-5">
+      {% if password_form %}
+        {# A new password, for someone who lost theirs and has no Telegram linked #}
+        <div class="card">
+          <div class="px-4 py-3 border-bottom">
+            <h5 class="card-title mb-0">{% translate "Set a new password" %}</h5>
+          </div>
+          <div class="card-body p-4">
+            <form method="post" novalidate class="form-compact">
+              {% csrf_token %}
+              <input type="hidden" name="set_password" value="1">
+              {% include "forms/_fields.html" with form=password_form %}
+              <button type="submit" class="btn bg-warning-subtle text-warning">{% translate "Set password" %}</button>
+            </form>
+            <p class="text-muted fs-2 mb-0 mt-3">
+              {% translate "Only when the user can't reset it themselves with a Telegram code. Tell them the new password; they can change it in their profile." %}
+            </p>
+          </div>
+        </div>
+        <div class="card bg-body-tertiary shadow-none">
+          <div class="card-body p-4 text-muted fs-2">
+            {% translate "Joined" %}: {{ person.date_joined|date:"d.m.Y" }} ·
+            {% translate "Last sign-in" %}: {{ person.last_login|date:"d.m.Y H:i"|default:"—" }}
+            {% if person.telegram_chat_id %} · {% translate "Telegram linked" %}{% endif %}
+          </div>
+        </div>
+      {% endif %}
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-2">{% translate "A user has one role. Records are never deleted with a user: untick “Can sign in” instead, so the history keeps its authors." %}</p>
+          <a href="{% url 'users:roles' %}">{% translate "What each role can do" %} →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

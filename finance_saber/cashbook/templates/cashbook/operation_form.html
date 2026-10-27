@@ -1,0 +1,42 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Edit operation" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Edit operation" as page_title %}
+  {% include "partials/_page_header.html" with title=page_title section=desk.name %}
+{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="card-body p-4">
+      {% if object.is_cancelled %}
+        <div class="alert alert-warning" role="alert">{% translate "This operation is cancelled and doesn't count towards the balance." %}</div>
+      {% endif %}
+      <form method="post" novalidate data-operation-form>
+        {% csrf_token %}
+        {% include "cashbook/_operation_fields.html" %}
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary">{% translate "Save Changes" %}</button>
+          <a href="{{ back_url }}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+        </div>
+      </form>
+      <p class="text-muted fs-2 mt-4 mb-0">
+        {% blocktranslate with created=object.created_at|date:"DATETIME_FORMAT" author=object.created_by|default:"—" %}Created {{ created }} by {{ author }}.{% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block scripts %}
+  {# jQuery (the theme's vendor bundle) and Select2: searchable counterparty and article lists #}
+  <script src="{% static 'matdash/js/vendor.min.js' %}"></script>
+  <script src="{% static 'matdash/libs/select2/dist/js/select2.min.js' %}"></script>
+  <script src="{% static 'matdash/libs/select2/dist/js/i18n/ru.js' %}"></script>
+  <script src="{% static 'js/cashbook.js' %}"></script>
+{% endblock %}

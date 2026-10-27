@@ -1,0 +1,76 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Finished goods" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Finished goods" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="d-flex flex-wrap align-items-center gap-2 form-compact">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" style="max-width: 260px" placeholder="{% translate "Search by name" %}" aria-label="{% translate "Search" %}">
+        <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+        {% if request.GET.q %}<a href="{% url 'production:products' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>{% endif %}
+        {% if perms.production.add_productmove %}
+        <span class="ms-auto d-flex flex-wrap gap-2">
+          <a href="{% url 'production:shipment' %}" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:delivery-line-duotone"></iconify-icon> {% translate "Shipment" %}
+          </a>
+          <a href="{% url 'production:stock_count' 'product' %}" class="btn btn-sm bg-warning-subtle text-warning">
+            <iconify-icon icon="solar:checklist-minimalistic-line-duotone"></iconify-icon> {% translate "Stock count" %}
+          </a>
+        </span>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Product" %}</th>
+            <th class="num">{% translate "Volume, l" %}</th>
+            <th class="num">{% translate "Produced this month" %}</th>
+            <th class="num">{% translate "Shipped this month" %}</th>
+            <th class="num">{% translate "Stock, units" %}</th>
+            <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>
+                {{ row.product.name }}
+                {% if row.product.sales_name %}<span class="d-block fs-1 text-muted">{{ row.product.sales_name }}</span>{% endif %}
+              </td>
+              <td class="num text-muted">{{ row.product.volume|floatformat:"-3" }}</td>
+              <td class="num">{% if row.produced %}{{ row.produced|floatformat:"0g" }}{% endif %}</td>
+              <td class="num">{% if row.shipped %}{{ row.shipped|floatformat:"0g" }}{% endif %}</td>
+              <td class="num fw-semibold{% if row.stock < 0 %} text-danger{% endif %}">{{ row.stock|floatformat:"0g" }}</td>
+              <td class="text-end text-nowrap">
+                <a href="{% url 'production:moves' %}?target=products&item={{ row.product.pk }}" class="btn btn-sm bg-secondary-subtle text-secondary ledger-action" title="{% translate "Movements" %}" aria-label="{% translate "Movements" %}">
+                  <iconify-icon icon="solar:history-line-duotone"></iconify-icon>
+                </a>
+                {% if perms.production.add_productmove %}
+                <a href="{% url 'production:stock_count' 'product' %}?item={{ row.product.pk }}" class="btn btn-sm bg-warning-subtle text-warning ledger-action" title="{% translate "Stock count" %}" aria-label="{% translate "Stock count" %}">
+                  <iconify-icon icon="solar:checklist-minimalistic-line-duotone"></iconify-icon>
+                </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No products found." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/_pagination.html" %}
+  </div>
+{% endblock %}

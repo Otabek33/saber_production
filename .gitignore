@@ -1,0 +1,67 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+.hypothesis/
+.pytest_cache/
+
+# Environments
+.env/*
+!.env/*.env.example
+.envrc
+.venv
+
+# uv
+#   Generally recommended to include uv.lock in version control for
+#   reproducibility. Uncomment for libraries where you want consumers
+#   to resolve their own dependencies.
+# uv.lock
+
+# Ruff
+.ruff_cache/
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Documentation build output
+site/
+
+# IDE files
+# .idea/
+# .vscode/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+*.log
+
+# One-off handbook exports (manage.py export_handbooks <path>) at the project root.
+# The project's own handbook files live in finance_saber/cashbook/seed/ and are committed:
+# they hold real counterparties, so the repository must stay private.
+/seed/

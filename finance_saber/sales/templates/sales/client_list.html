@@ -1,0 +1,65 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Clients" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Clients" as page_title %}
+  {% translate "Sales" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="d-flex flex-wrap align-items-center gap-2 form-compact">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" style="max-width: 280px" placeholder="{% translate "Client or payer" %}" aria-label="{% translate "Search" %}">
+        <select name="status" class="form-select form-select-sm" style="max-width: 220px" aria-label="{% translate "Status" %}">
+          <option value="">{% translate "All" %}</option>
+          <option value="unlinked"{% if request.GET.status == "unlinked" %} selected{% endif %}>{% translate "No bank payer" %}</option>
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+        {% if request.GET.q or request.GET.status %}<a href="{% url 'sales:clients' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>{% endif %}
+        <span class="ms-auto text-muted fs-2">{% translate "Clients are added with their first sale, by hand or from SmartUp." %}</span>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Client" %}</th>
+            <th>{% translate "Bank payer" %}</th>
+            <th>{% translate "Region" %}</th>
+            <th class="num">{% translate "Lines" %}</th>
+            <th class="num">{% translate "Shipped" %}</th>
+            <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for client in clients %}
+            <tr{% if not client.is_active %} class="opacity-50"{% endif %}>
+              <td><a href="{% url 'sales:statement' 'client' client.pk %}" class="text-reset">{{ client.name }}</a></td>
+              <td>{% if client.payer %}{{ client.payer.name }}{% else %}<span class="badge bg-warning-subtle text-warning">{% translate "No bank payer" %}</span>{% endif %}</td>
+              <td class="text-muted">{{ client.region|default:"" }}</td>
+              <td class="num">{{ client.lines }}</td>
+              <td class="num">{{ client.shipped|default:0|floatformat:"2g" }}</td>
+              <td class="text-end">
+                {% if perms.sales.change_client %}
+                  <a href="{% url 'sales:client_edit' client.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}">
+                    <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No clients found." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/_pagination.html" %}
+  </div>
+{% endblock %}

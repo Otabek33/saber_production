@@ -1,0 +1,14 @@
+{% load i18n %}
+{% comment %}
+  First header row of a collapsible ledger column group: the expanded header (with −)
+  and the narrow header shown when collapsed (with +). See js/cashbook.js.
+  Usage: {% include "cashbook/_group_header.html" with group="income" label=... span=3 %}
+{% endcomment %}
+<th {% if span %}colspan="{{ span }}"{% else %}rowspan="2"{% endif %} class="ledger-{{ group }} g-{{ group }}{% if span %} text-center{% endif %}">
+  {{ label }}
+  <button type="button" class="ledger-toggle" data-ledger-toggle="{{ group }}" title="{% translate "Hide group" %}" aria-label="{% translate "Hide group" %}: {{ label }}">−</button>
+</th>
+<th rowspan="2" class="ledger-{{ group }} gp-{{ group }}">
+  <button type="button" class="ledger-toggle" data-ledger-toggle="{{ group }}" title="{% translate "Show group" %}" aria-label="{% translate "Show group" %}: {{ label }}">+</button>
+  <span class="ledger-collapsed-label">{{ label }}</span>
+</th>

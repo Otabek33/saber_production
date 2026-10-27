@@ -1,0 +1,107 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Users" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Users" as page_title %}
+  {% translate "Administration" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-xl-9">
+      <div class="card mb-3">
+        <div class="card-body py-3 px-4">
+          <form method="get" class="d-flex flex-wrap align-items-center gap-2 form-compact">
+            <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" style="max-width: 280px" placeholder="{% translate "Name, username or email" %}" aria-label="{% translate "Search" %}">
+            <select name="role" class="form-select form-select-sm" style="max-width: 200px" aria-label="{% translate "Role" %}">
+              <option value="">{% translate "All roles" %}</option>
+              {% for value, label in role_filter %}
+                <option value="{{ value }}"{% if request.GET.role == value %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+            {% if request.GET.q or request.GET.role %}<a href="{% url 'users:list' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>{% endif %}
+            {% if perms.users.add_user %}
+              <a href="{% url 'users:add' %}" class="btn btn-sm bg-success-subtle text-success ms-auto">
+                <iconify-icon icon="solar:user-plus-line-duotone"></iconify-icon> {% translate "New user" %}
+              </a>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "User" %}</th>
+                <th>{% translate "Last sign-in" %}</th>
+                <th style="width: 220px">{% translate "Role" %}</th>
+                <th class="text-center">{% translate "Can sign in" %}</th>
+                <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                <tr{% if not row.user.is_active %} class="opacity-50"{% endif %}>
+                  <td>
+                    <a href="{% url 'users:edit' row.user.pk %}" class="fw-semibold">{{ row.user.get_full_name|default:row.user.username }}</a>
+                    <span class="d-block fs-1 text-muted">{{ row.user.username }}{% if row.user.email %} · {{ row.user.email }}{% endif %}</span>
+                  </td>
+                  <td class="text-muted text-nowrap">{{ row.user.last_login|date:"d.m.Y H:i"|default:"—" }}</td>
+                  {% if row.user == user %}
+                    <td><span class="badge bg-primary-subtle text-primary">{{ row.role }}</span></td>
+                    <td class="text-center">✓</td>
+                    <td class="text-end text-nowrap">
+                      <span class="text-muted fs-1 me-2">{% translate "That's you" %}</span>
+                      <a href="{% url 'users:edit' row.user.pk %}" class="btn btn-sm bg-primary-subtle text-primary" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}"><iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon></a>
+                    </td>
+                  {% else %}
+                    <td>
+                      <select name="{{ row.form.role.html_name }}" form="access-{{ row.user.pk }}" class="form-select form-select-sm" aria-label="{% translate "Role" %}">
+                        {% for value, label in row.form.role.field.choices %}
+                          <option value="{{ value }}"{% if row.form.role.value == value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td class="text-center">
+                      <input type="checkbox" name="{{ row.form.is_active.html_name }}" form="access-{{ row.user.pk }}" class="form-check-input" aria-label="{% translate "Can sign in" %}"{% if row.form.is_active.value %} checked{% endif %}>
+                    </td>
+                    <td class="text-end">
+                      <form method="post" action="{% url 'users:access' row.user.pk %}" id="access-{{ row.user.pk }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button type="submit" class="btn btn-sm btn-primary">{% translate "Save" %}</button>
+                        <a href="{% url 'users:edit' row.user.pk %}" class="btn btn-sm bg-primary-subtle text-primary" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}"><iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon></a>
+                      </form>
+                    </td>
+                  {% endif %}
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-6">{% translate "No users found." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% include "partials/_pagination.html" %}
+      </div>
+    </div>
+
+    {# What each role can do #}
+    <div class="col-xl-3">
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          {% for label, description in descriptions %}
+            <h6 class="mb-1">{{ label }}</h6>
+            <p class="fs-2 mb-3">{{ description }}</p>
+          {% endfor %}
+          <a href="{% url 'users:roles' %}">{% translate "Roles and permissions, section by section" %} →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

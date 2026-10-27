@@ -1,0 +1,322 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Dashboard" %}{% endblock %}
+
+{% block content %}
+  {% if not user_role %}
+    <div class="alert alert-warning d-flex align-items-center gap-3" role="alert">
+      <iconify-icon icon="solar:shield-user-line-duotone" class="fs-8"></iconify-icon>
+      <div>
+        <strong>{% translate "Your account is waiting for a role." %}</strong>
+        {% translate "An administrator will give you access to the sections you need. Until then, the data is hidden." %}
+      </div>
+    </div>
+  {% else %}
+
+  {# Period: presets or any dates; every figure below follows it #}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <h4 class="card-title mb-0 me-2">{% translate "Dashboard" %}</h4>
+        <ul class="nav nav-pills gap-1">
+          {% for key, label in presets.items %}
+            <li class="nav-item"><a class="nav-link py-1 px-3{% if period.preset == key %} active{% endif %}" href="?period={{ key }}">{{ label }}</a></li>
+          {% endfor %}
+        </ul>
+        <form method="get" class="d-flex flex-wrap align-items-center gap-2 ms-auto form-compact">
+          <input type="date" name="from" value="{{ period.date_from.isoformat }}" class="form-control form-control-sm w-auto" aria-label="{% translate "From" %}">
+          <span class="text-muted">—</span>
+          <input type="date" name="to" value="{{ period.date_to.isoformat }}" class="form-control form-control-sm w-auto" aria-label="{% translate "To" %}">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+        </form>
+      </div>
+      <div class="text-muted fs-2 mt-2">
+        {{ period.date_from|date:"j E Y" }} — {{ period.date_to|date:"j E Y" }}
+        {% if rate %} · {% blocktranslate with rate=rate|floatformat:"2g" %}USD rate {{ rate }}{% endblocktranslate %}{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Headline figures: the money cards split into cash desks, card and bank #}
+  <div class="row">
+    {% if money %}
+      {% with inflow=cash_flow.totals.income outflow=cash_flow.totals.expense %}
+      {% translate "Money at the end" as end_label %}
+      {% translate "USD cash counted at the rate" as end_note %}
+      {% include "core/_kpi.html" with label=end_label note=end_note icon="solar:wallet-money-line-duotone" tone="primary" value=money.total_uzs|floatformat:"0g" unit="UZS" channels=money.channels %}
+
+      {% translate "Money in" as in_label %}
+      {% if inflow.plan %}{% blocktranslate with plan=inflow.plan|floatformat:"0g" asvar in_note %}Plan {{ plan }}{% endblocktranslate %}{% else %}{% translate "No plan for the period" as in_note %}{% endif %}
+      {% include "core/_kpi.html" with label=in_label note=in_note icon="solar:arrow-down-line-duotone" tone="success" value=inflow.total|floatformat:"0g" unit="UZS" progress=inflow.percent channels=inflow.channels %}
+
+      {% translate "Money out" as out_label %}
+      {% if outflow.plan %}{% blocktranslate with plan=outflow.plan|floatformat:"0g" asvar out_note %}Plan {{ plan }}{% endblocktranslate %}{% else %}{% translate "No plan for the period" as out_note %}{% endif %}
+      {% include "core/_kpi.html" with label=out_label note=out_note icon="solar:arrow-up-line-duotone" tone="danger" value=outflow.total|floatformat:"0g" unit="UZS" channels=outflow.channels %}
+
+      {% translate "Net cash flow" as net_label %}
+      {% translate "Money in minus money out" as net_note %}
+      {% include "core/_kpi.html" with label=net_label note=net_note icon="solar:chart-2-line-duotone" tone=net_tone value=cash_flow.net|floatformat:"0g" unit="UZS" negative=net_negative channels=cash_flow.net_channels signed=True %}
+      {% endwith %}
+    {% endif %}
+    {% if sales %}
+      {% translate "Shipped" as shipped_label %}
+      {% blocktranslate with units=sales.quantity|floatformat:"0g" clients=sales.clients asvar shipped_note %}{{ units }} units to {{ clients }} clients{% endblocktranslate %}
+      {% include "core/_kpi.html" with label=shipped_label note=shipped_note icon="solar:bag-check-line-duotone" tone="info" value=sales.amount|floatformat:"0g" unit="UZS" %}
+    {% endif %}
+    {% if debts %}
+      {% translate "Owed to us" as owed_label %}
+      {% blocktranslate with amount=debts.payable|floatformat:"0g" asvar owed_note %}Paid in advance: {{ amount }}{% endblocktranslate %}
+      {% include "core/_kpi.html" with label=owed_label note=owed_note icon="solar:hand-money-line-duotone" tone="warning" value=debts.receivable|floatformat:"0g" unit="UZS" %}
+    {% endif %}
+    {% if products.totals.sales %}
+      {% blocktranslate with month=products.month|date:"F" asvar plan_label %}Sales plan, {{ month }}{% endblocktranslate %}
+      {% blocktranslate with progress=products.month_progress asvar month_note %}{{ progress }}% of the month gone{% endblocktranslate %}
+      {% include "core/_kpi.html" with label=plan_label note=products.totals.sales.fact|floatformat:"0g" icon="solar:target-line-duotone" tone="info" value=products.totals.sales.percent|default:0 unit="%" progress=products.totals.sales.percent progress_label=month_note %}
+    {% endif %}
+  </div>
+
+  {% if chart %}
+    <div class="row">
+      {# Money in and out by day #}
+      <div class="col-xl-8">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% if chart.monthly %}{% translate "Money in and out by month" %}{% else %}{% translate "Money in and out by day" %}{% endif %}</h5></div>
+          <div class="card-body px-3 py-2"><div id="cash-chart" style="min-height: 300px"></div></div>
+        </div>
+      </div>
+      {# Accounts #}
+      <div class="col-xl-4">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Accounts" %}</h5></div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead><tr><th>{% translate "Account" %}</th><th class="num">{% translate "Start" %}</th><th class="num">{% translate "End" %}</th></tr></thead>
+              <tbody>
+                {% for row in accounts %}
+                  <tr title="{% translate "In" %} {{ row.in|floatformat:'0g' }} · {% translate "Out" %} {{ row.out|floatformat:'0g' }}">
+                    <td>
+                      <a href="{{ row.desk.get_absolute_url }}?date_from={{ period.date_from.isoformat }}&date_to={{ period.date_to.isoformat }}" class="text-reset">{{ row.label }}</a>
+                      <span class="d-block fs-1"><span class="text-success">+{{ row.in|floatformat:"0g" }}</span> <span class="text-danger">−{{ row.out|floatformat:"0g" }}</span></span>
+                    </td>
+                    <td class="num text-muted">{{ row.opening|floatformat:"0g" }}</td>
+                    <td class="num fw-semibold {% if row.closing < 0 %}text-danger{% endif %}">{{ row.closing|floatformat:"0g" }} <span class="fs-1 text-muted">{{ row.currency }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if cash_flow %}
+    {# Cash flow statement (the "Сash flow" sheet) #}
+    <div class="card">
+      <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center gap-2">
+        <h5 class="card-title mb-0">{% translate "Cash flow by article" %}</h5>
+        {% if perms.planning.view_cashplan %}<a href="{% url 'planning:cash' %}?date={{ period.date_to.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "Cash plan" %}</a>{% endif %}
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+          <thead>
+            <tr>
+              <th>{% translate "Article" %}</th>
+              <th class="num">{% translate "Plan" %}</th>
+              {% for account, label in cash_flow.accounts %}<th class="num">{{ label }}</th>{% endfor %}
+              <th class="num">{% translate "Total, UZS" %}</th>
+              <th class="num">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="ledger-opening"><td colspan="{{ cash_flow.accounts|length|add:4 }}" class="fw-semibold">{% translate "Money in" %}</td></tr>
+            {% for row in cash_flow.income %}{% include "core/_cash_flow_row.html" %}{% empty %}<tr><td colspan="{{ cash_flow.accounts|length|add:4 }}" class="text-muted">—</td></tr>{% endfor %}
+            {% include "core/_cash_flow_row.html" with row=cash_flow.totals.income total_row=True label=_("Total money in") %}
+            <tr class="ledger-opening"><td colspan="{{ cash_flow.accounts|length|add:4 }}" class="fw-semibold">{% translate "Money out" %}</td></tr>
+            {% for row in cash_flow.expense %}{% include "core/_cash_flow_row.html" %}{% empty %}<tr><td colspan="{{ cash_flow.accounts|length|add:4 }}" class="text-muted">—</td></tr>{% endfor %}
+            {% include "core/_cash_flow_row.html" with row=cash_flow.totals.expense total_row=True label=_("Total money out") %}
+          </tbody>
+          <tfoot>
+            <tr class="fw-semibold">
+              <td>{% translate "Net cash flow" %}</td>
+              <td class="num">{{ cash_flow.net_plan|floatformat:"0g" }}</td>
+              {% for account in cash_flow.accounts %}<td></td>{% endfor %}
+              <td class="num {% if cash_flow.net < 0 %}text-danger{% else %}text-success{% endif %}">{{ cash_flow.net|floatformat:"0g" }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="px-4 py-2 border-top text-muted fs-2">{% translate "Cash desks and bank. Transfers between accounts, opening balances and corrections are left out; the USD column is in USD and counted in the total at the rate." %}</div>
+    </div>
+  {% endif %}
+
+  <div class="row">
+    {% if week %}
+      {# This week: plan against fact (the "1-week" sheet) #}
+      <div class="col-xl-6">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">{% blocktranslate with start=week.days.0.date|date:"d.m" end=week.days.6.date|date:"d.m" %}Week {{ start }}–{{ end }}: plan and fact{% endblocktranslate %}</h5>
+            <a href="{% url 'planning:cash' %}?date={{ period.date_to.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "Open" %}</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead><tr><th>{% translate "Day" %}</th><th class="num">{% translate "In: plan" %}</th><th class="num">{% translate "In: fact" %}</th><th class="num">{% translate "Out: plan" %}</th><th class="num">{% translate "Out: fact" %}</th></tr></thead>
+              <tbody>
+                {% for day in week.days %}
+                  <tr{% if day.date == period.date_to %} class="table-active"{% endif %}>
+                    <td>{{ day.date|date:"D d.m" }}</td>
+                    <td class="num text-muted">{{ day.income.plan|floatformat:"0g" }}</td>
+                    <td class="num text-success">{{ day.income.fact|floatformat:"0g" }}</td>
+                    <td class="num text-muted">{{ day.expense.plan|floatformat:"0g" }}</td>
+                    <td class="num text-danger">{{ day.expense.fact|floatformat:"0g" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr class="fw-semibold">
+                  <td>{% translate "Total" %}</td>
+                  <td class="num">{{ week.income.plan|floatformat:"0g" }}</td>
+                  <td class="num">{{ week.income.fact|floatformat:"0g" }}</td>
+                  <td class="num">{{ week.expense.plan|floatformat:"0g" }}</td>
+                  <td class="num">{{ week.expense.fact|floatformat:"0g" }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    {% if collections %}
+      {# Collections by region (the "Sells plan" sheet) #}
+      <div class="col-xl-6">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">{% translate "Collections by region" %}</h5>
+            <a href="{% url 'planning:collections' %}?date={{ period.date_to.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "Open" %}</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead><tr><th>{% translate "Region" %}</th><th class="num">{% translate "Plan" %}</th><th class="num">{% translate "Received" %}</th><th class="num">%</th></tr></thead>
+              <tbody>
+                {% for row in collections.rows %}
+                  <tr>
+                    <td>{{ row.region.name }}{% if row.region.manager %} <span class="fs-1 text-muted">{{ row.region.manager }}</span>{% endif %}</td>
+                    <td class="num text-muted">{{ row.plan|floatformat:"0g" }}</td>
+                    <td class="num">{{ row.fact|floatformat:"0g" }}</td>
+                    <td class="num">{% if row.percent is not None %}{{ row.percent }}%{% endif %}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted py-4">{% translate "No collections or plans in this period." %}</td></tr>
+                {% endfor %}
+              </tbody>
+              {% if collections.rows %}
+                <tfoot><tr class="fw-semibold"><td>{% translate "Total" %}</td><td class="num">{{ collections.plan|floatformat:"0g" }}</td><td class="num">{{ collections.fact|floatformat:"0g" }}</td><td class="num">{% if collections.percent is not None %}{{ collections.percent }}%{% endif %}</td></tr></tfoot>
+              {% endif %}
+            </table>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="row">
+    {% if products %}
+      {# The month's production and sales against plan (SWOT, right-hand side) #}
+      <div class="col-xl-8">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% blocktranslate with month=products.month|date:"F Y" date=period.date_to|date:"d.m" %}{{ month }}: plan and fact to {{ date }}{% endblocktranslate %}</h5></div>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+              <thead>
+                <tr>
+                  <th>{% translate "Product" %}</th>
+                  {% if products.totals.production %}<th class="num">{% translate "Production plan" %}</th><th class="num">{% translate "Produced" %}</th><th class="num">%</th>{% endif %}
+                  {% if products.totals.sales %}<th class="num">{% translate "Sales plan" %}</th><th class="num">{% translate "Sold" %}</th><th class="num">%</th>{% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in products.rows %}
+                  <tr>
+                    <td>{{ row.product.name }}</td>
+                    {% if products.totals.production %}{% include "core/_plan_cells.html" with part=row.production %}{% endif %}
+                    {% if products.totals.sales %}{% include "core/_plan_cells.html" with part=row.sales %}{% endif %}
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="7" class="text-center text-muted py-4">{% translate "No plan or fact for this month." %}</td></tr>
+                {% endfor %}
+              </tbody>
+              {% if products.rows %}
+                <tfoot>
+                  <tr class="fw-semibold">
+                    <td>{% translate "Total" %}</td>
+                    {% if products.totals.production %}{% include "core/_plan_cells.html" with part=products.totals.production %}{% endif %}
+                    {% if products.totals.sales %}{% include "core/_plan_cells.html" with part=products.totals.sales %}{% endif %}
+                  </tr>
+                </tfoot>
+              {% endif %}
+            </table>
+          </div>
+          <div class="px-4 py-2 border-top text-muted fs-2">{% blocktranslate with progress=products.month_progress %}{{ progress }}% of the month has passed: a share above it is ahead of plan.{% endblocktranslate %}</div>
+        </div>
+      </div>
+    {% endif %}
+    <div class="col-xl-4">
+      {% if debts %}
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">{% translate "Largest debtors" %}</h5>
+            <a href="{% url 'sales:debts' %}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "All" %}</a>
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for row in debts.top %}
+              <li class="list-group-item px-4 py-2 d-flex justify-content-between gap-2">
+                <a href="{% if row.payer %}{% url 'sales:statement' 'payer' row.payer.pk %}{% else %}{% url 'sales:statement' 'client' row.clients.0.pk %}{% endif %}" class="text-reset text-truncate">{{ row.name }}</a>
+                <span class="text-danger fw-semibold text-nowrap">{{ row.balance|floatformat:"0g" }}</span>
+              </li>
+            {% empty %}
+              <li class="list-group-item px-4 py-3 text-muted">{% translate "Nobody owes us." %}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if stock %}
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">{% translate "Warehouse" %}</h5>
+            <a href="{% url 'production:materials' %}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "Open" %}</a>
+          </div>
+          <div class="px-4 py-3">
+            <span class="text-muted">{% translate "Finished goods in stock" %}</span>
+            <h5 class="mb-0">{{ stock.goods_units|floatformat:"0g" }} {% translate "units" %}</h5>
+          </div>
+          {% if stock.short %}
+            <div class="px-4 pb-2 text-danger fw-semibold">{% blocktranslate count counter=stock.short_count %}{{ counter }} material is short{% plural %}{{ counter }} materials are short{% endblocktranslate %}</div>
+            <ul class="list-group list-group-flush">
+              {% for row in stock.short %}
+                <li class="list-group-item px-4 py-2 d-flex justify-content-between gap-2">
+                  <span class="text-truncate">{{ row.material.name }}</span>
+                  <span class="text-danger text-nowrap">{{ row.stock|floatformat:"-2g" }} {{ row.material.unit }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="px-4 pb-3 text-success">{% translate "No materials are short." %}</div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if chart %}{{ chart|json_script:"cash-chart-data" }}{% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {% if chart %}
+    <script src="{% static 'matdash/libs/apexcharts/dist/apexcharts.min.js' %}"></script>
+    <script src="{% static 'js/dashboard.js' %}"></script>
+  {% endif %}
+{% endblock %}

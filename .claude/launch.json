@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "django",
+      "runtimeExecutable": "powershell.exe",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:PATH = 'C:\\Program Files\\PostgreSQL\\16\\bin;' + $env:PATH; .\\.venv\\Scripts\\python.exe manage.py runserver 8010"
+      ],
+      "port": 8010,
+      "autoPort": false
+    }
+  ]
+}

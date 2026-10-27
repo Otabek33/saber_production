@@ -1,0 +1,20 @@
+{% load i18n %}
+{# Week switcher and the edit button, shared by the plan pages. #}
+<div class="card mb-3">
+  <div class="card-body py-3 px-4">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <a href="?date={{ previous_week.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Previous week" %}">‹</a>
+      <form method="get" class="form-compact">
+        <input type="date" name="date" value="{{ days.0.isoformat }}" class="form-control form-control-sm" aria-label="{% translate "Week" %}" onchange="this.form.submit()">
+      </form>
+      <a href="?date={{ next_week.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Next week" %}">›</a>
+      <span class="ms-2 fs-5 fw-semibold">{{ days.0|date:"j E" }} – {{ days.6|date:"j E Y" }}</span>
+      {% if extra %}<span class="ms-2 text-muted">{{ extra }}</span>{% endif %}
+      {% if can_edit and not editing %}
+        <a href="?date={{ days.0.isoformat }}&edit=1" class="btn btn-sm bg-success-subtle text-success ms-auto">
+          <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon> {% translate "Edit plan" %}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>

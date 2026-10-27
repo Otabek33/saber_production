@@ -1,0 +1,188 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Counterparties" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Counterparties" as page_title %}
+  {% translate "Cash desk" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-xl-9">
+      {# Filters #}
+      <div class="card mb-3">
+        <div class="card-body py-3 px-4">
+          <form method="get" class="row g-2 align-items-end form-compact">
+            <div class="col-12 col-md">
+              <label for="q" class="form-label">{% translate "Search" %}</label>
+              <input type="search" name="q" id="q" value="{{ request.GET.q }}" class="form-control" placeholder="{% translate "Name, INN or account" %}">
+            </div>
+            <div class="col-6 col-md-auto">
+              <label for="status" class="form-label">{% translate "Status" %}</label>
+              <select name="status" id="status" class="form-select">
+                <option value="">{% translate "All" %}</option>
+                <option value="unclassified"{% if request.GET.status == "unclassified" %} selected{% endif %}>{% translate "Need an article" %}</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-auto">
+              <label for="region" class="form-label">{% translate "Region" %}</label>
+              <select name="region" id="region" class="form-select">
+                <option value="">{% translate "All regions" %}</option>
+                {% for region in regions %}
+                  <option value="{{ region.pk }}"{% if request.GET.region == region.pk|stringformat:"s" %} selected{% endif %}>{{ region.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12 col-md-auto d-flex gap-2 mb-2">
+              <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+              <a href="{% url 'cashbook:counterparties' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
+{% if perms.cashbook.add_counterparty %}              <a href="{% url 'cashbook:counterparty_add' %}" class="btn btn-sm bg-success-subtle text-success">{% translate "New counterparty" %}</a>{% endif %}
+              {# The download keeps the filters applied above #}
+              <a href="{% url 'cashbook:counterparty_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-sm bg-success-subtle text-success">
+                <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+              </a>
+              {# The counterparties file kept with the code, for filling a new server #}
+              <a href="{% url 'cashbook:counterparty_seed' %}" class="btn btn-sm bg-secondary-subtle text-secondary" title="{% translate "The counterparties file kept in the project, to load into a new server" %}">
+                <iconify-icon icon="solar:archive-down-minimlistic-line-duotone"></iconify-icon> {% translate "Project file" %}
+              </a>
+              {% if perms.cashbook.add_counterparty and perms.cashbook.add_region %}
+                <button type="button" class="btn btn-sm bg-primary-subtle text-primary" data-bs-toggle="collapse" data-bs-target="#panel-upload" aria-expanded="false" aria-controls="panel-upload">
+                  <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Load from Excel" %}
+                </button>
+              {% endif %}
+            </div>
+          </form>
+          {% if perms.cashbook.add_counterparty and perms.cashbook.add_region %}
+            {# Counterparties from Excel: the finance workbook's "Handbook" sheet, or a counterparties download #}
+            <div class="collapse" id="panel-upload">
+              <form method="post" action="{% url 'cashbook:counterparty_import' %}" enctype="multipart/form-data"
+                    class="row g-2 align-items-end form-compact border-top pt-3 mt-1">
+                {% csrf_token %}
+                <div class="col-12 col-md">
+                  {% include "forms/_field.html" with field=upload_form.file %}
+                </div>
+                <div class="col-12 col-md-auto">
+                  {% include "forms/_field.html" with field=upload_form.dry_run %}
+                </div>
+                <div class="col-12 col-md-auto mb-3">
+                  <button type="submit" class="btn btn-primary btn-sm px-4 w-100">{% translate "Upload" %}</button>
+                </div>
+              </form>
+              <p class="text-muted fs-2 mb-0">
+                {% translate "The finance workbook (Situation.xlsx): counterparties with their article and region are taken from its «Handbook» sheet (columns H:J and Y:AA). Or a «Download Excel» file of this page or the Handbook. New counterparties are added and nothing is duplicated. From Situation.xlsx only an empty article or region is filled in; a download file sets them as the file says." %}
+              </p>
+            </div>
+          {% endif %}
+          {% if unclassified_count and request.GET.status != "unclassified" %}
+            <div class="alert alert-warning py-2 mt-2 mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+              <span>{% blocktranslate count counter=unclassified_count %}{{ counter }} counterparty needs an article.{% plural %}{{ counter }} counterparties need an article.{% endblocktranslate %}</span>
+              <a href="?status=unclassified" class="btn btn-sm btn-warning">{% translate "Show them" %}</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Counterparties #}
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+              <thead>
+                <tr>
+                  <th>{% translate "Name" %}</th>
+                  <th>{% translate "INN" %}</th>
+                  <th>{% translate "Account number" %}</th>
+                  <th>{% translate "Article" %}</th>
+                  <th>{% translate "Region" %}</th>
+                  <th class="num">{% translate "Lines" %}</th>
+                  <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for counterparty in counterparties %}
+                  <tr>
+                    <td class="ledger-counterparty">{{ counterparty.name }}</td>
+                    <td class="num">{{ counterparty.inn }}</td>
+                    <td class="num">{{ counterparty.account_number }}</td>
+                    <td>
+                      {% if counterparty.article %}
+                        {{ counterparty.article.name }}
+                      {% else %}
+                        <span class="badge bg-warning-subtle text-warning">{% translate "Need an article" %}</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ counterparty.region|default:"" }}</td>
+                    <td class="num">{{ counterparty.lines }}</td>
+                    <td class="text-end">
+                      {% if perms.cashbook.change_counterparty %}<a href="{% url 'cashbook:counterparty_edit' counterparty.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}">
+                        <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                      </a>{% endif %}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="7" class="text-center text-muted py-6">{% translate "No counterparties found." %}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if is_paginated %}
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-4 py-3 border-top">
+              <span class="text-muted fs-2">
+                {% blocktranslate with start=page_obj.start_index end=page_obj.end_index total=paginator.count %}Rows {{ start }}–{{ end }} of {{ total }}{% endblocktranslate %}
+              </span>
+              <nav aria-label="{% translate "Pages" %}">
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item{% if not page_obj.has_previous %} disabled{% endif %}">
+                    <a class="page-link" href="{% if page_obj.has_previous %}{% querystring page=page_obj.previous_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Previous page" %}">‹</a>
+                  </li>
+                  {% for number in page_obj.paginator.get_elided_page_range %}
+                    {% if number == page_obj.paginator.ELLIPSIS %}
+                      <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% elif number == page_obj.number %}
+                      <li class="page-item active" aria-current="page"><span class="page-link">{{ number }}</span></li>
+                    {% else %}
+                      <li class="page-item"><a class="page-link" href="{% querystring page=number %}">{{ number }}</a></li>
+                    {% endif %}
+                  {% endfor %}
+                  <li class="page-item{% if not page_obj.has_next %} disabled{% endif %}">
+                    <a class="page-link" href="{% if page_obj.has_next %}{% querystring page=page_obj.next_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Next page" %}">›</a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# Regions handbook #}
+    <div class="col-xl-3">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+          <h5 class="card-title mb-0">{% translate "Regions" %}</h5>
+          {% if perms.cashbook.add_region %}<a href="{% url 'cashbook:region_add' %}" class="btn btn-sm bg-primary-subtle text-primary" title="{% translate "New region" %}" aria-label="{% translate "New region" %}">
+            <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon>
+          </a>{% endif %}
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for region in regions %}
+            <li class="list-group-item px-4 py-2 d-flex justify-content-between align-items-center{% if not region.is_active %} opacity-50{% endif %}">
+              <a href="?region={{ region.pk }}" class="text-reset">{{ region.name }}</a>
+              <span class="d-flex align-items-center gap-2">
+                <span class="badge bg-body-tertiary text-body-emphasis">{{ region.counterparty_count }}</span>
+                {% if perms.cashbook.change_region %}<a href="{% url 'cashbook:region_edit' region.pk %}" class="text-muted" title="{% translate "Edit region" %}" aria-label="{% translate "Edit region" %}">
+                  <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                </a>{% endif %}
+              </span>
+            </li>
+          {% empty %}
+            <li class="list-group-item px-4 py-3 text-muted">{% translate "No regions yet." %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}

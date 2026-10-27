@@ -1,0 +1,106 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Sales plan" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Sales plan" as page_title %}
+  {% translate "Sales" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <ul class="nav nav-pills gap-2 me-2">
+          {% for value, label in kinds %}
+            <li class="nav-item"><a class="nav-link py-1 px-3{% if kind == value %} active{% endif %}" href="?year={{ year }}&kind={{ value }}">{{ label }}</a></li>
+          {% endfor %}
+        </ul>
+        <a href="?year={{ year|add:'-1' }}&kind={{ kind }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Previous year" %}">‹</a>
+        <span class="fs-5 fw-semibold">{{ year }}</span>
+        <a href="?year={{ year|add:'1' }}&kind={{ kind }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Next year" %}">›</a>
+        <span class="ms-auto text-muted text-nowrap">{% translate "Plan" %}: <strong class="text-body">{{ plan_total|floatformat:"0g" }}</strong></span>
+        <span class="text-muted text-nowrap">{% translate "Fact" %}: <strong class="text-body">{{ fact_total|floatformat:"0g" }}</strong>{% if percent_total is not None %} ({{ percent_total }}%){% endif %}</span>
+        {% if perms.sales.change_plan and not editing %}
+          <a href="?year={{ year }}&kind={{ kind }}&edit=1" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon> {% translate "Edit plan" %}
+          </a>
+        {% endif %}
+        {% if perms.sales.import_sales %}
+          <a href="{% url 'sales:import' %}" class="btn btn-sm bg-primary-subtle text-primary">
+            <iconify-icon icon="solar:upload-minimalistic-line-duotone"></iconify-icon> {% translate "Upload from Excel" %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <form method="post" action="?year={{ year }}&kind={{ kind }}">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 ledger-table journal-grid plan-grid">
+          <thead>
+            <tr>
+              <th class="journal-product">{% translate "Product" %}</th>
+              {% for month in months %}
+                <th class="num text-capitalize{% if forloop.counter == current_month %} bg-primary-subtle{% endif %}">{{ month|date:"M" }}</th>
+              {% endfor %}
+              <th class="num">{% translate "Year" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td class="journal-product">{{ row.product.name }}</td>
+                {% for cell in row.cells %}
+                  <td class="num{% if cell.month == current_month %} bg-primary-subtle{% endif %}">
+                    {% if editing %}
+                      <input type="text" inputmode="numeric" name="plan-{{ row.product.pk }}-{{ cell.month }}" value="{% if cell.plan %}{{ cell.plan }}{% endif %}" class="form-control form-control-sm text-end px-1" aria-label="{{ row.product.name }} {{ cell.month }}">
+                    {% else %}
+                      <span class="d-block">{% if cell.plan %}{{ cell.plan|floatformat:"0g" }}{% else %}<span class="text-muted">—</span>{% endif %}</span>
+                      {% if cell.fact %}
+                        <span class="d-block fs-1 {% if cell.percent is None or cell.percent >= 100 %}text-success{% elif cell.percent >= 80 %}text-warning{% else %}text-danger{% endif %}" title="{% translate "Fact" %}">{{ cell.fact|floatformat:"0g" }}{% if cell.percent is not None %} · {{ cell.percent }}%{% endif %}</span>
+                      {% endif %}
+                    {% endif %}
+                  </td>
+                {% endfor %}
+                <td class="num fw-semibold">
+                  <span class="d-block">{{ row.plan|floatformat:"0g" }}</span>
+                  {% if row.fact %}<span class="d-block fs-1 text-muted">{{ row.fact|floatformat:"0g" }}{% if row.percent is not None %} · {{ row.percent }}%{% endif %}</span>{% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="14" class="text-center text-muted py-6">{% translate "No products yet." %}</td></tr>
+            {% endfor %}
+          </tbody>
+          {% if rows %}
+            <tfoot>
+              <tr class="fw-semibold">
+                <td class="journal-product">{% translate "Total" %}</td>
+                {% for total in totals %}
+                  <td class="num">
+                    <span class="d-block">{{ total.plan|floatformat:"0g" }}</span>
+                    {% if total.fact %}<span class="d-block fs-1 text-muted">{{ total.fact|floatformat:"0g" }}{% if total.percent is not None %} · {{ total.percent }}%{% endif %}</span>{% endif %}
+                  </td>
+                {% endfor %}
+                <td class="num">{{ plan_total|floatformat:"0g" }}</td>
+              </tr>
+            </tfoot>
+          {% endif %}
+        </table>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2 px-4 py-3 border-top">
+        {% if editing %}
+          <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+          <a href="?year={{ year }}&kind={{ kind }}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+        {% endif %}
+        <span class="text-muted fs-2">
+          {% if kind == "sales" %}{% translate "Each cell: the plan in units, below it what was sold (sales recorded here) and the share of the plan." %}{% else %}{% translate "Each cell: the plan in units, below it what was produced (Daily production) and the share of the plan." %}{% endif %}
+        </span>
+      </div>
+    </form>
+  </div>
+{% endblock %}

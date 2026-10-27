@@ -1,0 +1,67 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Collections by region" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Collections by region" as page_title %}
+  {% translate "Finance" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {% blocktranslate with plan=plan_total|floatformat:"0g" fact=fact_total|floatformat:"0g" asvar summary %}Plan {{ plan }} · received {{ fact }}{% endblocktranslate %}
+  {% include "planning/_week_toolbar.html" with can_edit=perms.planning.change_collectionplan extra=summary %}
+
+  <div class="card">
+    <form method="post" action="?date={{ days.0.isoformat }}">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 ledger-table journal-grid plan-grid">
+          <thead>
+            <tr>
+              <th class="journal-product">{% translate "Region" %}</th>
+              <th>{% translate "Manager" %}</th>
+              {% for day in days %}
+                <th class="num{% if day == today %} bg-primary-subtle{% endif %}{% if day.weekday == 6 %} text-danger{% endif %}">{{ day|date:"D d.m" }}</th>
+              {% endfor %}
+              <th class="num">{% translate "Week" %}</th>
+              <th class="num">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td class="journal-product">{{ row.region.name }}</td>
+                <td class="text-muted">{{ row.region.manager }}</td>
+                {% for cell in row.cells %}{% include "planning/_cell.html" with key=row.region.pk label=row.region.name %}{% endfor %}
+                <td class="num fw-semibold"><span class="d-block">{{ row.plan|floatformat:"0g" }}</span>{% if row.fact %}<span class="d-block fs-1 text-muted">{{ row.fact|floatformat:"0g" }}</span>{% endif %}</td>
+                <td class="num">{% if row.percent is not None %}<span class="badge {% if row.percent >= 100 %}bg-success-subtle text-success{% elif row.percent >= 80 %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %}">{{ row.percent }}%</span>{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="11" class="text-center text-muted py-6">{% translate "No regions yet. Add them on the Counterparties page." %}</td></tr>
+            {% endfor %}
+          </tbody>
+          {% if rows %}
+            <tfoot>
+              <tr class="fw-semibold">
+                <td class="journal-product">{% translate "Total" %}</td>
+                <td></td>
+                {% for day in totals %}<td class="num"><span class="d-block">{{ day.plan|floatformat:"0g" }}</span><span class="d-block fs-1 text-muted">{{ day.fact|floatformat:"0g" }}</span></td>{% endfor %}
+                <td class="num"><span class="d-block">{{ plan_total|floatformat:"0g" }}</span><span class="d-block fs-1 text-muted">{{ fact_total|floatformat:"0g" }}</span></td>
+                <td class="num">{% if percent_total is not None %}{{ percent_total }}%{% endif %}</td>
+              </tr>
+            </tfoot>
+          {% endif %}
+        </table>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2 px-4 py-3 border-top">
+        {% if editing %}
+          <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+          <a href="?date={{ days.0.isoformat }}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+        {% endif %}
+        <span class="text-muted fs-2">{% translate "Received: bank receipts from counterparties of the region (set a counterparty's region on the Counterparties page)." %}</span>
+      </div>
+    </form>
+  </div>
+{% endblock %}

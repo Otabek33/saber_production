@@ -1,0 +1,10 @@
+{% load cashbook %}
+{% comment %}
+  One column group's cells in a ledger row (one per account of the desk), plus the
+  narrow cell shown instead when the group is collapsed (see js/cashbook.js).
+  Usage: {% include "cashbook/_amount_cells.html" with group="income" values=row.income %}
+{% endcomment %}
+{% for account in accounts %}
+  <td class="num g-{{ group }}{% if group == 'balance' %} ledger-balance-cell{% endif %}">{{ values|get:account.value|floatformat:"-2g" }}</td>
+{% endfor %}
+<td class="gp-{{ group }}"></td>

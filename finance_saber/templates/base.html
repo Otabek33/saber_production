@@ -1,0 +1,41 @@
+{% load i18n static %}<!doctype html>
+<html lang="{{ LANGUAGE_CODE|default:'en' }}" dir="ltr" data-bs-theme="light" data-color-theme="Blue_Theme" data-layout="horizontal">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %} | {{ company_name }}</title>
+    <link rel="shortcut icon" type="image/png" href="{% static 'matdash/images/logos/favicon.png' %}">
+    {# Library CSS a page needs (e.g. Select2) goes first, so the theme's styles for it win. #}
+    {% block vendor_css %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'vendor/fonts/manrope/manrope.css' %}">
+    <link rel="stylesheet" href="{% static 'matdash/css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body>
+    <div class="preloader">
+      <img src="{% static 'matdash/images/logos/favicon.png' %}" alt="{% translate "Loading" %}" class="lds-ripple img-fluid">
+    </div>
+
+    {% block body %}{% endblock %}
+
+    {# MatDash theme scripts. sidebarmenu.js is replaced by js/app.js; the active menu item is set server-side. #}
+    <script src="{% static 'matdash/libs/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'matdash/libs/simplebar/dist/simplebar.min.js' %}"></script>
+    <script src="{% static 'matdash/js/theme/app.horizontal.init.js' %}"></script>
+    <script>
+      // Full-width layout (the theme boxes pages at 1200px by default), and the
+      // light/dark choice saved by js/app.js, before the theme applies its defaults.
+      userSettings.BoxedLayout = false;
+      try { userSettings.Theme = localStorage.getItem("theme") || userSettings.Theme; } catch (e) {}
+    </script>
+    <script src="{% static 'matdash/js/theme/theme.js' %}"></script>
+    <script src="{% static 'matdash/js/theme/app.min.js' %}"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+    {# Icons: served from the app, not a CDN, and deferred so they never hold the page up. #}
+    {# icons.js (manage.py build_icons) preloads the icons used, so no Iconify API calls either. #}
+    <script src="{% static 'js/icons.js' %}" defer></script>
+    <script src="{% static 'vendor/iconify/iconify-icon-1.0.8.min.js' %}" defer></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

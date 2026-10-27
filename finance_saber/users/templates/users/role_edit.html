@@ -1,0 +1,123 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{{ label }} · {% translate "Roles and permissions" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Roles and permissions" as section %}
+  {% include "partials/_page_header.html" with title=label section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    {# The role's access, section by section #}
+    <div class="col-xl-8">
+      <form method="post" class="card" novalidate>
+        {% csrf_token %}
+        <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div>
+            <h5 class="card-title mb-0">{{ label }}</h5>
+            <span class="text-muted fs-2">{{ description }}</span>
+          </div>
+          {% if changed %}
+            <span class="badge bg-warning-subtle text-warning">
+              {% blocktranslate count counter=changed %}{{ counter }} section changed from the standard{% plural %}{{ counter }} sections changed from the standard{% endblocktranslate %}
+            </span>
+          {% else %}
+            <span class="badge bg-success-subtle text-success">{% translate "Standard access" %}</span>
+          {% endif %}
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="ps-4">{% translate "Section" %}</th>
+                <th>{% translate "Access" %}</th>
+                <th class="pe-4 text-muted fw-normal">{% translate "Standard" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                <tr{% if row.changed %} class="table-warning"{% endif %}>
+                  <td class="ps-4">{{ row.area.label }}</td>
+                  <td>
+                    {% if row.field %}
+                      <div class="d-flex flex-wrap gap-3">
+                        {% for choice in row.field %}
+                          <div class="form-check mb-0">
+                            {{ choice.tag }}
+                            <label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <span class="text-muted fs-2">{% translate "Superuser only: not given to roles" %}</span>
+                    {% endif %}
+                  </td>
+                  <td class="pe-4 text-muted fs-2">
+                    {% if row.field %}{{ row.standard }}{% if row.changed %} · <span class="text-warning fw-semibold">{% translate "changed" %}</span>{% endif %}{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+          <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+          {% if changed %}
+            <button type="submit" name="reset" value="1" class="btn bg-warning-subtle text-warning"
+                    data-confirm="{% translate "Return this role to its standard access?" %}">{% translate "Reset to standard" %}</button>
+          {% endif %}
+          <a href="{% url 'users:roles' %}" class="btn bg-primary-subtle text-primary">{% translate "Back to roles" %}</a>
+        </div>
+      </form>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-2">{% translate "“Works”: sees the section and enters or changes its data. “Views”: sees it only. “No access”: the section isn't in the menu and its pages are closed." %}</p>
+          <p class="mb-0">{% translate "Changes apply to everyone with this role at once, stay after program updates and are recorded below. “Reset to standard” returns the role to the access the program defines for it." %}</p>
+        </div>
+      </div>
+
+      {# Who has this role #}
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h6 class="mb-0">{% translate "Users with this role" %}: {{ users|length }}</h6></div>
+        <div class="card-body px-4 py-3">
+          {% for person in users %}
+            <a href="{% url 'users:edit' person.pk %}" class="d-block{% if not person.is_active %} text-muted text-decoration-line-through{% endif %}">{{ person.get_full_name|default:person.username }}</a>
+          {% empty %}
+            <span class="text-muted fs-2">{% translate "Nobody yet." %}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# What was changed, by whom and when #}
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h6 class="mb-0">{% translate "History of changes" %}</h6></div>
+        <ul class="list-group list-group-flush">
+          {% for item in history %}
+            <li class="list-group-item px-4 py-2 fs-2">
+              <span class="text-muted">{{ item.change.changed_at|date:"d.m.Y H:i" }} · {{ item.change.changed_by.username|default:"—" }}</span><br>
+              {{ item.area }}: {{ item.old }} → <strong>{{ item.new }}</strong>
+            </li>
+          {% empty %}
+            <li class="list-group-item px-4 py-3 text-muted fs-2">{% translate "No changes yet: the role has its standard access." %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {# "Reset to standard" asks first #}
+  <script>
+    document.querySelectorAll("[data-confirm]").forEach(function (button) {
+      button.addEventListener("click", function (event) {
+        if (!window.confirm(button.dataset.confirm)) event.preventDefault();
+      });
+    });
+  </script>
+{% endblock %}

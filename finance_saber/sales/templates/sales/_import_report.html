@@ -1,0 +1,46 @@
+{% load i18n %}
+{# What a SmartUp upload did (or, for a check or a failed upload, would have done). #}
+<div class="border-top">
+  <table class="table table-sm align-middle mb-0 ledger-table">
+    <tbody>
+      <tr><td>{% translate "Lines in the file" %}</td><td class="num">{{ report.rows }}</td></tr>
+      <tr><td>{% translate "New sales" %}</td><td class="num">{{ report.created }}</td></tr>
+      <tr><td>{% translate "Duplicates skipped" %}</td><td class="num">{{ report.duplicates|length }}</td></tr>
+      {% if report.first_date %}
+        <tr><td>{% translate "Days" %}</td><td class="num">{{ report.first_date|date:"d.m.Y" }}{% if report.last_date != report.first_date %} – {{ report.last_date|date:"d.m.Y" }}{% endif %}</td></tr>
+      {% endif %}
+      <tr><td>{% translate "Units" %}</td><td class="num">{{ report.quantity|floatformat:"0g" }}</td></tr>
+      <tr><td>{% translate "Amount" %}</td><td class="num">{{ report.amount|floatformat:"2g" }}</td></tr>
+      <tr><td>{% translate "New clients" %}</td><td class="num">{{ report.new_clients|length }}</td></tr>
+      <tr>
+        <td>{% translate "Result" %}</td>
+        <td class="num">{% if report.saved %}<span class="badge bg-success-subtle text-success">{% translate "Saved" %}</span>{% else %}<span class="badge bg-warning-subtle text-warning">{% translate "Not saved" %}</span>{% endif %}</td>
+      </tr>
+    </tbody>
+  </table>
+  {% if report.unknown_products %}
+    <div class="alert alert-danger m-3" role="alert">
+      <p class="mb-1 fw-semibold">{% translate "Products not found — add them as product aliases, then upload again:" %}</p>
+      <ul class="mb-0">{% for name in report.unknown_products %}<li>{{ name }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+  {% if report.errors %}
+    <div class="alert alert-danger m-3" role="alert">
+      <p class="mb-1 fw-semibold">{% translate "Rows that couldn't be read:" %}</p>
+      <ul class="mb-0">{% for error in report.errors|slice:":20" %}<li>{{ error }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+  {% if report.duplicates %}
+    <details class="m-3">
+      <summary class="text-muted">{% translate "Duplicates skipped" %} ({{ report.duplicates|length }})</summary>
+      <ul class="fs-2 mb-0 mt-2">{% for line in report.duplicates|slice:":50" %}<li>{{ line }}</li>{% endfor %}</ul>
+    </details>
+  {% endif %}
+  {% if report.new_clients %}
+    <details class="m-3">
+      <summary class="text-muted">{% translate "New clients" %} ({{ report.new_clients|length }})</summary>
+      <ul class="fs-2 mb-0 mt-2">{% for name in report.new_clients %}<li>{{ name }}</li>{% endfor %}</ul>
+      <p class="fs-2 text-muted mb-0 mt-2">{% translate "Link them to their bank payers on the Clients page, so payments settle their debts." %}</p>
+    </details>
+  {% endif %}
+</div>

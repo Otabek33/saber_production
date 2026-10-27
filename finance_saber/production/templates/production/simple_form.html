@@ -1,0 +1,38 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Form page for a material or a new product.
+{% endcomment %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body p-4">
+          <form method="post" novalidate class="form-compact">
+            {% csrf_token %}
+            {% include "forms/_fields.html" %}
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">{% translate "Save Changes" %}</button>
+              <a href="{{ cancel_url }}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-0">{% translate "Materials and products in use can't be deleted, so past movements keep their meaning. Untick “Active” to hide one from new entries instead." %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

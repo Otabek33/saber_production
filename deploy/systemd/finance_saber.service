@@ -1,0 +1,32 @@
+# The web app (gunicorn). Install:
+#   sudo cp deploy/systemd/finance_saber.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now finance_saber
+# Logs: journalctl -u finance_saber -f
+[Unit]
+Description=finance_saber (gunicorn)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=finance_saber
+Group=finance_saber
+WorkingDirectory=/srv/finance_saber
+Environment=DJANGO_SETTINGS_MODULE=config.settings.production
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/srv/finance_saber/.venv/bin/gunicorn -c deploy/gunicorn.conf.py config.wsgi
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+Restart=on-failure
+RestartSec=5
+
+# Hardening: the app only needs to write to the system temp folder (large uploads);
+# the code, static files and env file stay read-only while it runs.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

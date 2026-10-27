@@ -1,0 +1,12 @@
+{# One account's balance in the summary strip. Usage: {% include "cashbook/_balance_card.html" with label=... value=... color="primary" icon=... currency="UZS" %} #}
+<div class="d-flex align-items-center gap-2">
+  <span class="d-flex align-items-center justify-content-center round-40 rounded-circle bg-{{ color }}-subtle flex-shrink-0">
+    <iconify-icon icon="{{ icon }}" class="fs-5 text-{{ color }}"></iconify-icon>
+  </span>
+  <div class="lh-sm">
+    <div class="fs-2 text-muted">{{ label }}</div>
+    <div class="fs-5 fw-semibold text-nowrap{% if value < 0 %} text-danger{% endif %}">
+      {{ value|floatformat:"2g" }} <span class="fs-2 fw-normal text-muted">{{ currency }}</span>
+    </div>
+  </div>
+</div>

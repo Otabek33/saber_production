@@ -1,0 +1,101 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Recipes and norms" as section %}
+  {% include "partials/_page_header.html" with title=product.name section=section %}
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="form-compact">
+    {% csrf_token %}
+    <div class="row">
+      {# The product #}
+      <div class="col-xl-4">
+        <div class="card">
+          <div class="card-body p-4">
+            {% include "forms/_fields.html" with form=form %}
+          </div>
+        </div>
+        <div class="card bg-info-subtle shadow-none">
+          <div class="card-body p-4">
+            <p class="mb-0">{% translate "A changed recipe applies to production entered or re-saved from now on. Days already saved keep what they used." %}</p>
+          </div>
+        </div>
+      </div>
+
+      {# Its recipe: norm per unit for each material #}
+      <div class="col-xl-8">
+        <div class="card">
+          {{ formset.management_form }}
+          {% for error in formset.non_form_errors %}<div class="alert alert-danger m-3 mb-0">{{ error }}</div>{% endfor %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead>
+                <tr>
+                  <th>{% translate "Material" %}</th>
+                  <th class="num" style="width: 180px">{% translate "Norm per unit" %}</th>
+                  <th class="num" style="width: 110px">{% translate "Allowed, %" %}</th>
+                  <th class="num" style="width: 90px">{% translate "Order" %}</th>
+                  <th class="num">{% translate "Stock" %}</th>
+                  <th class="text-center" style="width: 70px">{% translate "Delete" %}</th>
+                </tr>
+              </thead>
+              <tbody data-recipe-lines>
+                {% for line in formset %}
+                  <tr>
+                    <td>
+                      {% for hidden in line.hidden_fields %}{{ hidden }}{% endfor %}
+                      {{ line.material }}
+                      {% for error in line.material.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                      {% for error in line.non_field_errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </td>
+                    <td>
+                      {{ line.quantity_per_unit }}
+                      {% for error in line.quantity_per_unit.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </td>
+                    <td>{{ line.allowed_loss }}</td>
+                    <td>{{ line.position }}</td>
+                    <td class="num text-muted">
+                      {% if line.instance.material_id %}{{ line.stock|floatformat:"-3g" }} {{ line.instance.material.unit }}{% endif %}
+                    </td>
+                    <td class="text-center">{% if line.instance.pk %}{{ line.DELETE }}{% endif %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <template id="recipe-empty-line">
+            <tr>
+              <td>{% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}{{ formset.empty_form.material }}</td>
+              <td>{{ formset.empty_form.quantity_per_unit }}</td>
+              <td>{{ formset.empty_form.allowed_loss }}</td>
+              <td>{{ formset.empty_form.position }}</td>
+              <td></td>
+              <td></td>
+            </tr>
+          </template>
+          <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+            {% if can_edit %}
+            <button type="submit" class="btn btn-primary">{% translate "Save Changes" %}</button>
+            <button type="button" class="btn bg-success-subtle text-success" data-add-recipe-line>
+              <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon> {% translate "Add a line" %}
+            </button>
+            {% endif %}
+            <a href="{% url 'production:recipes' %}" class="btn bg-danger-subtle text-danger">{% if can_edit %}{% translate "Cancel" %}{% else %}{% translate "Back" %}{% endif %}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

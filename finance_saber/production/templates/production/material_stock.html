@@ -1,0 +1,109 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Raw materials" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Raw materials" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="d-flex flex-wrap align-items-center gap-2 form-compact">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" style="max-width: 260px" placeholder="{% translate "Search by name" %}" aria-label="{% translate "Search" %}">
+        <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+        {% if request.GET.q %}<a href="{% url 'production:materials' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>{% endif %}
+        <span class="ms-auto d-flex flex-wrap gap-2">
+          {% if perms.production.add_materialmove %}
+          <a href="{% url 'production:material_receipt' %}" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:import-line-duotone"></iconify-icon> {% translate "Receipt" %}
+          </a>
+          <a href="{% url 'production:material_write_off' %}" class="btn btn-sm bg-danger-subtle text-danger">
+            <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon> {% translate "Write-off" %}
+          </a>
+          <a href="{% url 'production:stock_count' 'material' %}" class="btn btn-sm bg-warning-subtle text-warning">
+            <iconify-icon icon="solar:checklist-minimalistic-line-duotone"></iconify-icon> {% translate "Stock count" %}
+          </a>
+          {% endif %}
+          {% if perms.production.add_material %}
+          <a href="{% url 'production:material_add' %}" class="btn btn-sm bg-primary-subtle text-primary">
+            <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon> {% translate "New material" %}
+          </a>
+          {% endif %}
+          {% if perms.production.add_material and perms.production.change_material %}
+          <a href="{% url 'production:material_import' %}" class="btn btn-sm bg-primary-subtle text-primary">
+            <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Load from Excel" %}
+          </a>
+          {% endif %}
+          <a href="{% url 'production:material_export' %}" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+          </a>
+          {# The materials file kept with the code, for filling a new server #}
+          <a href="{% url 'production:material_seed' %}" class="btn btn-sm bg-secondary-subtle text-secondary" title="{% translate "The materials file kept in the project, to load into a new server" %}">
+            <iconify-icon icon="solar:archive-down-minimlistic-line-duotone"></iconify-icon> {% translate "Project file" %}
+          </a>
+        </span>
+      </form>
+      {% if short_count %}
+        <div class="alert alert-danger py-2 mt-2 mb-0" role="alert">
+          {% blocktranslate count counter=short_count %}{{ counter }} material is below zero: production used more than was received. Record the receipt or a stock count.{% plural %}{{ counter }} materials are below zero: production used more than was received. Record the receipts or a stock count.{% endblocktranslate %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Material" %}</th>
+            <th>{% translate "Unit" %}</th>
+            <th class="num">{% translate "Received this month" %}</th>
+            <th class="num">{% translate "Used this month" %}</th>
+            <th class="num">{% translate "Stock" %}</th>
+            <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            {% ifchanged row.material.kind %}
+              <tr class="ledger-opening"><td colspan="6" class="fw-semibold">{{ row.material.get_kind_display }}</td></tr>
+            {% endifchanged %}
+            <tr>
+              <td>
+                {{ row.material.name }}
+                {% if row.material.shelf_life %}<span class="d-block fs-1 text-muted">{% translate "Shelf life" %}: {{ row.material.shelf_life }}</span>{% endif %}
+              </td>
+              <td class="text-muted">{{ row.material.unit }}</td>
+              <td class="num">{% if row.received %}{{ row.received|floatformat:"-3g" }}{% endif %}</td>
+              <td class="num">{% if row.used %}{{ row.used|floatformat:"-3g" }}{% endif %}</td>
+              <td class="num fw-semibold{% if row.low %} text-danger{% endif %}">{{ row.stock|floatformat:"-3g" }}</td>
+              <td class="text-end text-nowrap">
+                <a href="{% url 'production:moves' %}?target=materials&item={{ row.material.pk }}" class="btn btn-sm bg-secondary-subtle text-secondary ledger-action" title="{% translate "Movements" %}" aria-label="{% translate "Movements" %}">
+                  <iconify-icon icon="solar:history-line-duotone"></iconify-icon>
+                </a>
+                {% if perms.production.add_materialmove %}
+                <a href="{% url 'production:stock_count' 'material' %}?item={{ row.material.pk }}" class="btn btn-sm bg-warning-subtle text-warning ledger-action" title="{% translate "Stock count" %}" aria-label="{% translate "Stock count" %}">
+                  <iconify-icon icon="solar:checklist-minimalistic-line-duotone"></iconify-icon>
+                </a>
+                {% endif %}
+                {% if perms.production.change_material %}
+                <a href="{% url 'production:material_edit' row.material.pk %}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}">
+                  <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No materials found." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/_pagination.html" %}
+  </div>
+{% endblock %}

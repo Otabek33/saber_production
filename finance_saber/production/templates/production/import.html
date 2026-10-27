@@ -1,0 +1,73 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Import from Excel" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Import from Excel" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data" novalidate class="form-compact">
+            {% csrf_token %}
+            {% include "forms/_fields.html" %}
+            <button type="submit" class="btn btn-primary">
+              <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Upload" %}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      {% if report %}
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0">{% translate "Result" %}</h5>
+            {% if report.saved %}
+              <span class="badge bg-success-subtle text-success">{% translate "Saved" %}</span>
+            {% else %}
+              <span class="badge bg-warning-subtle text-warning">{% translate "Not saved" %}</span>
+            {% endif %}
+          </div>
+          <table class="table table-sm align-middle mb-0 ledger-table">
+            <tbody>
+              <tr><td>{% translate "Materials in the list" %}</td><td class="num">{{ report.materials }}</td></tr>
+              <tr><td>{% translate "New materials" %}</td><td class="num">{{ report.new_materials }}</td></tr>
+              <tr><td>{% translate "New opening balances" %}</td><td class="num">{{ report.opening_balances }}</td></tr>
+              <tr><td>{% translate "Products in Warehouse" %}</td><td class="num">{{ report.products }}</td></tr>
+              <tr><td>{% translate "New products" %}</td><td class="num">{{ report.new_products }}</td></tr>
+              <tr><td>{% translate "New recipes" %}</td><td class="num">{{ report.recipes }}</td></tr>
+              <tr><td>{% translate "Past production days (history only)" %}</td><td class="num">{{ report.history_days }}</td></tr>
+            </tbody>
+          </table>
+          {% if report.unmatched %}
+            <div class="alert alert-danger m-3" role="alert">
+              <p class="mb-1 fw-semibold">{% translate "Recipe materials not found in the stock list:" %}</p>
+              <ul class="mb-1">{% for line in report.unmatched %}<li>{{ line }}</li>{% endfor %}</ul>
+              <p class="mb-0">{% translate "Correct the names in the workbook, or add the materials under Raw materials, then upload again." %}</p>
+            </div>
+          {% endif %}
+          {% if report.without_recipe %}
+            <div class="alert alert-warning m-3" role="alert">
+              {% translate "No recipe in Сбор for:" %} {{ report.without_recipe|join:", " }}.
+              <a href="{% url 'production:recipes' %}">{% translate "Enter it on the Recipes page." %}</a>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-2">{% translate "Files are read once and not kept on the server. Save the workbooks in Excel first, so the formula cells have their values." %}</p>
+          <p class="mb-0">{% translate "Importing again only adds what is missing: existing materials, recipes and stock are not changed. Day-to-day changes are entered on the Production pages." %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
