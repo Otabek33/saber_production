@@ -147,6 +147,11 @@ if [ -z "$DB_PORT" ] && [ -z "$(newest_cluster)" ]; then
         || /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
     apt-get install -y -qq "postgresql-$PG_VERSION" >/dev/null
 fi
+# Servers with create_main_cluster = false get no cluster with the package: make it here
+# (it takes the next free port, e.g. 5433 next to an older version on 5432).
+if [ -z "$DB_PORT" ] && [ -z "$(newest_cluster)" ] && [ -x "/usr/lib/postgresql/$PG_VERSION/bin/postgres" ]; then
+    pg_createcluster "$PG_VERSION" main --start >/dev/null
+fi
 systemctl enable --now postgresql >/dev/null 2>&1 || true
 if [ -z "$DB_PORT" ]; then
     read -r pg_version DB_PORT <<< "$(newest_cluster)"
@@ -277,7 +282,7 @@ if [ -n "$(get_env TELEGRAM_BOT_TOKEN)" ] && [ -n "$(get_env TELEGRAM_WEBHOOK_SE
     manage set_telegram_webhook "https://$DOMAIN" || echo "Telegram webhook not set; run it later."
 fi
 
-if ! manage shell -c "from django.contrib.auth import get_user_model; import sys; sys.exit(0 if get_user_model().objects.filter(is_superuser=True).exists() else 1)"; then
+if ! manage shell --no-imports -v 0 -c "from django.contrib.auth import get_user_model; import sys; sys.exit(0 if get_user_model().objects.filter(is_superuser=True).exists() else 1)"; then
     admin_hint="Create the first administrator:
     cd $APP_DIR && sudo -u $APP env DJANGO_SETTINGS_MODULE=config.settings.production .venv/bin/python manage.py createsuperuser"
 else

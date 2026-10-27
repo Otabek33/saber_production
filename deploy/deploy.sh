@@ -33,7 +33,8 @@ echo "==> Reloading the app (graceful: running requests finish first)"
 sudo systemctl reload finance_saber
 
 echo "==> Health check"
-HOST=$($PYTHON manage.py shell -c "from django.conf import settings; print(settings.ALLOWED_HOSTS[0])")
+# Quiet shell: its "N objects imported" line must not end up in the Host header.
+HOST=$($PYTHON manage.py shell --no-imports -v 0 -c "from django.conf import settings; print(settings.ALLOWED_HOSTS[0])")
 # The address gunicorn listens on, as setup_server.sh set it for this server.
 BIND=$(systemctl show -p Environment --value finance_saber | tr ' ' '\n' | sed -n 's/^GUNICORN_BIND=//p')
 BIND=${BIND:-127.0.0.1:8000}

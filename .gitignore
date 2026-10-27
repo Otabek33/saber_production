@@ -7,8 +7,8 @@ __pycache__/
 *.so
 
 # Distribution / packaging
-build/
-dist/
+/build/
+/dist/
 eggs/
 .eggs/
 *.egg-info/
@@ -57,8 +57,8 @@ site/
 # Django
 db.sqlite3
 db.sqlite3-journal
-staticfiles/
-media/
+/staticfiles/
+/media/
 *.log
 
 # One-off handbook exports (manage.py export_handbooks <path>) at the project root.
