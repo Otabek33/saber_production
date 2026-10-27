@@ -20,17 +20,24 @@
 # Shared server: other sites keep running. The app listens on 127.0.0.1:PORT (8000 by
 # default); if another program already uses that port the script stops, so pick a free
 # one (see: ss -ltnp) with PORT=8010. WORKERS sets gunicorn's processes (default 2 x CPU + 1).
+#
+# PostgreSQL: Django 6.1 needs 15+. If the server only has an older one (Ubuntu 22.04 ships
+# 14), PostgreSQL 17 is installed next to it on its own port (5433) and the database is made
+# there; the older one and its databases are not touched.
 set -euo pipefail
 
 DOMAIN="${DOMAIN:-work.fintechdev.uz}"
 CERTBOT_EMAIL="${CERTBOT_EMAIL:-}"
-REPO_URL="${REPO_URL:-git@github.com:Otabek33/finance_saber.git}"
-BRANCH="${BRANCH:-master}"
+REPO_URL="${REPO_URL:-git@github.com:Otabek33/saber_production.git}"
+BRANCH="${BRANCH:-main}"
 DB_NAME="${DB_NAME:-}"
 DB_USER="${DB_USER:-}"
 DB_PASSWORD="${DB_PASSWORD:-}"
 PORT="${PORT:-8000}"
 WORKERS="${WORKERS:-}"
+# Empty: the newest PostgreSQL 15+ on this server (installed if missing).
+DB_PORT="${DB_PORT:-}"
+PG_VERSION="${PG_VERSION:-17}"
 
 # Fixed paths: the systemd units in deploy/systemd/ use them.
 APP=finance_saber
@@ -63,20 +70,26 @@ cd /tmp  # sudo -u postgres can't read root's home folder
 [[ "$DOMAIN" =~ ^[a-z0-9.-]+$ ]] || fail "DOMAIN looks wrong: $DOMAIN"
 [[ "$PORT" =~ ^[0-9]+$ ]] || fail "PORT must be a number: $PORT"
 [[ "$WORKERS" =~ ^[0-9]*$ ]] || fail "WORKERS must be a number: $WORKERS"
+[[ "$DB_PORT" =~ ^[0-9]*$ ]] || fail "DB_PORT must be a number: $DB_PORT"
 # The port must be free, or already ours (running the script again).
 listener=$(ss -ltnpH "sport = :$PORT" 2>/dev/null || true)
 if [ -n "$listener" ]; then
     our_pid=$(systemctl show -p MainPID --value finance_saber 2>/dev/null || echo 0)
     if [ "${our_pid:-0}" = "0" ] || ! grep -q "pid=$our_pid," <<< "$listener"; then
         echo "$listener" >&2
-        fail "port $PORT is used by another program (above); choose a free one, e.g. PORT=8010"
+        free=""
+        for p in $(seq 8000 8999); do
+            if [ -z "$(ss -ltnH "sport = :$p" 2>/dev/null)" ]; then free=$p; break; fi
+        done
+        fail "port $PORT is used by another program (above); choose a free one${free:+, e.g. PORT=$free}"
     fi
 fi
 
 step "1. System packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-packages=(git curl ca-certificates openssl python3 nginx postgresql)
+# PostgreSQL is installed in step 4, and only when no version 15+ is here yet.
+packages=(git curl ca-certificates openssl python3 nginx)
 # Keep a certbot already installed (e.g. from snap) for the other sites; add apt's only if none.
 command -v certbot >/dev/null 2>&1 || packages+=(certbot)
 apt-get install -y -qq "${packages[@]}" >/dev/null
@@ -100,7 +113,8 @@ if [ ! -f "$APP_DIR/manage.py" ]; then
         ssh-keyscan -t ed25519 github.com 2>/dev/null | as_app tee -a "$home/.ssh/known_hosts" >/dev/null
     fi
     if ! as_app git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"; then
-        [[ "$REPO_URL" == git@* ]] && echo "Add this key on GitHub › the repository › Settings › Deploy keys, then run again:"             && cat "$home/.ssh/id_ed25519.pub"
+        [[ "$REPO_URL" == git@* ]] && echo "Add this key on GitHub › the repository › Settings › Deploy keys, then run again:" \
+            && cat "$home/.ssh/id_ed25519.pub"
         fail "could not clone $REPO_URL"
     fi
 fi
@@ -123,40 +137,67 @@ chown "$APP:$APP" "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
 step "4. PostgreSQL database"
-systemctl enable --now postgresql
-psql_root() { sudo -u postgres psql -v ON_ERROR_STOP=1 -qtAX "$@"; }
+# Django 6.1 needs PostgreSQL 15+. Other sites on this server may use an older one: then a
+# newer version is installed next to it, on its own port, and theirs is left as it is.
+newest_cluster() { pg_lsclusters -h 2>/dev/null | sort -k1,1nr | awk '$1 >= 15 { print $1, $3; exit }'; }
+if [ -z "$DB_PORT" ] && [ -z "$(newest_cluster)" ]; then
+    echo "No PostgreSQL 15+ here: installing PostgreSQL $PG_VERSION from apt.postgresql.org."
+    apt-get install -y -qq postgresql-common >/dev/null
+    [ -f /etc/apt/sources.list.d/pgdg.list ] || [ -f /etc/apt/sources.list.d/pgdg.sources ] \
+        || /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
+    apt-get install -y -qq "postgresql-$PG_VERSION" >/dev/null
+fi
+systemctl enable --now postgresql >/dev/null 2>&1 || true
+if [ -z "$DB_PORT" ]; then
+    read -r pg_version DB_PORT <<< "$(newest_cluster)"
+    [ -n "$DB_PORT" ] || fail "no PostgreSQL 15+ cluster is running (see: pg_lsclusters)"
+    pg_ctlcluster "$pg_version" main start 2>/dev/null || true
+    echo "Using PostgreSQL $pg_version on port $DB_PORT."
+fi
+psql_root() { sudo -u postgres psql -p "$DB_PORT" -v ON_ERROR_STOP=1 -qtAX "$@"; }
+[ "$(psql_root -c "SHOW server_version_num")" -ge 150000 ] || fail "PostgreSQL on port $DB_PORT is older than 15"
 database_url=$(get_env DATABASE_URL)
 if [ -n "$DB_NAME$DB_USER" ]; then
-    # A database created by hand: use it as it is, never change its user or password.
+    # Your own user and database: created here if missing, never changed if they exist.
     [ -n "$DB_NAME" ] && [ -n "$DB_USER" ] || fail "give both DB_NAME and DB_USER"
-    if [[ "$database_url" != "postgres://$DB_USER:"*"@localhost:5432/$DB_NAME" ]] || [ -n "$DB_PASSWORD" ]; then
+    if [[ "$database_url" != "postgres://$DB_USER:"*"@localhost:$DB_PORT/$DB_NAME" ]] || [ -n "$DB_PASSWORD" ]; then
         if [ -z "$DB_PASSWORD" ]; then
             [ -t 0 ] || fail "no terminal to ask for the password: set DB_PASSWORD"
             read -rsp "Password of PostgreSQL user $DB_USER: " DB_PASSWORD
             echo
         fi
-        PGPASSWORD="$DB_PASSWORD" psql -h localhost -U "$DB_USER" -d "$DB_NAME" -qtAX -c "SELECT 1" >/dev/null             || fail "cannot connect to database $DB_NAME as $DB_USER with that password"
+        if [ "$(psql_root -c "SELECT 1 FROM pg_roles WHERE rolname = '$DB_USER'")" != "1" ]; then
+            # Through stdin, so the password never shows in the process list.
+            psql_root <<< "CREATE ROLE \"$DB_USER\" WITH LOGIN PASSWORD '${DB_PASSWORD//\'/\'\'}'"
+            echo "PostgreSQL user $DB_USER created."
+        fi
+        if [ "$(psql_root -c "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'")" != "1" ]; then
+            sudo -u postgres createdb -p "$DB_PORT" --owner "$DB_USER" --encoding UTF8 --template template0 "$DB_NAME"
+            echo "Database $DB_NAME created."
+        fi
+        PGPASSWORD="$DB_PASSWORD" psql -h localhost -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -qtAX -c "SELECT 1" >/dev/null \
+            || fail "cannot connect to database $DB_NAME as $DB_USER with that password"
         # Percent-encode the password: characters like ! @ : / # would break the URL.
         encoded=$(DB_PASSWORD="$DB_PASSWORD" python3 -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["DB_PASSWORD"], safe=""))')
-        set_env DATABASE_URL "postgres://$DB_USER:$encoded@localhost:5432/$DB_NAME"
+        set_env DATABASE_URL "postgres://$DB_USER:$encoded@localhost:$DB_PORT/$DB_NAME"
         unset DB_PASSWORD encoded
         echo "Using database $DB_NAME as $DB_USER (connection checked)."
     fi
     # PostgreSQL 15+ no longer lets every user create tables in "public"; the owner can.
-    [ "$(psql_root -d "$DB_NAME" -c "SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = '$DB_NAME'")" = "$DB_USER" ]         || psql_root -d "$DB_NAME" -c "GRANT USAGE, CREATE ON SCHEMA public TO \"$DB_USER\""
+    [ "$(psql_root -c "SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = '$DB_NAME'")" = "$DB_USER" ] \
+        || psql_root -d "$DB_NAME" -c "GRANT USAGE, CREATE ON SCHEMA public TO \"$DB_USER\""
 else
-    if [ -z "$database_url" ] || [[ "$database_url" == *":password@"* ]]; then
+    if [[ "$database_url" != "postgres://$APP:"*"@localhost:$DB_PORT/$APP" ]] || [[ "$database_url" == *":password@"* ]]; then
         # New password, written only to the env file (hex: safe inside a URL).
         db_password=$(openssl rand -hex 24)
         if [ "$(psql_root -c "SELECT 1 FROM pg_roles WHERE rolname = '$APP'")" = "1" ]; then action=ALTER; else action=CREATE; fi
-        # Through stdin, so the password never shows in the process list.
         psql_root <<< "$action ROLE $APP WITH LOGIN PASSWORD '$db_password'"
-        set_env DATABASE_URL "postgres://$APP:$db_password@localhost:5432/$APP"
+        set_env DATABASE_URL "postgres://$APP:$db_password@localhost:$DB_PORT/$APP"
         unset db_password
         echo "Database user $APP has a new password (in the env file)."
     fi
     if [ "$(psql_root -c "SELECT 1 FROM pg_database WHERE datname = '$APP'")" != "1" ]; then
-        sudo -u postgres createdb --owner "$APP" --encoding UTF8 --template template0 "$APP"
+        sudo -u postgres createdb -p "$DB_PORT" --owner "$APP" --encoding UTF8 --template template0 "$APP"
         echo "Database $APP created."
     fi
 fi
@@ -226,7 +267,7 @@ fi
 step "9. First release: check, migrate, static files, start"
 # restart, not start: a run with a new PORT or WORKERS must take effect.
 systemctl restart finance_saber
-as_app "$APP_DIR/deploy/deploy.sh"
+as_app bash "$APP_DIR/deploy/deploy.sh"
 systemctl start finance_saber-daily-reports.timer
 
 step "10. From the outside"

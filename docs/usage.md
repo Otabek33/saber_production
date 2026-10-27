@@ -107,6 +107,11 @@ free one (`ss -ltnp` lists the ports in use) and pass `PORT=8010`, and optionall
 `WORKERS=3` to keep gunicorn small next to the other apps. nginx 1.18/1.24 (Ubuntu
 22.04/24.04) get `http2` on the `listen` line automatically.
 
+Django 6.1 needs PostgreSQL 15 or later. Ubuntu 22.04 ships 14: there the script adds
+the official PostgreSQL repository and installs PostgreSQL 17 next to 14, on its own
+port (usually 5433). The database is made there, and the other sites' databases on 14
+are not touched. `DB_PORT=` picks a cluster yourself; `pg_lsclusters` lists them.
+
 The same steps by hand, as root (replace `finance.example.uz` with your domain in the nginx file):
 
 ```sh
@@ -120,7 +125,7 @@ sudo -u postgres createdb finance_saber --owner finance_saber
 # App user and code
 useradd --system --create-home --shell /bin/bash finance_saber
 install -d -o finance_saber -g finance_saber /srv/finance_saber
-sudo -u finance_saber git clone https://github.com/Otabek33/finance_saber /srv/finance_saber
+sudo -u finance_saber git clone git@github.com:Otabek33/saber_production.git /srv/finance_saber
 cd /srv/finance_saber
 sudo -u finance_saber cp .env/production.env.example .env/production.env
 sudo -u finance_saber nano .env/production.env      # fill in every value
