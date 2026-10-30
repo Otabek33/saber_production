@@ -15,17 +15,37 @@
     {% include "forms/_field.html" with field=form.password %}
     <input type="hidden" name="next" value="{{ next }}">
 
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-      <div class="form-check">
-        {{ form.remember_me }}
-        <label class="form-check-label text-dark" for="{{ form.remember_me.id_for_label }}">{{ form.remember_me.label }}</label>
-      </div>
-      <a class="text-primary fw-medium" href="{% url 'users:password_reset' %}">{% translate "Forgot Password?" %}</a>
+    {# Theme is only a choice on this screen: it has no name, so the form does not send it. #}
+    <div class="mb-3">
+      <label for="theme-select" class="form-label">{% translate "Theme" %}</label>
+      <select id="theme-select" class="form-select">
+        <option value="light">{% translate "Light" %}</option>
+        <option value="dark">{% translate "Dark" %}</option>
+      </select>
+    </div>
+
+    <div class="form-check mb-4">
+      {{ form.remember_me }}
+      <label class="form-check-label text-dark" for="{{ form.remember_me.id_for_label }}">{{ form.remember_me.label }}</label>
     </div>
     <button type="submit" class="btn btn-primary w-100 py-8 mb-4 rounded-2">{% translate "Sign In" %}</button>
-    <div class="d-flex align-items-center justify-content-center">
-      <p class="fs-4 mb-0 fw-medium">{% blocktranslate with site=company_name %}New to {{ site }}?{% endblocktranslate %}</p>
-      <a class="text-primary fw-medium ms-2" href="{% url 'users:register' %}">{% translate "Create an account" %}</a>
-    </div>
   </form>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    // Light or dark, applied at once and saved the same way as the header switch (js/app.js).
+    (function () {
+      var select = document.getElementById("theme-select");
+      select.value = document.documentElement.getAttribute("data-bs-theme") === "dark" ? "dark" : "light";
+      select.addEventListener("change", function () {
+        document.documentElement.setAttribute("data-bs-theme", select.value);
+        try {
+          localStorage.setItem("theme", select.value);
+        } catch (e) {
+          // Storage unavailable: the choice applies to this page only.
+        }
+      });
+    })();
+  </script>
 {% endblock %}

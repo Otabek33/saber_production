@@ -15,10 +15,11 @@ from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 
 from finance_saber.core.permissions import PermissionMixin, permission
 
-from . import bank, exports, handbooks, importer, workbook
+from . import bank, company_files, exports, handbooks, importer, workbook
 from .forms import (
     ArticleForm,
     CategoryForm,
+    CompanyForm,
     CounterpartyForm,
     HandbookUploadForm,
     LedgerFilterForm,
@@ -36,6 +37,7 @@ from .models import (
     ArticleKind,
     CashDesk,
     Category,
+    Company,
     Counterparty,
     Kind,
     Operation,
@@ -455,6 +457,10 @@ def filter_counterparties(counterparties, params):
         counterparties = counterparties.filter(article__isnull=True)
     if params.get("region", "").isdigit():
         counterparties = counterparties.filter(region_id=params["region"])
+    if params.get("company") == "none":
+        counterparties = counterparties.filter(company__isnull=True)
+    elif params.get("company", "").isdigit():
+        counterparties = counterparties.filter(company_id=params["company"])
     return counterparties.order_by(F("article").asc(nulls_first=True), "name")
 
 
@@ -522,13 +528,16 @@ class CounterpartyListView(PermissionMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        counterparties = Counterparty.objects.select_related("article", "region").annotate(lines=Count("operations"))
+        counterparties = Counterparty.objects.select_related("article", "region", "company").annotate(
+            lines=Count("operations")
+        )
         return filter_counterparties(counterparties, self.request.GET)
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
             # Explicit order: Meta.ordering doesn't apply to aggregate (GROUP BY) queries.
             regions=Region.objects.annotate(counterparty_count=Count("counterparties")).order_by("name"),
+            companies=Company.objects.order_by("name"),
             unclassified_count=bank.unclassified_counterparties().count(),
             upload_form=HandbookUploadForm(initial={"dry_run": False}),
             **kwargs,
@@ -561,6 +570,110 @@ class CounterpartyCreateView(CounterpartyFormMixin, CreateView):
 class CounterpartyUpdateView(CounterpartyFormMixin, UpdateView):
     permission_required = "cashbook.change_counterparty"
     extra_context = {"title": _("Edit counterparty"), "section_url": reverse_lazy("cashbook:counterparties")}
+
+
+class CompanyListView(PermissionMixin, ListView):
+    """Our companies, each with the bank accounts connected to it; accounts not yet connected are listed at the top."""
+
+    template_name = "cashbook/companies.html"
+    permission_required = "cashbook.view_company"
+    context_object_name = "companies"
+
+    def get_queryset(self):
+        accounts = Counterparty.objects.annotate(lines=Count("operations")).order_by("name")
+        return (
+            Company.objects.select_related("region")
+            .annotate(account_count=Count("accounts", distinct=True))
+            .prefetch_related(Prefetch("accounts", queryset=accounts))
+        )
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(
+            unconnected_count=Counterparty.objects.filter(company__isnull=True).count(),
+            **kwargs,
+        )
+
+
+@permission(view="cashbook.view_company")
+def companies_export(request):
+    """The companies and their bank accounts as an .xlsx file (see company_files.py)."""
+    return exports.xlsx_response(exports.dated_filename(_("Companies")), [company_files.companies_sheet()])
+
+
+@permission(view="cashbook.view_company")
+def companies_seed(request):
+    """The project's companies file (cashbook/seed/companies.xlsx), e.g. to load into a new server."""
+    if response := company_files.seed_response():
+        return response
+    messages.error(request, _("The project has no such file yet. Write it with: manage.py export_companies --seed"))
+    return redirect("cashbook:companies")
+
+
+@require_POST
+@permission(change=("cashbook.change_company", "cashbook.change_counterparty"))
+def companies_import(request):
+    """Create companies from Excel (an upload, or the project's file) and connect their bank accounts."""
+    if "seed" in request.POST:
+        if not company_files.SEED_PATH.is_file():
+            messages.error(
+                request, _("The project has no such file yet. Write it with: manage.py export_companies --seed")
+            )
+            return redirect("cashbook:companies")
+        file, dry_run = company_files.SEED_PATH, "dry_run" in request.POST
+    else:
+        form = HandbookUploadForm(request.POST, request.FILES)
+        if not form.is_valid():
+            for error in form.errors.get("file", []):
+                messages.error(request, error)
+            return redirect("cashbook:companies")
+        file, dry_run = form.cleaned_data["file"], form.cleaned_data["dry_run"]
+    try:
+        report = company_files.load_companies(file, dry_run=dry_run)
+    except handbooks.HandbookError as error:
+        messages.error(request, str(error))
+        return redirect("cashbook:companies")
+    if report.errors:
+        shown = " ".join(report.errors[:10]) + (" …" if len(report.errors) > 10 else "")
+        messages.error(request, _("Nothing was saved: %(errors)s") % {"errors": shown})
+    elif report.saved:
+        messages.success(
+            request,
+            _("Loaded: %(created)s companies created, %(linked)s bank accounts connected.")
+            % {"created": report.created, "linked": report.linked},
+        )
+    else:
+        messages.info(
+            request,
+            _("Checked, nothing was saved: %(created)s companies to create, %(linked)s bank accounts to connect.")
+            % {"created": report.created, "linked": report.linked},
+        )
+    return redirect("cashbook:companies")
+
+
+class CompanyFormMixin(PermissionMixin, SuccessMessageMixin):
+    model = Company
+    form_class = CompanyForm
+    template_name = "cashbook/handbook_form.html"
+    success_url = reverse_lazy("cashbook:companies")
+    success_message = _("Saved.")
+
+
+class CompanyCreateView(CompanyFormMixin, CreateView):
+    permission_required = "cashbook.add_company"
+    extra_context = {
+        "title": _("New company"),
+        "section_url": reverse_lazy("cashbook:companies"),
+        "section_label": _("Companies"),
+    }
+
+
+class CompanyUpdateView(CompanyFormMixin, UpdateView):
+    permission_required = "cashbook.change_company"
+    extra_context = {
+        "title": _("Edit company"),
+        "section_url": reverse_lazy("cashbook:companies"),
+        "section_label": _("Companies"),
+    }
 
 
 class RegionFormMixin(PermissionMixin, SuccessMessageMixin):

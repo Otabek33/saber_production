@@ -18,11 +18,10 @@ changes.
 * Finance — the money side: cash desks, bank, the handbook and counterparties,
   exchange rates, the cash plan and collections, and sales (sales, clients and
   their payers, plans, imports); production and stock read-only.
-* Planner — the plans: the sales and production plan, the cash plan and
-  collections by region; cash desks, sales, production and stock read-only.
-* Technologist — production: recipes and norms, daily production and its
-  calculation, raw materials (receipts, write-offs, stock counts), finished
-  goods, the production Excel import and the production plan; sales read-only.
+* Planner and Technologist — Production only: daily production and its
+  journal, raw materials (stock, receipts, movements), finished goods, recipes
+  and norms. Nothing outside Production, not even read-only; the production
+  Excel import is the Director's.
 * Operator — sales entry: the day's sales (entering, correcting, cancelling)
   and the sales import; clients, debts and sales channels read-only.
 * Manager (Director) — every business section, but not users and roles.
@@ -62,12 +61,12 @@ DESCRIPTIONS = {
         "sales and clients. Production and stock: view only."
     ),
     Role.PLANNER: _(
-        "The sales and production plan, the cash plan and collections. Cash desks, sales, production and stock: "
-        "view only."
+        "Production only: daily production and its journal, raw materials, receipts and stock movements, "
+        "finished goods, recipes and norms."
     ),
     Role.TECHNOLOGIST: _(
-        "Recipes and norms, daily production and its calculation, raw materials and stock, finished goods, "
-        "the production import and the production plan. Sales: view only."
+        "Production only: daily production and its journal, raw materials, receipts and stock movements, "
+        "finished goods, recipes and norms."
     ),
     Role.OPERATOR: _("Enters the day's sales and the sales import, and corrects them. Clients and debts: view only."),
     Role.MANAGER: _("Every business section, without users and roles."),
@@ -133,8 +132,16 @@ AREAS = [
     Area(
         "counterparties",
         _("Counterparties and regions"),
-        _perms("cashbook", "view_counterparty", "view_region"),
-        _perms("cashbook", "add_counterparty", "change_counterparty", "add_region", "change_region"),
+        _perms("cashbook", "view_counterparty", "view_region", "view_company"),
+        _perms(
+            "cashbook",
+            "add_counterparty",
+            "change_counterparty",
+            "add_region",
+            "change_region",
+            "add_company",
+            "change_company",
+        ),
     ),
     Area(
         "rates",
@@ -200,8 +207,16 @@ AREAS = [
     Area(
         "materials",
         _("Raw materials: receipts, write-offs, counts"),
-        _perms("production", "view_material", "view_materialmove"),
-        _perms("production", "add_material", "change_material", "add_materialmove", "change_materialmove"),
+        _perms("production", "view_material", "view_materialmove", "view_materialreceipt"),
+        _perms(
+            "production",
+            "add_material",
+            "change_material",
+            "add_materialmove",
+            "change_materialmove",
+            "add_materialreceipt",
+            "change_materialreceipt",
+        ),
     ),
     Area(
         "goods",
@@ -227,15 +242,10 @@ STANDARD_ACCESS: dict[str, dict[str, str]] = {
         "collections": EDIT, "sales": EDIT, "clients": EDIT, "plan": EDIT,
         "recipes": VIEW, "production": VIEW, "materials": VIEW, "goods": VIEW,
     },
-    Role.PLANNER: {
-        "cash": VIEW, "handbook": VIEW, "counterparties": VIEW, "rates": VIEW, "cash_plan": EDIT,
-        "collections": EDIT, "sales": VIEW, "clients": VIEW, "plan": EDIT,
-        "recipes": VIEW, "production": VIEW, "materials": VIEW, "goods": VIEW,
-    },
-    Role.TECHNOLOGIST: {
-        "sales": VIEW, "clients": VIEW, "plan": EDIT,
-        "recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT, "production_import": EDIT,
-    },
+    # Production only: Выпуск за день, Журнал выпуска, Сырьё на складе, Поступления сырья,
+    # Готовая продукция, Рецептуры и нормы, Движения склада.
+    Role.PLANNER: {"recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT},
+    Role.TECHNOLOGIST: {"recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT},
     Role.OPERATOR: {"sales": EDIT, "clients": VIEW},
     Role.MANAGER: {
         "cash": EDIT, "handbook": EDIT, "counterparties": EDIT, "rates": EDIT, "cash_plan": EDIT,

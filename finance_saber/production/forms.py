@@ -4,24 +4,47 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from django import forms
 from django.core.validators import FileExtensionValidator
 from django.forms import formset_factory, inlineformset_factory
+from django.forms.formsets import DELETION_FIELD_NAME
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from finance_saber.cashbook.forms import MoneyField
+from finance_saber.cashbook.models import Company
 from finance_saber.core.forms import BootstrapFormMixin
 
-from .models import DEFAULT_ALLOWED_LOSS, Material, MaterialMove, Product, ProductMove, RecipeLine
+from .models import (
+    DEFAULT_ALLOWED_LOSS,
+    QUANTITY_STEP,
+    Material,
+    MaterialMove,
+    MaterialReceipt,
+    MaterialReceiptLine,
+    Product,
+    ProductMove,
+    RecipeLine,
+)
 
 DATE_WIDGET = forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
 SEARCHABLE = {"data-searchable": ""}  # production.js turns these selects into Select2
 
 
 class QuantityField(MoneyField):
-    """A quantity typed like "1 250,5": reuses the cash desk's amount parsing, with 4 decimals."""
+    """A quantity typed like "1 250,5" or "0,125", with up to 4 decimals.
+
+    Unlike amounts, a lone comma is always the decimal mark ("0,125" kg is 0.125, not 125):
+    thousands are grouped by spaces, as app.js formats them while typing.
+    """
 
     def __init__(self, **kwargs):
         kwargs.setdefault("decimal_places", 4)
         super().__init__(**kwargs)
+
+    def to_python(self, value):
+        if isinstance(value, str):
+            text = re.sub(r"[\s  ']", "", value)
+            if text.count(",") == 1 and "." not in text:
+                value = text.replace(",", ".")
+        return super().to_python(value)
 
 
 class NormField(forms.DecimalField):
@@ -103,17 +126,15 @@ class DailyProductionForm(BootstrapFormMixin, forms.Form):
         return {product: self.cleaned_data.get(self.field_name(product)) or 0 for product in self.products}
 
 
-class MaterialReceiptForm(BootstrapFormMixin, forms.ModelForm):
-    """A movement entered by hand; ``kind`` and ``sign`` (+1 in, −1 out) say what it is."""
+class MaterialMoveForm(BootstrapFormMixin, forms.ModelForm):
+    """A material movement entered by hand; ``kind`` and ``sign`` (+1 in, −1 out) say what it is."""
 
-    kind, sign = MaterialMove.Kind.RECEIPT, 1
     quantity = QuantityField(label=_("Quantity"))
 
     class Meta:
         model = MaterialMove
         fields = ["date", "material", "quantity", "note"]
         widgets = {"date": DATE_WIDGET, "material": forms.Select(attrs=SEARCHABLE)}
-        labels = {"note": _("Supplier / note")}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -121,10 +142,95 @@ class MaterialReceiptForm(BootstrapFormMixin, forms.ModelForm):
         self.fields["date"].initial = timezone.localdate()
 
 
-class MaterialWriteOffForm(MaterialReceiptForm):
+class MaterialReceiptForm(BootstrapFormMixin, forms.ModelForm):
+    """The receipt document's header: who it came from, when, and the supplier's invoice number."""
+
+    class Meta:
+        model = MaterialReceipt
+        fields = ["supplier", "date", "number", "note"]
+        # data-supplier-first: production.js shows the material lines once a supplier is chosen
+        widgets = {"date": DATE_WIDGET, "supplier": forms.Select(attrs={**SEARCHABLE, "data-supplier-first": ""})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Suppliers are the companies of Cash desk › Companies, other than our own.
+        self.fields["supplier"].queryset = Company.objects.filter(is_own=False).order_by("name")
+        self.fields["supplier"].empty_label = _("Choose a supplier")
+        # Today by default. Not field.initial: with an instance, its empty date would win.
+        self.initial["date"] = self.initial.get("date") or timezone.localdate()
+
+    def clean_number(self):
+        # Kept in capitals, so "нк-101" and "НК-101" are one number on any database (SQLite
+        # compares Cyrillic case-sensitively) and the unique constraint catches a duplicate.
+        return " ".join(self.cleaned_data["number"].split()).upper()
+
+    def clean(self):
+        cleaned = super().clean()
+        supplier, number = cleaned.get("supplier"), cleaned.get("number")
+        duplicate = MaterialReceipt.objects.posted().filter(supplier=supplier, number=number)
+        if supplier and number and duplicate.exclude(pk=self.instance.pk).exists():
+            self.add_error(
+                "number",
+                _("This supplier's document № %(number)s is already entered.") % {"number": number},
+            )
+        return cleaned
+
+
+class ReceiptLineForm(BootstrapFormMixin, forms.ModelForm):
+    # data-number: app.js groups the digits as they are typed ("1 250,5"), as QuantityField reads them
+    quantity = QuantityField(
+        label=_("Quantity"), min_value=QUANTITY_STEP, widget=forms.TextInput(attrs={"data-number": "4"})
+    )
+
+    class Meta:
+        model = MaterialReceiptLine
+        fields = ["material", "quantity"]
+        widgets = {"material": forms.Select(attrs=SEARCHABLE)}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["material"].queryset = Material.objects.filter(is_active=True)
+
+
+class BaseReceiptLineFormSet(forms.BaseInlineFormSet):
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+        # A removed line stays in the page, hidden, with DELETE set by production.js: the
+        # formset then skips it, so lines can be removed anywhere without renumbering forms.
+        form.fields[DELETION_FIELD_NAME].widget = forms.HiddenInput(attrs={"data-delete": ""})
+
+    def clean(self):
+        # Before Django's own unique check, so a repeated material gets this message on its line.
+        seen = set()
+        for form in self.forms:
+            if self._should_delete_form(form):
+                continue
+            material = form.cleaned_data.get("material") if form.has_changed() else None
+            if material is None:
+                continue
+            if material in seen:
+                message = _("%(material)s is already in this receipt: add its quantity to one line.")
+                form.add_error("material", message % {"material": material})
+            seen.add(material)
+        super().clean()
+
+
+ReceiptLineFormSet = inlineformset_factory(
+    MaterialReceipt,
+    MaterialReceiptLine,
+    form=ReceiptLineForm,
+    formset=BaseReceiptLineFormSet,
+    extra=2,
+    can_delete=True,
+    min_num=1,
+    validate_min=True,
+)
+
+
+class MaterialWriteOffForm(MaterialMoveForm):
     kind, sign = MaterialMove.Kind.WRITE_OFF, -1
 
-    class Meta(MaterialReceiptForm.Meta):
+    class Meta(MaterialMoveForm.Meta):
         labels = {"note": _("Reason")}
 
 

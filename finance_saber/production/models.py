@@ -322,7 +322,7 @@ class Move(models.Model):
     objects = MoveQuerySet.as_manager()
 
     # Movements a document made (a production run, a sale) change with that document, not by hand.
-    DOCUMENT_SOURCES = ("sale:",)
+    DOCUMENT_SOURCES = ("sale:", "receipt:")
 
     class Meta:
         abstract = True
@@ -353,6 +353,96 @@ class MaterialMove(Move):
 
     def __str__(self):
         return f"{self.date} {self.material} {self.quantity}"
+
+
+class MaterialReceiptQuerySet(models.QuerySet):
+    def posted(self):
+        return self.filter(is_cancelled=False)
+
+
+class MaterialReceipt(models.Model):
+    """Materials received from a supplier: one document (the supplier's invoice) with its lines.
+
+    Like 1C's «Поступление»: the document is the record, and its lines make the stock
+    movements (rebuild_moves), so they change only with the document. A wrong document
+    isn't deleted: it is cancelled, and its movements stop counting.
+    """
+
+    date = models.DateField(_("date"), db_index=True)
+    supplier = models.ForeignKey(
+        "cashbook.Company", models.PROTECT, related_name="material_receipts", verbose_name=_("supplier")
+    )
+    number = models.CharField(
+        _("registration number"), max_length=50, help_text=_("The number of the supplier's invoice or waybill.")
+    )
+    note = models.CharField(_("note"), max_length=255, blank=True)
+    is_cancelled = models.BooleanField(_("cancelled"), default=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, models.PROTECT, null=True, blank=True, related_name="+", verbose_name=_("created by")
+    )
+    created_at = models.DateTimeField(_("created"), auto_now_add=True)
+
+    objects = MaterialReceiptQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        verbose_name = _("material receipt")
+        verbose_name_plural = _("material receipts")
+        constraints = [
+            # The same invoice of the same supplier entered twice is a duplicate.
+            models.UniqueConstraint(
+                fields=["supplier", "number"],
+                condition=Q(is_cancelled=False),
+                name="unique_material_receipt_number_per_supplier",
+            )
+        ]
+
+    def __str__(self):
+        return f"№ {self.number} {self.date:%d.%m.%Y} {self.supplier}"
+
+    @property
+    def stock_source(self) -> str:
+        """Prefix of its movements' source: "receipt:<document>:<line>"."""
+        return f"receipt:{self.pk}:"
+
+    def moves(self):
+        return MaterialMove.objects.filter(source__startswith=self.stock_source)
+
+    def rebuild_moves(self):
+        """(Re)create one receipt movement per line; none while the document is cancelled."""
+        self.moves().delete()
+        if self.is_cancelled:
+            return
+        note = f"{self.supplier.name}, № {self.number}"[:255]
+        MaterialMove.objects.bulk_create(
+            MaterialMove(
+                material_id=line.material_id,
+                date=self.date,
+                kind=MaterialMove.Kind.RECEIPT,
+                quantity=line.quantity,
+                note=note,
+                source=f"{self.stock_source}{line.pk}",
+                created_by=self.created_by,
+            )
+            for line in self.lines.all()
+        )
+
+
+class MaterialReceiptLine(models.Model):
+    receipt = models.ForeignKey(MaterialReceipt, models.CASCADE, related_name="lines", verbose_name=_("receipt"))
+    material = models.ForeignKey(Material, models.PROTECT, related_name="receipt_lines", verbose_name=_("material"))
+    quantity = models.DecimalField(_("quantity"), **QUANTITY, validators=[MinValueValidator(QUANTITY_STEP)])
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = _("receipt line")
+        verbose_name_plural = _("receipt lines")
+        constraints = [
+            models.UniqueConstraint(fields=["receipt", "material"], name="unique_material_per_receipt"),
+        ]
+
+    def __str__(self):
+        return f"{self.material} {self.quantity}"
 
 
 class ProductMove(Move):

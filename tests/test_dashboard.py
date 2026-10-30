@@ -228,9 +228,10 @@ def test_dashboard_page_for_a_manager(client, user, bon):
 
 
 def test_dashboard_shows_only_what_the_role_allows(client, planner, no_role):
-    client.force_login(planner)
+    client.force_login(planner)  # Production only: stock and production, no money or sales
     context = client.get(reverse("core:home")).context
-    assert "money" in context and "debts" in context
+    assert "stock" in context
+    assert "money" not in context and "debts" not in context and "sales" not in context
     client.force_login(no_role)
     response = client.get(reverse("core:home"))
     assert "money" not in response.context and "sales" not in response.context
@@ -238,14 +239,14 @@ def test_dashboard_shows_only_what_the_role_allows(client, planner, no_role):
 
 
 @pytest.mark.parametrize("name", ["planning:cash", "planning:collections", "planning:rates"])
-def test_plan_pages(client, planner, name):
-    client.force_login(planner)
+def test_plan_pages(client, finance, name):
+    client.force_login(finance)
     assert client.get(reverse(name), {"date": MONDAY.isoformat(), "edit": "1"}).status_code == 200
 
 
-def test_plan_pages_save(client, planner, finance):
+def test_plan_pages_save(client, finance):
     region = Region.objects.get_or_create(name="Bukhara")[0]
-    client.force_login(planner)
+    client.force_login(finance)
     response = client.post(
         reverse("planning:collections") + f"?date={MONDAY.isoformat()}",
         {f"plan-{region.pk}-{MONDAY.isoformat()}": "2000000"},

@@ -91,6 +91,7 @@ LOCAL_APPS = [
     "finance_saber.production",
     "finance_saber.sales",
     "finance_saber.planning",
+    "finance_saber.audit",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -132,6 +133,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
+    # After authentication: the action log knows who is acting (finance_saber/audit).
+    "finance_saber.audit.context.AuditMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]

@@ -202,9 +202,7 @@ def test_runs_recorded_before_get_the_recipe_copied(anor):
     assert not MaterialMove.objects.filter(run=run).exists()  # history: stock unchanged
 
 
-def test_viewers_cannot_save(client, planner, anor):
+def test_viewers_cannot_save(client, finance, anor):
     product, materials = anor
-    client.force_login(planner)
-    if planner.has_perm("production.change_productionrun"):
-        pytest.skip("the planner role may record production")
+    client.force_login(finance)  # finance views production, doesn't record it
     assert client.post(url(product), form_data(materials)).status_code == 403

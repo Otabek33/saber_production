@@ -29,17 +29,19 @@ ROLES = reverse("users:roles")
             ["production.add_productionrun", "production.change_recipeline", "users.change_user"],
         ),
         (
-            "planner",
-            ["sales.change_plan", "planning.change_cashplan", "planning.change_collectionplan",
-             "cashbook.view_operation", "sales.view_sale", "production.view_material"],
-            ["cashbook.add_operation", "sales.add_sale", "production.add_productionrun", "users.change_user"],
+            "planner",  # Production only, like the technologist
+            ["production.add_productionrun", "production.change_productionrun", "production.add_materialreceipt",
+             "production.change_recipeline", "production.add_productmove", "production.view_materialmove"],
+            ["cashbook.view_operation", "sales.view_sale", "sales.view_plan", "planning.view_cashplan",
+             "production.import_excel", "users.change_user"],
         ),
         (
             "technologist",
             ["production.change_recipeline", "production.delete_recipeline", "production.add_productionrun",
-             "production.change_productionrun", "production.add_materialmove", "production.import_excel",
-             "sales.change_plan", "sales.view_sale"],
-            ["cashbook.view_operation", "sales.add_sale", "planning.view_cashplan", "users.change_user"],
+             "production.change_productionrun", "production.add_materialmove", "production.add_materialreceipt",
+             "production.change_materialreceipt", "production.add_productmove"],
+            ["cashbook.view_operation", "sales.view_sale", "sales.view_plan", "planning.view_cashplan",
+             "production.import_excel", "users.change_user"],
         ),
         (
             "operator",
@@ -71,7 +73,9 @@ def test_access_matrix_shows_who_works_and_who_views(db):
     assert recipes[Role.TECHNOLOGIST] == EDIT
     assert recipes[Role.FINANCE] == VIEW
     cash = dict(zip(order, rows["Cash desks and bank"], strict=True))
-    assert (cash[Role.FINANCE], cash[Role.PLANNER], cash[Role.TECHNOLOGIST]) == (EDIT, VIEW, NONE)
+    assert (cash[Role.FINANCE], cash[Role.PLANNER], cash[Role.TECHNOLOGIST]) == (EDIT, NONE, NONE)
+    materials = dict(zip(order, rows["Raw materials: receipts, write-offs, counts"], strict=True))
+    assert (materials[Role.PLANNER], materials[Role.TECHNOLOGIST], materials[Role.FINANCE]) == (EDIT, EDIT, VIEW)
     users = dict(zip(order, rows["Users, roles and permissions"], strict=True))
     assert [users[role] for role in Role] == [NONE] * len(Role)
     assert users["superuser"] == EDIT
@@ -187,11 +191,20 @@ def test_finance_planner_group_is_renamed_to_planner(db):
     assert list(person.groups.values_list("name", flat=True)) == [Role.PLANNER]
 
 
-def test_technologist_menu_has_no_money_sections(client, technologist, finance):
-    client.force_login(technologist)
-    sections = {str(entry.label) for entry in client.get(reverse("core:home")).context["nav_menu"]}
-    assert {"Производство", "Продажи"} <= sections
-    assert not sections & {"Касса", "Финансы", "Закупки", "Отчёты", "Администрирование"}
+@pytest.mark.parametrize("role_fixture", ["technologist", "planner"])
+def test_production_roles_see_only_production(request, client, role_fixture):
+    client.force_login(request.getfixturevalue(role_fixture))
+    menu = client.get(reverse("core:home")).context["nav_menu"]
+    sections = {str(entry.label) for entry in menu if entry.children}
+    assert sections == {"Производство"}
+    production = next(entry for entry in menu if str(entry.label) == "Производство")
+    assert [str(child.label) for child in production.children] == [
+        "Выпуск за день", "Журнал выпуска", "Сырьё на складе", "Поступления сырья",
+        "Готовая продукция", "Рецептуры и нормы", "Движения склада",
+    ]  # fmt: skip
+
+
+def test_finance_menu_has_the_money_sections(client, finance):
     client.force_login(finance)
     sections = {str(entry.label) for entry in client.get(reverse("core:home")).context["nav_menu"]}
     assert {"Касса", "Финансы", "Продажи", "Закупки", "Отчёты"} <= sections

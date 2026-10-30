@@ -20,6 +20,12 @@ urlpatterns = [
     path("counterparties/import/", views.counterparty_import, name="counterparty_import"),
     path("counterparties/add/", views.CounterpartyCreateView.as_view(), name="counterparty_add"),
     path("counterparties/<int:pk>/edit/", views.CounterpartyUpdateView.as_view(), name="counterparty_edit"),
+    path("companies/", views.CompanyListView.as_view(), name="companies"),
+    path("companies/export/", views.companies_export, name="companies_export"),
+    path("companies/project-file/", views.companies_seed, name="companies_seed"),
+    path("companies/import/", views.companies_import, name="companies_import"),
+    path("companies/add/", views.CompanyCreateView.as_view(), name="company_add"),
+    path("companies/<int:pk>/edit/", views.CompanyUpdateView.as_view(), name="company_edit"),
     path("regions/add/", views.RegionCreateView.as_view(), name="region_add"),
     path("regions/<int:pk>/edit/", views.RegionUpdateView.as_view(), name="region_edit"),
     # Desk pages last: their slug would otherwise match the fixed paths above.

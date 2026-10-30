@@ -90,6 +90,12 @@ NAVIGATION = (
                 ),
                 permission="cashbook.view_counterparty",
             ),
+            NavItem(
+                _("Companies"),
+                "cashbook:companies",
+                also_active_on=("cashbook:company_add", "cashbook:company_edit"),
+                permission="cashbook.view_company",
+            ),
         ),
     ),
     NavItem(
@@ -104,11 +110,16 @@ NAVIGATION = (
                 also_active_on=(
                     "production:material_add",
                     "production:material_edit",
-                    "production:material_receipt",
                     "production:material_write_off",
                     "production:material_import",
                 ),
                 permission="production.view_material",
+            ),
+            NavItem(
+                _("Material receipts"),
+                "production:receipts",
+                also_active_on=("production:material_receipt", "production:receipt"),
+                permission="production.view_materialreceipt",
             ),
             NavItem(
                 _("Finished goods"),
@@ -200,6 +211,7 @@ NAVIGATION = (
                 also_active_on=("users:role_edit",),
                 permission="users.change_user",
             ),
+            NavItem(_("Action log"), "audit:events", permission="audit.view_auditevent"),
         ),
     ),
 )

@@ -2,14 +2,19 @@
 {% load i18n %}
 {% comment %}
   Form page for handbook entries: articles and categories (back to the Handbook),
-  or counterparties and regions (views pass section_url: back to Counterparties).
+  or counterparties and regions (views pass section_url: back to Counterparties;
+  section_label names another section, e.g. Companies).
 {% endcomment %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block page_header %}
-  {% if section_url %}{% translate "Counterparties" as section %}{% else %}{% translate "Handbook" as section %}{% endif %}
-  {% include "partials/_page_header.html" with section=section %}
+  {% if section_label %}
+    {% include "partials/_page_header.html" with section=section_label %}
+  {% else %}
+    {% if section_url %}{% translate "Counterparties" as section %}{% else %}{% translate "Handbook" as section %}{% endif %}
+    {% include "partials/_page_header.html" with section=section %}
+  {% endif %}
 {% endblock %}
 
 {% block content %}

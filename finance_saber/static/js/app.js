@@ -56,4 +56,37 @@ document.addEventListener("DOMContentLoaded", function () {
       setFullscreenMode(false);
     }
   });
+
+  // Number inputs (data-number="<decimals>"): digits grouped by spaces and a decimal comma
+  // as they are typed, "1250.5" -> "1 250,5", the way the server reads them (QuantityField).
+  function formatNumber(text, decimals) {
+    var clean = text.replace(/[\s  ']/g, "").replace(/\./g, ",").replace(/[^\d,]/g, "");
+    var comma = clean.indexOf(",");
+    var whole = comma === -1 ? clean : clean.slice(0, comma);
+    var fraction = comma === -1 ? "" : clean.slice(comma + 1).replace(/,/g, "").slice(0, decimals);
+    whole = whole.replace(/^0+(?=\d)/, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    if (comma === -1 || decimals === 0) return whole;
+    return (whole || "0") + "," + fraction;
+  }
+  // How many digits and commas come before the caret: the caret goes back after as many.
+  function significant(text) {
+    return text.replace(/[^\d,.]/g, "").length;
+  }
+  function reformat(input) {
+    var decimals = Number(input.dataset.number) || 0;
+    var caret = input.selectionStart === null ? input.value.length : input.selectionStart;
+    var before = significant(input.value.slice(0, caret));
+    var formatted = formatNumber(input.value, decimals);
+    if (formatted === input.value) return;
+    input.value = formatted;
+    var position = 0;
+    for (var seen = 0; position < formatted.length && seen < before; position++) {
+      if (/[\d,]/.test(formatted[position])) seen++;
+    }
+    if (document.activeElement === input) input.setSelectionRange(position, position);
+  }
+  document.addEventListener("input", function (event) {
+    if (event.target.matches && event.target.matches("input[data-number]")) reformat(event.target);
+  });
+  document.querySelectorAll("input[data-number]").forEach(reformat);
 });

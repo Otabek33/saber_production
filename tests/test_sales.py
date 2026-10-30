@@ -359,8 +359,8 @@ def test_plan_page_shows_plan_and_fact(client, user, tmp_path, client_shop, tea,
     assert (october["plan"], october["fact"], october["percent"]) == (1000, 500, 50)
 
 
-def test_plan_can_be_edited(client, planner, tea):
-    client.force_login(planner)
+def test_plan_can_be_edited(client, finance, tea):
+    client.force_login(finance)
     response = client.post(reverse("sales:plan") + "?year=2026&kind=sales", {f"plan-{tea.pk}-11": "1 500"})
     assert response.status_code == 302
     assert Plan.objects.get(product=tea, month=11, year=2026, kind=Plan.Kind.SALES).quantity == 1500
@@ -369,12 +369,12 @@ def test_plan_can_be_edited(client, planner, tea):
 # --- Roles ------------------------------------------------------------------------------
 
 
-def test_planner_reads_sales_but_cannot_enter_them(client, planner, tea, client_shop):
-    client.force_login(planner)
-    assert client.get(reverse("sales:daily")).status_code == 200
-    assert client.get(reverse("sales:debts")).status_code == 200
-    assert post_sale(client, client=str(client_shop.pk), product=tea.pk).status_code == 403
-    assert client.get(reverse("sales:import")).status_code == 403
+def test_production_roles_have_no_sales(client, planner, technologist, tea, client_shop):
+    for person in (planner, technologist):
+        client.force_login(person)
+        assert client.get(reverse("sales:daily")).status_code == 403
+        assert client.get(reverse("sales:debts")).status_code == 403
+        assert post_sale(client, client=str(client_shop.pk), product=tea.pk).status_code == 403
 
 
 def test_no_role_sees_no_sales(client, no_role):

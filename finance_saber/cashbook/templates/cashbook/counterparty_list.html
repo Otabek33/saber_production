@@ -36,6 +36,16 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="col-6 col-md-auto">
+              <label for="company" class="form-label">{% translate "Company" %}</label>
+              <select name="company" id="company" class="form-select">
+                <option value="">{% translate "All companies" %}</option>
+                <option value="none"{% if request.GET.company == "none" %} selected{% endif %}>{% translate "Not connected" %}</option>
+                {% for company in companies %}
+                  <option value="{{ company.pk }}"{% if request.GET.company == company.pk|stringformat:"s" %} selected{% endif %}>{{ company.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
             <div class="col-12 col-md-auto d-flex gap-2 mb-2">
               <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
               <a href="{% url 'cashbook:counterparties' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
@@ -97,6 +107,7 @@
                   <th>{% translate "Account number" %}</th>
                   <th>{% translate "Article" %}</th>
                   <th>{% translate "Region" %}</th>
+                  <th>{% translate "Company" %}</th>
                   <th class="num">{% translate "Lines" %}</th>
                   <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
                 </tr>
@@ -115,6 +126,7 @@
                       {% endif %}
                     </td>
                     <td>{{ counterparty.region|default:"" }}</td>
+                    <td>{{ counterparty.company.name|default:"" }}</td>
                     <td class="num">{{ counterparty.lines }}</td>
                     <td class="text-end">
                       {% if perms.cashbook.change_counterparty %}<a href="{% url 'cashbook:counterparty_edit' counterparty.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}">
@@ -123,7 +135,7 @@
                     </td>
                   </tr>
                 {% empty %}
-                  <tr><td colspan="7" class="text-center text-muted py-6">{% translate "No counterparties found." %}</td></tr>
+                  <tr><td colspan="8" class="text-center text-muted py-6">{% translate "No counterparties found." %}</td></tr>
                 {% endfor %}
               </tbody>
             </table>

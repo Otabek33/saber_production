@@ -1,4 +1,4 @@
-"""Roles: what a superuser, manager, finance planner and a user without a role may see and do."""
+"""Roles: what a superuser, manager, planner, finance and a user without a role may see and do."""
 
 import datetime
 from decimal import Decimal
@@ -21,21 +21,25 @@ from finance_saber.users.roles import (
     user_role,
 )
 
-# Pages and who may open them: (url name, kwargs, manager, planner)
+# Pages and who may open them: (url name, kwargs, manager, planner). The planner works in
+# Production only: nothing outside it, and not the production import (the Director's).
 PAGES = [
-    ("cashbook:operations", {"desk": "bon"}, True, True),
-    ("cashbook:handbook", {}, True, True),
-    ("cashbook:counterparties", {}, True, True),
-    ("cashbook:article_add", {}, True, False),  # the planner only sees the handbook
+    ("cashbook:operations", {"desk": "bon"}, True, False),
+    ("cashbook:handbook", {}, True, False),
+    ("cashbook:counterparties", {}, True, False),
+    ("cashbook:article_add", {}, True, False),
+    ("sales:daily", {}, True, False),
+    ("sales:plan", {}, True, False),
     ("production:daily", {}, True, True),
     ("production:journal", {}, True, True),
     ("production:materials", {}, True, True),
+    ("production:receipts", {}, True, True),
     ("production:products", {}, True, True),
     ("production:recipes", {}, True, True),
     ("production:moves", {}, True, True),
-    ("production:material_receipt", {}, True, False),
-    ("production:shipment", {}, True, False),
-    ("production:material_add", {}, True, False),
+    ("production:material_receipt", {}, True, True),
+    ("production:shipment", {}, True, True),
+    ("production:material_add", {}, True, True),
     ("production:import", {}, True, False),
     ("users:list", {}, False, False),
 ]
@@ -70,17 +74,17 @@ def test_who_can_open_what(client, user, planner, no_role, superuser, url_name, 
         assert (client.get(url).status_code == 200) is allowed, (account.username, url)
 
 
-def test_planner_cannot_record_production(client, planner):
+def test_finance_cannot_record_production(client, finance):
     product = Product.objects.create(name="Чай", volume=Decimal("0.45"))
-    client.force_login(planner)
+    client.force_login(finance)
     response = client.post(reverse("production:daily"), {f"product_{product.pk}": "10"})
     assert response.status_code == 403
     assert not product.runs.exists()
 
 
-def test_planner_sees_production_read_only(client, planner):
+def test_finance_sees_production_read_only(client, finance):
     Product.objects.create(name="Чай", volume=Decimal("0.45"))
-    client.force_login(planner)
+    client.force_login(finance)
     response = client.get(reverse("production:daily"))
     assert not response.context["can_edit"]
     assert all(field.field.disabled for _product, field, _possible in response.context["rows"])
@@ -94,12 +98,12 @@ def test_finance_can_add_a_cash_operation(client, finance):
     assert response.status_code == 400  # let through: the incomplete form is what's rejected
 
 
-def test_planner_cannot_cancel_a_stock_movement(client, planner):
+def test_finance_cannot_cancel_a_stock_movement(client, finance):
     material = Material.objects.create(name="Сахар", unit="кг")
     move = MaterialMove.objects.create(
         material=material, date=datetime.date(2026, 10, 22), kind=MaterialMove.Kind.OPENING, quantity=1
     )
-    client.force_login(planner)
+    client.force_login(finance)
     assert client.post(reverse("production:move_cancel", args=["materials", move.pk])).status_code == 403
     move.refresh_from_db()
     assert not move.is_cancelled
@@ -128,9 +132,9 @@ def test_superuser_assigns_a_role(client, superuser, no_role):
     assert response.status_code == 302
     no_role.refresh_from_db()
     assert user_role(no_role) == Role.PLANNER
-    assert no_role.has_perm("planning.change_cashplan")
-    assert not no_role.has_perm("cashbook.add_operation")  # the planner sees cash desks, finance keeps them
-    assert not no_role.has_perm("production.add_productionrun")
+    assert no_role.has_perm("production.add_productionrun")
+    assert not no_role.has_perm("cashbook.view_operation")  # Production only
+    assert not no_role.has_perm("planning.change_cashplan")
 
 
 def test_changing_a_role_replaces_the_old_one(user):

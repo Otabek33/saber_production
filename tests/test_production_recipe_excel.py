@@ -155,8 +155,8 @@ def test_upload_page(client, technologist, recipe):
     assert RecipeLine.objects.count() == 2
 
 
-def test_viewers_cannot_load(client, planner, recipe):
-    client.force_login(planner)
+def test_viewers_cannot_load(client, finance, recipe):
+    client.force_login(finance)
     assert URL not in client.get(PAGE).content.decode()
     assert client.get(reverse("production:recipe_export")).status_code == 200
     upload = SimpleUploadedFile("recipes.xlsx", workbook().getvalue())

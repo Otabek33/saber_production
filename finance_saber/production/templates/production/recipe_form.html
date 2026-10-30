@@ -47,7 +47,7 @@
                   <th class="text-center" style="width: 70px">{% translate "Delete" %}</th>
                 </tr>
               </thead>
-              <tbody data-recipe-lines>
+              <tbody data-lines="recipe">
                 {% for line in formset %}
                   <tr>
                     <td>
@@ -84,7 +84,7 @@
           <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
             {% if can_edit %}
             <button type="submit" class="btn btn-primary">{% translate "Save Changes" %}</button>
-            <button type="button" class="btn bg-success-subtle text-success" data-add-recipe-line>
+            <button type="button" class="btn bg-success-subtle text-success" data-add-line="recipe">
               <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon> {% translate "Add a line" %}
             </button>
             {% endif %}

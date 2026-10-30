@@ -63,15 +63,16 @@ def test_superuser_gives_a_role_a_section(client, superuser, technologist):
     page = client.get(url()).content.decode()
     assert "Стандартный доступ" in page and "Только суперпользователь: ролям не выдаётся" in page
 
-    response = client.post(url(), form_data(TECH, cash=VIEW, production_import=NONE))
+    response = client.post(url(), form_data(TECH, cash=VIEW, goods=VIEW))
     assert response.status_code == 302
     technologist = type(technologist).objects.get(pk=technologist.pk)  # fresh: permissions are cached per object
     assert technologist.has_perm("cashbook.view_operation")
     assert not technologist.has_perm("cashbook.add_operation")
-    assert not technologist.has_perm("production.import_excel")
+    assert technologist.has_perm("production.view_productmove")
+    assert not technologist.has_perm("production.add_productmove")
     assert {(a.area, a.level) for a in RoleAccess.objects.filter(role=TECH)} == {
         ("cash", VIEW),
-        ("production_import", NONE),
+        ("goods", VIEW),
     }
     change = RoleAccessChange.objects.get(role=TECH, area="cash")
     assert (change.old_level, change.new_level, change.changed_by) == (NONE, VIEW, superuser)

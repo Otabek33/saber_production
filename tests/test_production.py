@@ -154,14 +154,15 @@ def test_journal_shows_the_month_grid(client, user, drink):
     assert response.context["grand_total"] == 600
 
 
-def test_receipt_form_adds_stock(client, user, sugar):
+def test_write_off_has_a_reason_and_no_supplier(client, user, sugar):
     client.force_login(user)
-    response = client.post(
-        reverse("production:material_receipt"),
-        {"date": DAY.isoformat(), "material": sugar.pk, "quantity": "1 250,5", "note": "Поставщик"},
+    page = client.get(reverse("production:material_write_off")).content.decode()
+    assert 'name="supplier"' not in page
+    client.post(
+        reverse("production:material_write_off"),
+        {"date": DAY.isoformat(), "material": sugar.pk, "quantity": "5", "note": "брак"},
     )
-    assert response.status_code == 302
-    assert material_stock()[sugar.pk] == D("1350.5")
+    assert MaterialMove.objects.latest("pk").note == "брак"
 
 
 def test_shipment_takes_goods_out(client, user, drink):

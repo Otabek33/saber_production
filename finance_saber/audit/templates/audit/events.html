@@ -1,0 +1,153 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Administration › Action log: sign-ins and every record created, changed or deleted,
+  newest first. A record's name opens its whole history (?record=<section>:<id>).
+{% endcomment %}
+
+{% block title %}{% translate "Action log" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Action log" as page_title %}
+  {% translate "Administration" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="row g-2 align-items-end form-compact">
+        {% if record %}<input type="hidden" name="record" value="{{ record }}">{% endif %}
+        <div class="col-6 col-md-2">
+          <label for="user" class="form-label">{% translate "User" %}</label>
+          <select name="user" id="user" class="form-select">
+            <option value="">{% translate "Everyone" %}</option>
+            {% for person in people %}
+              <option value="{{ person.pk }}"{% if request.GET.user == person.pk|stringformat:"s" %} selected{% endif %}>{{ person.get_username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label for="action" class="form-label">{% translate "Action" %}</label>
+          <select name="action" id="action" class="form-select">
+            <option value="">{% translate "All actions" %}</option>
+            {% for value, label in actions %}
+              <option value="{{ value }}"{% if request.GET.action == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-2">
+          <label for="section" class="form-label">{% translate "Section" %}</label>
+          <select name="section" id="section" class="form-select">
+            <option value="">{% translate "All sections" %}</option>
+            {% for value, label in sections %}
+              <option value="{{ value }}"{% if request.GET.section == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="from" class="form-label">{% translate "From" %}</label>
+          <input type="date" name="from" id="from" value="{{ request.GET.from }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="to" class="form-label">{% translate "To" %}</label>
+          <input type="date" name="to" id="to" value="{{ request.GET.to }}" class="form-control">
+        </div>
+        <div class="col-12 col-md">
+          <label for="q" class="form-label">{% translate "Search" %}</label>
+          <input type="search" name="q" id="q" value="{{ request.GET.q }}" class="form-control" placeholder="{% translate "Record, username or IP" %}">
+        </div>
+        <div class="col-12 col-md-auto d-flex flex-wrap gap-2 mb-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+          <a href="{% url 'audit:events' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
+          <a href="{% url 'audit:export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+          </a>
+        </div>
+      </form>
+      {% if record %}
+        <div class="alert alert-info py-2 mt-2 mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <span>{% translate "The history of one record." %}</span>
+          <a href="{% url 'audit:events' %}" class="btn btn-sm btn-info">{% translate "Show everything" %}</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0 ledger-table audit-log">
+        <thead>
+          <tr>
+            <th>{% translate "Time" %}</th>
+            <th>{% translate "User" %}</th>
+            <th>{% translate "Action" %}</th>
+            <th>{% translate "Section" %}</th>
+            <th>{% translate "Record" %}</th>
+            <th>{% translate "Changes" %}</th>
+            <th>{% translate "IP address" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in page_obj %}
+            <tr>
+              <td class="text-nowrap" title="{{ event.created_at|date:"d.m.Y H:i:s" }}">{{ event.created_at|date:"d.m.Y H:i" }}</td>
+              <td class="text-nowrap">{{ event.username|default:"—" }}</td>
+              <td>
+                <span class="badge {% if event.action == "create" or event.action == "login" %}bg-success-subtle text-success{% elif event.action == "delete" or event.action == "login_failed" %}bg-danger-subtle text-danger{% elif event.action == "update" %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}">{{ event.get_action_display }}</span>
+              </td>
+              <td>{{ event.section }}</td>
+              <td class="ledger-clamp">
+                {% if event.model %}
+                  <a href="?record={{ event.model|urlencode }}:{{ event.object_id|urlencode }}" class="text-reset" title="{% translate "This record's history" %}">{{ event.object_repr|default:event.object_id }}</a>
+                {% endif %}
+              </td>
+              <td class="audit-changes">
+                {% for field, before, after in event.rows|slice:":4" %}
+                  <span class="d-block"><span class="text-muted">{{ field }}:</span> {% if before %}<s class="text-muted">{{ before|truncatechars:60 }}</s> → {% endif %}{{ after|default:"—"|truncatechars:60 }}</span>
+                {% endfor %}
+                {% if event.rows|length > 4 %}
+                  <details>
+                    <summary class="text-primary fs-2">{% blocktranslate count counter=event.rows|length|add:"-4" %}{{ counter }} more field{% plural %}{{ counter }} more fields{% endblocktranslate %}</summary>
+                    {% for field, before, after in event.rows|slice:"4:" %}
+                      <span class="d-block"><span class="text-muted">{{ field }}:</span> {% if before %}<s class="text-muted">{{ before|truncatechars:60 }}</s> → {% endif %}{{ after|default:"—"|truncatechars:60 }}</span>
+                    {% endfor %}
+                  </details>
+                {% endif %}
+              </td>
+              <td class="text-nowrap text-muted" title="{{ event.user_agent }}">{{ event.ip|default:"" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-6">{% translate "Nothing in the log for these filters." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-4 py-3 border-top">
+        <span class="text-muted fs-2">
+          {% blocktranslate with start=page_obj.start_index end=page_obj.end_index total=page_obj.paginator.count %}Rows {{ start }}–{{ end }} of {{ total }}{% endblocktranslate %}
+        </span>
+        <nav aria-label="{% translate "Pages" %}">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item{% if not page_obj.has_previous %} disabled{% endif %}">
+              <a class="page-link" href="{% if page_obj.has_previous %}{% querystring page=page_obj.previous_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Previous page" %}">‹</a>
+            </li>
+            {% for number in page_obj.paginator.get_elided_page_range %}
+              {% if number == page_obj.paginator.ELLIPSIS %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+              {% elif number == page_obj.number %}
+                <li class="page-item active" aria-current="page"><span class="page-link">{{ number }}</span></li>
+              {% else %}
+                <li class="page-item"><a class="page-link" href="{% querystring page=number %}">{{ number }}</a></li>
+              {% endif %}
+            {% endfor %}
+            <li class="page-item{% if not page_obj.has_next %} disabled{% endif %}">
+              <a class="page-link" href="{% if page_obj.has_next %}{% querystring page=page_obj.next_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Next page" %}">›</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

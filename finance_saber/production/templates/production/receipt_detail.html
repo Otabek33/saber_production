@@ -1,0 +1,84 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  One material receipt: the document and its materials. A wrong receipt isn't edited
+  or deleted: it is cancelled (its materials leave stock) and entered again.
+{% endcomment %}
+
+{% block title %}{% translate "Receipt" %} № {{ receipt.number }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Material receipts" as section %}
+  {% blocktranslate with number=receipt.number asvar page_title %}Receipt № {{ number }}{% endblocktranslate %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-xl-8">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div>
+            <h5 class="card-title mb-1">{{ receipt.supplier.name }}</h5>
+            <span class="text-muted fs-2">{% translate "INN" %} {{ receipt.supplier.inn }}</span>
+          </div>
+          {% if receipt.is_cancelled %}
+            <span class="badge bg-danger-subtle text-danger">{% translate "Cancelled" %}</span>
+          {% else %}
+            <span class="badge bg-success-subtle text-success">{% translate "Posted" %}</span>
+          {% endif %}
+        </div>
+        <div class="card-body px-4 py-3 border-bottom">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">{% translate "Registration number" %}</dt><dd class="col-sm-8">№ {{ receipt.number }}</dd>
+            <dt class="col-sm-4">{% translate "Date" %}</dt><dd class="col-sm-8">{{ receipt.date|date:"d.m.Y" }}</dd>
+            {% if receipt.note %}<dt class="col-sm-4">{% translate "Note" %}</dt><dd class="col-sm-8">{{ receipt.note }}</dd>{% endif %}
+            <dt class="col-sm-4">{% translate "Author" %}</dt><dd class="col-sm-8 mb-0">{{ receipt.created_by|default:"—" }}, {{ receipt.created_at|date:"d.m.Y H:i" }}</dd>
+          </dl>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th style="width: 50px">№</th>
+                <th>{% translate "Material" %}</th>
+                <th class="num">{% translate "Quantity" %}</th>
+                <th>{% translate "Unit" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for line in receipt.lines.all %}
+                <tr>
+                  <td class="text-muted">{{ forloop.counter }}</td>
+                  <td>{{ line.material.name }}</td>
+                  <td class="num fw-semibold">{{ line.quantity|floatformat:"-3g" }}</td>
+                  <td class="text-muted">{{ line.material.unit }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+          <a href="{% url 'production:receipts' %}" class="btn bg-primary-subtle text-primary">{% translate "Back" %}</a>
+          {% if perms.production.change_materialreceipt %}
+            <form method="post" action="{% url 'production:receipt_cancel' receipt.pk %}" class="d-inline">
+              {% csrf_token %}
+              {% if receipt.is_cancelled %}
+                <button type="submit" class="btn bg-success-subtle text-success">{% translate "Restore" %}</button>
+              {% else %}
+                <button type="submit" class="btn bg-danger-subtle text-danger">{% translate "Cancel the receipt" %}</button>
+              {% endif %}
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          <p class="mb-0">{% translate "A receipt adds its materials to stock. A wrong one isn't edited or deleted: cancel it, and its materials leave stock; then enter it again." %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

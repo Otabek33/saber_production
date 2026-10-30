@@ -3375,3 +3375,408 @@ msgstr "Остаток не загружен: по этому сырью зде�
 
 msgid "The materials file kept in the project, to load into a new server"
 msgstr "Файл сырья, хранящийся в проекте, — для загрузки на новый сервер"
+
+#: finance_saber/users/templates/users/login.html
+msgid "Theme"
+msgstr "Тема оформления"
+
+#: finance_saber/users/templates/users/login.html
+msgid "Light"
+msgstr "Светлая"
+
+#: finance_saber/users/templates/users/login.html
+msgid "Dark"
+msgstr "Тёмная"
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "Companies"
+msgstr "Компании"
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "Company"
+msgstr "Компания"
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "New company"
+msgstr "Новая компания"
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "Edit company"
+msgstr "Изменить компанию"
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "All companies"
+msgstr "Все компании"
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "Not connected"
+msgstr "Не подключён"
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "No companies yet."
+msgstr "Компаний пока нет."
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "No bank accounts connected yet."
+msgstr "Банковские счета пока не подключены."
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "Our company this bank account belongs to."
+msgstr "Наша компания, к которой относится этот банковский счёт."
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "%(counter)s account"
+msgid_plural "%(counter)s accounts"
+msgstr[0] "%(counter)s счёт"
+msgstr[1] "%(counter)s счёта"
+msgstr[2] "%(counter)s счетов"
+
+#: finance_saber/cashbook/templates/cashbook/companies.html
+msgid "%(counter)s bank account is not connected"
+msgid_plural "%(counter)s bank accounts are not connected"
+msgstr[0] "%(counter)s банковский счёт не подключён"
+msgstr[1] "%(counter)s банковских счёта не подключены"
+msgstr[2] "%(counter)s банковских счетов не подключены"
+
+#: finance_saber/cashbook/company_files.py
+msgid "Companies workbook (.xlsx)"
+msgstr "Файл компаний (.xlsx)"
+
+#: finance_saber/cashbook/company_files.py
+msgid "Loaded: %(created)s companies created, %(linked)s bank accounts connected."
+msgstr "Загружено: создано компаний — %(created)s, подключено банковских счетов — %(linked)s."
+
+#: finance_saber/cashbook/company_files.py
+msgid "Checked, nothing was saved: %(created)s companies to create, %(linked)s bank accounts to connect."
+msgstr "Проверено, ничего не сохранено: компаний к созданию — %(created)s, счетов к подключению — %(linked)s."
+
+#: finance_saber/cashbook/company_files.py
+msgid "Row %(row)s: %(message)s"
+msgstr "Строка %(row)s: %(message)s"
+
+#: finance_saber/cashbook/company_files.py
+msgid "the company has no INN."
+msgstr "у компании не указан ИНН."
+
+#: finance_saber/cashbook/company_files.py
+msgid "no bank account with the statement reference “%(reference)s”."
+msgstr "нет банковского счёта со ссылкой выписки «%(reference)s»."
+
+#: finance_saber/cashbook/company_files.py
+msgid "A company is found by its INN, or created. Each bank account is connected by its statement reference (account/INN/name), as the counterparties list shows it. Nothing is saved if any row has an error."
+msgstr "Компания находится по ИНН или создаётся. Каждый банковский счёт подключается по ссылке выписки (счёт/ИНН/название), как в списке контрагентов. Если в какой-либо строке ошибка, ничего не сохраняется."
+
+#: finance_saber/cashbook/company_files.py
+msgid "Our company"
+msgstr "Наша компания"
+
+#: finance_saber/cashbook/company_files.py
+msgid "our company"
+msgstr "наша компания"
+
+#: finance_saber/cashbook/company_files.py
+msgid "One of our own companies."
+msgstr "Одна из наших компаний."
+
+#: finance_saber/cashbook/company_files.py
+msgid "The company this bank account belongs to."
+msgstr "Компания, к которой относится этот банковский счёт."
+
+#: finance_saber/cashbook/company_files.py
+msgid "The companies file kept in the project, to load into a new server"
+msgstr "Файл компаний, хранящийся в проекте, — для загрузки на новый сервер"
+
+#: finance_saber/cashbook/company_files.py
+msgid "The project has no such file yet. Write it with: manage.py export_companies --seed"
+msgstr "В проекте пока нет такого файла. Создайте его командой: manage.py export_companies --seed"
+
+#: finance_saber/cashbook/company_files.py
+msgid "Not required, but please choose one: reports by region count the company there."
+msgstr "Необязательно, но желательно выбрать: отчёты по регионам учитывают компанию в нём."
+
+#: finance_saber/cashbook/company_files.py
+msgid "No region"
+msgstr "Без региона"
+
+#: finance_saber/cashbook/company_files.py
+msgid "unknown region “%(name)s”: add it on the Counterparties page first."
+msgstr "неизвестный регион «%(name)s»: сначала добавьте его на странице «Контрагенты»."
+
+#: finance_saber/production/models.py
+msgid "supplier"
+msgstr "поставщик"
+
+#: finance_saber/production/forms.py
+msgid "Choose a supplier"
+msgstr "Выберите поставщика"
+
+#: finance_saber/production/receipts
+msgid "%(material)s is already in this receipt: add its quantity to one line."
+msgstr "%(material)s уже есть в этом поступлении: укажите количество одной строкой."
+
+#: finance_saber/production/receipts
+msgid "A receipt adds its materials to stock. A wrong one isn't edited or deleted: cancel it, and its materials leave stock; then enter it again."
+msgstr "Поступление добавляет сырьё на склад. Ошибочное не изменяют и не удаляют: отмените его — сырьё уйдёт со склада, — и введите заново."
+
+#: finance_saber/production/receipts
+msgid "All materials"
+msgstr "Всё сырьё"
+
+#: finance_saber/production/receipts
+msgid "All suppliers"
+msgstr "Все поставщики"
+
+#: finance_saber/production/receipts
+msgid "Cancel the receipt"
+msgstr "Отменить поступление"
+
+#: finance_saber/production/receipts
+msgid "Document"
+msgstr "Документ"
+
+#: finance_saber/production/receipts
+msgid "Material receipts"
+msgstr "Поступления сырья"
+
+#: finance_saber/production/receipts
+msgid "New material receipt"
+msgstr "Новое поступление сырья"
+
+#: finance_saber/production/receipts
+msgid "New receipt"
+msgstr "Новое поступление"
+
+#: finance_saber/production/receipts
+msgid "No receipts found."
+msgstr "Поступлений не найдено."
+
+#: finance_saber/production/receipts
+msgid "Post the receipt"
+msgstr "Провести поступление"
+
+#: finance_saber/production/receipts
+msgid "Posted"
+msgstr "Проведено"
+
+#: finance_saber/production/receipts
+msgid "Receipt cancelled."
+msgstr "Поступление отменено."
+
+#: finance_saber/production/receipts
+msgid "Receipt restored."
+msgstr "Поступление восстановлено."
+
+#: finance_saber/production/receipts
+msgid "Receipt № %(number)s"
+msgstr "Поступление № %(number)s"
+
+#: finance_saber/production/receipts
+msgid "Receipt № %(number)s recorded: %(count)s materials."
+msgstr "Поступление № %(number)s проведено: позиций — %(count)s."
+
+#: finance_saber/production/receipts
+msgid "Receipts journal"
+msgstr "Журнал поступлений"
+
+#: finance_saber/production/receipts
+msgid "Registration number"
+msgstr "Регистрационный номер"
+
+#: finance_saber/production/receipts
+msgid "Supplier"
+msgstr "Поставщик"
+
+#: finance_saber/production/receipts
+msgid "The number of the supplier's invoice or waybill."
+msgstr "Номер счёта-фактуры или накладной поставщика."
+
+#: finance_saber/production/receipts
+msgid "This supplier's document № %(number)s is already entered."
+msgstr "Документ № %(number)s этого поставщика уже введён."
+
+#: finance_saber/production/receipts
+msgid "material receipt"
+msgstr "поступление сырья"
+
+#: finance_saber/production/receipts
+msgid "material receipts"
+msgstr "поступления сырья"
+
+#: finance_saber/production/receipts
+msgid "receipt"
+msgstr "поступление"
+
+#: finance_saber/production/receipts
+msgid "receipt line"
+msgstr "строка поступления"
+
+#: finance_saber/production/receipts
+msgid "receipt lines"
+msgstr "строки поступления"
+
+#: finance_saber/production/receipts
+msgid "registration number"
+msgstr "регистрационный номер"
+
+#: finance_saber/production/templates/production/receipt_form.html
+msgid "Remove"
+msgstr "Удалить"
+
+#: finance_saber/production/templates/production/receipt_form.html
+msgid "Remove the line"
+msgstr "Удалить строку"
+
+#: finance_saber/users/roles.py
+msgid "Production only: daily production and its journal, raw materials, receipts and stock movements, finished goods, recipes and norms."
+msgstr "Только производство: выпуск за день и журнал выпуска, сырьё, поступления и движения склада, готовая продукция, рецептуры и нормы."
+
+#: finance_saber/audit
+msgid "Action"
+msgstr "Действие"
+
+#: finance_saber/audit
+msgid "Action log"
+msgstr "Журнал действий"
+
+#: finance_saber/audit
+msgid "After"
+msgstr "Стало"
+
+#: finance_saber/audit
+msgid "All actions"
+msgstr "Все действия"
+
+#: finance_saber/audit
+msgid "All sections"
+msgstr "Все разделы"
+
+#: finance_saber/audit
+msgid "Before"
+msgstr "Было"
+
+#: finance_saber/audit
+msgid "Changes"
+msgstr "Изменения"
+
+#: finance_saber/audit
+msgid "Created"
+msgstr "Создано"
+
+#: finance_saber/audit
+msgid "Deleted"
+msgstr "Удалено"
+
+#: finance_saber/audit
+msgid "Everyone"
+msgstr "Все"
+
+#: finance_saber/audit
+msgid "Failed sign-in"
+msgstr "Неудачный вход"
+
+#: finance_saber/audit
+msgid "Field"
+msgstr "Поле"
+
+#: finance_saber/audit
+msgid "ID"
+msgstr "ID"
+
+#: finance_saber/audit
+msgid "IP address"
+msgstr "IP-адрес"
+
+#: finance_saber/audit
+msgid "Nothing in the log for these filters."
+msgstr "В журнале нет записей по этим фильтрам."
+
+#: finance_saber/audit
+msgid "Page"
+msgstr "Страница"
+
+#: finance_saber/audit
+msgid "Record"
+msgstr "Запись"
+
+#: finance_saber/audit
+msgid "Record, username or IP"
+msgstr "Запись, пользователь или IP"
+
+#: finance_saber/audit
+msgid "Show everything"
+msgstr "Показать всё"
+
+#: finance_saber/audit
+msgid "Signed in"
+msgstr "Вход"
+
+#: finance_saber/audit
+msgid "Signed out"
+msgstr "Выход"
+
+#: finance_saber/audit
+msgid "The history of one record."
+msgstr "История одной записи."
+
+#: finance_saber/audit
+msgid "This record's history"
+msgstr "История этой записи"
+
+#: finance_saber/audit
+msgid "Time"
+msgstr "Время"
+
+#: finance_saber/audit
+msgid "action"
+msgstr "действие"
+
+#: finance_saber/audit
+msgid "action log"
+msgstr "журнал действий"
+
+#: finance_saber/audit
+msgid "action log entry"
+msgstr "запись журнала действий"
+
+#: finance_saber/audit
+msgid "browser"
+msgstr "браузер"
+
+#: finance_saber/audit
+msgid "changes"
+msgstr "изменения"
+
+#: finance_saber/audit
+msgid "page"
+msgstr "страница"
+
+#: finance_saber/audit
+msgid "record"
+msgstr "запись"
+
+#: finance_saber/audit
+msgid "time"
+msgstr "время"
+
+#: finance_saber/audit
+msgid "user"
+msgstr "пользователь"
+
+#: finance_saber/audit
+msgid "username"
+msgstr "имя пользователя"
+
+#: finance_saber/audit
+msgid "%(counter)s more field"
+msgid_plural "%(counter)s more fields"
+msgstr[0] "ещё %(counter)s поле"
+msgstr[1] "ещё %(counter)s поля"
+msgstr[2] "ещё %(counter)s полей"
+
+#: finance_saber/cashbook/models.py
+msgid "company"
+msgstr "компания"
+
+#: finance_saber/cashbook/models.py
+msgid "companies"
+msgstr "компании"

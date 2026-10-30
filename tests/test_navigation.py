@@ -39,6 +39,7 @@ def test_each_cash_desk_has_its_own_menu_item(client, user, desk):
         "/cash/import/",
         "/cash/handbook/",
         "/cash/counterparties/",
+        "/cash/companies/",
     ]
     assert [child.url for child in cash_section.children if child.active] == [url]
 

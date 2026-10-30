@@ -156,8 +156,8 @@ def test_upload_needs_a_file(client, technologist, materials):
     assert response.context["form"].errors["file"]
 
 
-def test_viewers_cannot_load(client, planner, materials):
-    client.force_login(planner)
+def test_viewers_cannot_load(client, finance, materials):
+    client.force_login(finance)
     assert URL not in client.get(PAGE).content.decode()
     assert client.get(reverse("production:material_export")).status_code == 200
     upload = SimpleUploadedFile("materials.xlsx", workbook().getvalue())

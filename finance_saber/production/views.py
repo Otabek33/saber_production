@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -19,6 +19,7 @@ from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 
 from finance_saber.cashbook import exports
 from finance_saber.cashbook.handbooks import HandbookError
+from finance_saber.cashbook.models import Company
 from finance_saber.core.permissions import PermissionMixin, permission
 
 from . import importer, recipe_excel, services
@@ -33,12 +34,23 @@ from .forms import (
     MaterialUploadForm,
     MaterialWriteOffForm,
     ProductForm,
+    ReceiptLineFormSet,
     RecipeFormSet,
     RecipeUploadForm,
     ShipmentForm,
     StockCountForm,
 )
-from .models import Material, MaterialMove, Product, ProductionRun, ProductMove, material_stock, product_stock
+from .models import (
+    Material,
+    MaterialMove,
+    MaterialReceipt,
+    MaterialReceiptLine,
+    Product,
+    ProductionRun,
+    ProductMove,
+    material_stock,
+    product_stock,
+)
 
 PAGE_SIZE = 20
 
@@ -312,11 +324,130 @@ def move_form(request, form_class, title, success_url, success_message):
     return render(request, "production/move_form.html", {"form": form, "title": title, "back_url": success_url})
 
 
-@permission(view="production.add_materialmove")
+# --- Material receipts: documents from suppliers, like 1C's «Поступление» ---------------
+
+DUPLICATE_NUMBER = _("This supplier's document № %(number)s is already entered.")
+
+
+@permission(view="production.add_materialreceipt")
 def material_receipt(request):
-    return move_form(
-        request, MaterialReceiptForm, _("Material receipt"), reverse("production:materials"), _("Receipt recorded.")
+    """A new receipt: the supplier first, its invoice number and date, then any number of materials."""
+    receipt = MaterialReceipt(created_by=request.user)
+    form = MaterialReceiptForm(request.POST or None, instance=receipt)
+    lines = ReceiptLineFormSet(request.POST or None, instance=receipt, prefix="lines")
+    if request.method == "POST" and all([form.is_valid(), lines.is_valid()]):
+        try:
+            with transaction.atomic():
+                receipt = form.save()
+                lines.instance = receipt
+                lines.save()
+                receipt.rebuild_moves()
+        except IntegrityError:  # the same number was saved a moment ago, e.g. a double click
+            form.add_error("number", DUPLICATE_NUMBER % {"number": receipt.number})
+        else:
+            messages.success(
+                request,
+                _("Receipt № %(number)s recorded: %(count)s materials.")
+                % {"number": receipt.number, "count": receipt.lines.count()},
+            )
+            return redirect("production:receipt", pk=receipt.pk)
+    units = {material.pk: material.unit for material in Material.objects.filter(is_active=True)}
+    return render(request, "production/receipt_form.html", {"form": form, "lines": lines, "units": units})
+
+
+def filter_receipts(params):
+    """The receipts journal's filters (supplier, material, dates, number, status), shared with its Excel file."""
+    receipts = MaterialReceipt.objects.select_related("supplier", "created_by")
+    if params.get("supplier", "").isdigit():
+        receipts = receipts.filter(supplier_id=params["supplier"])
+    if params.get("material", "").isdigit():
+        receipts = receipts.filter(lines__material_id=params["material"]).distinct()
+    date_from, date_to = parse_date(params.get("from") or ""), parse_date(params.get("to") or "")
+    if date_from:
+        receipts = receipts.filter(date__gte=date_from)
+    if date_to:
+        receipts = receipts.filter(date__lte=date_to)
+    if number := params.get("q", "").strip():
+        receipts = receipts.filter(number__contains=number.upper())  # numbers are kept in capitals
+    if params.get("status") == "cancelled":
+        receipts = receipts.filter(is_cancelled=True)
+    elif params.get("status") != "all":
+        receipts = receipts.posted()
+    return receipts.order_by("-date", "-id")
+
+
+@permission(view="production.view_materialreceipt")
+def receipts(request):
+    """Receipts journal: what came from which supplier and when, document by document."""
+    lines = MaterialReceiptLine.objects.select_related("material")
+    found = filter_receipts(request.GET).prefetch_related(Prefetch("lines", queryset=lines))
+    page = Paginator(found, PAGE_SIZE).get_page(request.GET.get("page"))
+    return render(
+        request,
+        "production/receipts.html",
+        {
+            "page_obj": page,
+            "suppliers": Company.objects.filter(is_own=False).order_by("name"),
+            "materials": Material.objects.all(),
+        },
     )
+
+
+@permission(view="production.view_materialreceipt")
+def receipts_export(request):
+    """The journal's lines (one row per material) as an .xlsx file, with the filters applied on the page."""
+    lines = (
+        MaterialReceiptLine.objects.filter(receipt__in=filter_receipts(request.GET))
+        .select_related("receipt__supplier", "receipt__created_by", "material")
+        .order_by("-receipt__date", "-receipt_id", "id")
+    )
+    rows = [
+        [
+            line.receipt.date,
+            line.receipt.number,
+            line.receipt.supplier.name,
+            line.receipt.supplier.inn,
+            line.material.name,
+            line.material.unit,
+            line.quantity,
+            str(_("Cancelled") if line.receipt.is_cancelled else _("Posted")),
+            line.receipt.note,
+            str(line.receipt.created_by or ""),
+        ]
+        for line in lines
+    ]
+    headers = [
+        _("Date"), _("Registration number"), _("Supplier"), _("INN"), _("Material"), _("Unit"),
+        _("Quantity"), _("Status"), _("Note"), _("Author"),
+    ]  # fmt: skip
+    sheet = exports.Sheet(str(_("Material receipts")), [str(header) for header in headers], rows)  # not lazy
+    return exports.xlsx_response(exports.dated_filename(_("Material receipts")), [sheet])
+
+
+@permission(view="production.view_materialreceipt")
+def receipt(request, pk):
+    lines = MaterialReceiptLine.objects.select_related("material")
+    receipts = MaterialReceipt.objects.select_related("supplier", "created_by")
+    document = get_object_or_404(receipts.prefetch_related(Prefetch("lines", queryset=lines)), pk=pk)
+    return render(request, "production/receipt_detail.html", {"receipt": document})
+
+
+@require_POST
+@permission(change="production.change_materialreceipt")
+def receipt_cancel(request, pk):
+    """Cancel a receipt (its materials leave stock) or restore it. A wrong receipt is cancelled, then entered again."""
+    document = get_object_or_404(MaterialReceipt, pk=pk)
+    restoring = document.is_cancelled
+    same_number = MaterialReceipt.objects.posted().filter(supplier=document.supplier_id, number=document.number)
+    if restoring and same_number.exists():
+        messages.error(request, DUPLICATE_NUMBER % {"number": document.number})
+        return redirect("production:receipt", pk=document.pk)
+    with transaction.atomic():
+        document.is_cancelled = not restoring
+        document.save(update_fields=["is_cancelled"])
+        document.rebuild_moves()
+    messages.success(request, _("Receipt restored.") if restoring else _("Receipt cancelled."))
+    return redirect("production:receipt", pk=document.pk)
 
 
 @permission(view="production.add_materialmove")

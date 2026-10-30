@@ -215,6 +215,32 @@ class Region(models.Model):
         return self.name
 
 
+class Company(models.Model):
+    """A company by its INN, ours or a counterparty; its bank accounts are connected to it (Counterparty.company)."""
+
+    name = models.CharField(_("name"), max_length=255)
+    inn = models.CharField(_("INN"), max_length=20, unique=True)
+    is_own = models.BooleanField(_("our company"), default=False, help_text=_("One of our own companies."))
+    region = models.ForeignKey(
+        Region,
+        models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="companies",
+        verbose_name=_("region"),
+        help_text=_("Not required, but please choose one: reports by region count the company there."),
+    )
+    created_at = models.DateTimeField(_("created"), auto_now_add=True)
+
+    class Meta:
+        ordering = ["-is_own", "name"]  # ours first
+        verbose_name = _("company")
+        verbose_name_plural = _("companies")
+
+    def __str__(self):
+        return self.name
+
+
 class Counterparty(models.Model):
     """A bank counterparty as the statement names it: "account/INN/name".
 
@@ -242,6 +268,15 @@ class Counterparty(models.Model):
     )
     region = models.ForeignKey(
         Region, models.PROTECT, null=True, blank=True, related_name="counterparties", verbose_name=_("region")
+    )
+    company = models.ForeignKey(
+        Company,
+        models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accounts",
+        verbose_name=_("company"),
+        help_text=_("The company this bank account belongs to."),
     )
     created_at = models.DateTimeField(_("created"), auto_now_add=True)
 

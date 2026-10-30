@@ -14,13 +14,14 @@
 
   makeSearchable(document);
 
-  // Recipe page: "Add a line" copies the formset's empty form.
-  var addLine = document.querySelector("[data-add-recipe-line]");
-  if (addLine) {
-    addLine.addEventListener("click", function () {
-      var total = document.getElementById("id_recipe-TOTAL_FORMS");
-      var template = document.getElementById("recipe-empty-line");
-      var body = document.querySelector("[data-recipe-lines]");
+  // "Add a line" (recipes, receipts): copies the formset's empty form. The button names the
+  // formset prefix; its rows are in [data-lines="<prefix>"], the empty form in #<prefix>-empty-line.
+  document.querySelectorAll("[data-add-line]").forEach(function (button) {
+    var prefix = button.dataset.addLine;
+    button.addEventListener("click", function () {
+      var total = document.getElementById("id_" + prefix + "-TOTAL_FORMS");
+      var template = document.getElementById(prefix + "-empty-line");
+      var body = document.querySelector("[data-lines='" + prefix + "']");
       var index = Number(total.value);
       var row = document.createElement("tbody");
       row.innerHTML = template.innerHTML.replace(/__prefix__/g, index);
@@ -28,7 +29,56 @@
       body.appendChild(line);
       total.value = index + 1;
       makeSearchable(line);
+      showUnits(line);
+      numberLines(body);
+      $(line).find("select[data-searchable]").first().select2("open"); // straight on to choosing
     });
+  });
+
+  // "Remove the line": the line is hidden and its DELETE set, so the formset skips it (forms
+  // keep their numbers). The last line left is only cleared: a receipt always has one to fill.
+  function numberLines(body) {
+    var number = 0;
+    $(body).children("tr").each(function () {
+      if (!this.hidden) $(this).find("[data-line-number]").text(++number);
+    });
+  }
+  document.querySelectorAll("[data-lines]").forEach(numberLines);
+  $(document).on("click", "[data-remove-line]", function () {
+    var row = this.closest("tr");
+    var body = row.parentElement;
+    var shown = $(body).children("tr").filter(function () { return !this.hidden; });
+    if (shown.length > 1) {
+      $(row).find("[data-delete]").val("on");
+      row.hidden = true;
+    } else {
+      $(row).find("select").val(null).trigger("change");
+      $(row).find("input:not([type=hidden])").val("");
+    }
+    numberLines(body);
+  });
+
+  // Receipt form: the materials are entered once the supplier is chosen, and each line shows its unit.
+  var units = document.getElementById("material-units");
+  var unitOf = units ? JSON.parse(units.textContent) : {};
+  function showUnits(root) {
+    $(root).find("select[name$='-material']").each(function () {
+      var cell = $(this).closest("tr").find("[data-unit]");
+      var update = function () { cell.text(unitOf[this.value] || ""); }.bind(this);
+      $(this).on("change", update);
+      update();
+    });
+  }
+  showUnits(document);
+
+  var supplier = document.querySelector("[data-supplier-first]");
+  if (supplier) {
+    var lines = document.querySelector("[data-after-supplier]");
+    var reveal = function () {
+      lines.hidden = !supplier.value;
+    };
+    $(supplier).on("change", reveal); // Select2 reports changes through jQuery
+    reveal();
   }
 
   // Production calculation: recompute every line as norms, defects and quantities are typed,

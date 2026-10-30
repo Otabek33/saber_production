@@ -140,14 +140,58 @@
   gap: 0.35rem;
 }
 
-/* Searchable selects (Select2) as tall as the compact inputs beside them. */
+/* Searchable selects (Select2) as tall as the compact inputs beside them, the chosen
+   text centred in the box and cut with "…" rather than overflowing. */
 .form-compact .select2-container .select2-selection--single {
   height: 35px;
   display: flex;
   align-items: center;
 }
-.form-compact .select2-container .select2-selection__arrow {
+/* (as specific as the theme's "body .select2-container--default ... __rendered" line-height: 40px) */
+.form-compact .select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 33px;
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.form-compact .select2-container--default .select2-selection--single .select2-selection__arrow {
   height: 33px;
+  top: 1px;
+}
+/* A block, not inline: the arrow is placed against the box itself, also under a label. */
+.form-compact .select2-container {
+  display: block;
+}
+
+/* Select2 lists: denser rows, so more of a long list (materials, companies) fits. */
+.select2-container--open .select2-results__option {
+  padding: 0.3rem 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+.select2-container--open .select2-results > .select2-results__options {
+  max-height: 280px;
+}
+.select2-container--open .select2-search--dropdown .select2-search__field {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Action log: the changes column wide enough to read "field: before → after". */
+.audit-log .audit-changes { min-width: 280px; font-size: 0.78rem; }
+
+/* Material receipt: a working width, and line columns sized to their content. */
+.receipt-form {
+  max-width: 1080px;
+}
+.receipt-lines .receipt-col-number { width: 44px; }
+.receipt-lines .receipt-col-quantity { width: 170px; }
+.receipt-lines .receipt-col-unit { width: 70px; }
+.receipt-lines .receipt-col-remove { width: 48px; }
+.receipt-lines input[data-number] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Buttons in a field row line up with the inputs beside them. */

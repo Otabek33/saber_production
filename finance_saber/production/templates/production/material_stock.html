@@ -17,10 +17,17 @@
         <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
         {% if request.GET.q %}<a href="{% url 'production:materials' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>{% endif %}
         <span class="ms-auto d-flex flex-wrap gap-2">
-          {% if perms.production.add_materialmove %}
+          {% if perms.production.add_materialreceipt %}
           <a href="{% url 'production:material_receipt' %}" class="btn btn-sm bg-success-subtle text-success">
             <iconify-icon icon="solar:import-line-duotone"></iconify-icon> {% translate "Receipt" %}
           </a>
+          {% endif %}
+          {% if perms.production.view_materialreceipt %}
+          <a href="{% url 'production:receipts' %}" class="btn btn-sm bg-secondary-subtle text-secondary">
+            <iconify-icon icon="solar:document-text-line-duotone"></iconify-icon> {% translate "Receipts journal" %}
+          </a>
+          {% endif %}
+          {% if perms.production.add_materialmove %}
           <a href="{% url 'production:material_write_off' %}" class="btn btn-sm bg-danger-subtle text-danger">
             <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon> {% translate "Write-off" %}
           </a>

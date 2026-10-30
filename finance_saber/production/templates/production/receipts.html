@@ -1,0 +1,146 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+{% comment %}
+  Receipts journal: every receipt document with its materials, to check what came
+  from which supplier and when. The Excel file has one row per material, same filters.
+{% endcomment %}
+
+{% block title %}{% translate "Material receipts" %}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Material receipts" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="row g-2 align-items-end form-compact">
+        <div class="col-12 col-md-3">
+          <label for="supplier" class="form-label">{% translate "Supplier" %}</label>
+          <select name="supplier" id="supplier" class="form-select" data-searchable>
+            <option value="">{% translate "All suppliers" %}</option>
+            {% for supplier in suppliers %}
+              <option value="{{ supplier.pk }}"{% if request.GET.supplier == supplier.pk|stringformat:"s" %} selected{% endif %}>{{ supplier.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <label for="material" class="form-label">{% translate "Material" %}</label>
+          <select name="material" id="material" class="form-select" data-searchable>
+            <option value="">{% translate "All materials" %}</option>
+            {% for material in materials %}
+              <option value="{{ material.pk }}"{% if request.GET.material == material.pk|stringformat:"s" %} selected{% endif %}>{{ material.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="from" class="form-label">{% translate "From" %}</label>
+          <input type="date" name="from" id="from" value="{{ request.GET.from }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="to" class="form-label">{% translate "To" %}</label>
+          <input type="date" name="to" id="to" value="{{ request.GET.to }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="q" class="form-label">{% translate "Registration number" %}</label>
+          <input type="search" name="q" id="q" value="{{ request.GET.q }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="status" class="form-label">{% translate "Status" %}</label>
+          <select name="status" id="status" class="form-select">
+            <option value="">{% translate "Posted" %}</option>
+            <option value="cancelled"{% if request.GET.status == "cancelled" %} selected{% endif %}>{% translate "Cancelled" %}</option>
+            <option value="all"{% if request.GET.status == "all" %} selected{% endif %}>{% translate "All" %}</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-auto d-flex flex-wrap gap-2 mb-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+          <a href="{% url 'production:receipts' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
+          <a href="{% url 'production:receipts_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+          </a>
+          {% if perms.production.add_materialreceipt %}
+            <a href="{% url 'production:material_receipt' %}" class="btn btn-sm bg-success-subtle text-success">
+              <iconify-icon icon="solar:import-line-duotone"></iconify-icon> {% translate "New receipt" %}
+            </a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Date" %}</th>
+            <th>{% translate "Registration number" %}</th>
+            <th>{% translate "Supplier" %}</th>
+            <th>{% translate "Materials" %}</th>
+            <th>{% translate "Author" %}</th>
+            <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for receipt in page_obj %}
+            <tr{% if receipt.is_cancelled %} class="text-decoration-line-through opacity-50"{% endif %}>
+              <td class="text-nowrap">{{ receipt.date|date:"d.m.Y" }}</td>
+              <td class="text-nowrap fw-semibold">№ {{ receipt.number }}</td>
+              <td class="ledger-counterparty">{{ receipt.supplier.name }}</td>
+              <td>
+                {% for line in receipt.lines.all %}
+                  <span class="d-block">{{ line.material.name }} — <span class="fw-semibold">{{ line.quantity|floatformat:"-3g" }}</span> <span class="text-muted fs-1">{{ line.material.unit }}</span></span>
+                {% endfor %}
+              </td>
+              <td class="text-muted">{{ receipt.created_by|default:"" }}</td>
+              <td class="text-end">
+                <a href="{% url 'production:receipt' receipt.pk %}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Open" %}" aria-label="{% translate "Open" %}">
+                  <iconify-icon icon="solar:document-text-line-duotone"></iconify-icon>
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No receipts found." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-4 py-3 border-top">
+        <span class="text-muted fs-2">
+          {% blocktranslate with start=page_obj.start_index end=page_obj.end_index total=page_obj.paginator.count %}Rows {{ start }}–{{ end }} of {{ total }}{% endblocktranslate %}
+        </span>
+        <nav aria-label="{% translate "Pages" %}">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item{% if not page_obj.has_previous %} disabled{% endif %}">
+              <a class="page-link" href="{% if page_obj.has_previous %}{% querystring page=page_obj.previous_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Previous page" %}">‹</a>
+            </li>
+            {% for number in page_obj.paginator.get_elided_page_range %}
+              {% if number == page_obj.paginator.ELLIPSIS %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+              {% elif number == page_obj.number %}
+                <li class="page-item active" aria-current="page"><span class="page-link">{{ number }}</span></li>
+              {% else %}
+                <li class="page-item"><a class="page-link" href="{% querystring page=number %}">{{ number }}</a></li>
+              {% endif %}
+            {% endfor %}
+            <li class="page-item{% if not page_obj.has_next %} disabled{% endif %}">
+              <a class="page-link" href="{% if page_obj.has_next %}{% querystring page=page_obj.next_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Next page" %}">›</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

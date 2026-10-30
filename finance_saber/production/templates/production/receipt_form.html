@@ -1,0 +1,113 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+{% comment %}
+  A new material receipt, like 1C's «Поступление»: the document (supplier, its invoice
+  number and date) on top, then the materials received with their quantities.
+  The lines appear once a supplier is chosen (production.js).
+{% endcomment %}
+
+{% block title %}{% translate "New material receipt" %}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "New material receipt" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {# A working width: long names stay readable without stretching the inputs across the screen #}
+  <form method="post" novalidate class="form-compact receipt-form">
+    {% csrf_token %}
+    {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+
+    {# The document #}
+    <div class="card mb-3">
+      <div class="px-4 py-3 border-bottom">
+        <h5 class="card-title mb-0">{% translate "Document" %}</h5>
+      </div>
+      <div class="card-body px-4 py-3">
+        <div class="row g-2">
+          <div class="col-md-6">{% include "forms/_field.html" with field=form.supplier %}</div>
+          <div class="col-6 col-md-3">{% include "forms/_field.html" with field=form.number %}</div>
+          <div class="col-6 col-md-3">{% include "forms/_field.html" with field=form.date %}</div>
+          <div class="col-12">{% include "forms/_field.html" with field=form.note %}</div>
+        </div>
+      </div>
+    </div>
+
+    {# The materials received #}
+    <div class="card" data-after-supplier{% if not form.supplier.value %} hidden{% endif %}>
+      <div class="px-4 py-3 border-bottom">
+        <h5 class="card-title mb-0">{% translate "Materials" %}</h5>
+      </div>
+      {{ lines.management_form }}
+      {% for error in lines.non_form_errors %}<div class="alert alert-danger m-3 mb-0">{{ error }}</div>{% endfor %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0 ledger-table receipt-lines">
+          <thead>
+            <tr>
+              <th class="receipt-col-number">№</th>
+              <th>{% translate "Material" %}</th>
+              <th class="num receipt-col-quantity">{% translate "Quantity" %}</th>
+              <th class="receipt-col-unit">{% translate "Unit" %}</th>
+              <th class="receipt-col-remove"><span class="visually-hidden">{% translate "Remove" %}</span></th>
+            </tr>
+          </thead>
+          <tbody data-lines="lines">
+            {% for line in lines %}
+              {# A line removed before an error stays removed: hidden, its DELETE kept #}
+              <tr{% if line in lines.deleted_forms %} hidden{% endif %}>
+                <td class="text-muted" data-line-number>{{ forloop.counter }}</td>
+                <td>
+                  {% for hidden in line.hidden_fields %}{{ hidden }}{% endfor %}
+                  {{ line.material }}
+                  {% for error in line.material.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  {% for error in line.non_field_errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
+                <td>
+                  {{ line.quantity }}
+                  {% for error in line.quantity.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
+                <td class="text-muted" data-unit></td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm bg-danger-subtle text-danger ledger-action" data-remove-line title="{% translate "Remove the line" %}" aria-label="{% translate "Remove the line" %}">
+                    <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon>
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <template id="lines-empty-line">
+        <tr>
+          <td class="text-muted" data-line-number></td>
+          <td>{% for hidden in lines.empty_form.hidden_fields %}{{ hidden }}{% endfor %}{{ lines.empty_form.material }}</td>
+          <td>{{ lines.empty_form.quantity }}</td>
+          <td class="text-muted" data-unit></td>
+          <td class="text-end">
+            <button type="button" class="btn btn-sm bg-danger-subtle text-danger ledger-action" data-remove-line title="{% translate "Remove the line" %}" aria-label="{% translate "Remove the line" %}">
+              <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon>
+            </button>
+          </td>
+        </tr>
+      </template>
+      <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+        <button type="submit" class="btn btn-primary">{% translate "Post the receipt" %}</button>
+        <button type="button" class="btn bg-success-subtle text-success" data-add-line="lines">
+          <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon> {% translate "Add a line" %}
+        </button>
+        <a href="{% url 'production:receipts' %}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+      </div>
+    </div>
+  </form>
+  {{ units|json_script:"material-units" }}
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

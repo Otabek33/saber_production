@@ -8,7 +8,18 @@ from django.utils.translation import gettext_lazy as _
 
 from finance_saber.core.forms import BootstrapFormMixin
 
-from .models import Account, Article, ArticleKind, Category, Counterparty, DeskKind, Kind, Operation, Region
+from .models import (
+    Account,
+    Article,
+    ArticleKind,
+    Category,
+    Company,
+    Counterparty,
+    DeskKind,
+    Kind,
+    Operation,
+    Region,
+)
 
 # The whole finance workbook may be uploaded (Situation.xlsx is ~1.2 MB); a daily bank
 # statement is a few hundred KB. nginx allows 25 MB (deploy/nginx/finance_saber.conf).
@@ -117,7 +128,7 @@ class CounterpartyForm(BootstrapFormMixin, forms.ModelForm):
 
     class Meta:
         model = Counterparty
-        fields = ["reference", "name", "inn", "account_number", "article", "region"]
+        fields = ["reference", "name", "inn", "account_number", "article", "region", "company"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -129,6 +140,7 @@ class CounterpartyForm(BootstrapFormMixin, forms.ModelForm):
             .distinct()
         )
         self.fields["region"].queryset = Region.objects.filter(is_active=True)
+        self.fields["company"].queryset = Company.objects.all()
         if self.instance.pk:
             # The reference identifies the counterparty in statements; changing it would break matching.
             self.fields["reference"].disabled = True
@@ -138,6 +150,17 @@ class CounterpartyForm(BootstrapFormMixin, forms.ModelForm):
         if not self.instance.pk and cleaned.get("reference") and not cleaned.get("name"):
             cleaned["name"] = Counterparty.parse_reference(cleaned["reference"])["name"]
         return cleaned
+
+
+class CompanyForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Company
+        fields = ["name", "inn", "region", "is_own"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Active regions, plus the company's own if it was since deactivated.
+        self.fields["region"].queryset = Region.objects.filter(Q(is_active=True) | Q(pk=self.instance.region_id))
 
 
 class RegionForm(BootstrapFormMixin, forms.ModelForm):

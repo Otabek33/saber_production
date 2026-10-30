@@ -1,0 +1,135 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Companies (ours first), each with the bank accounts connected to it. A bank account is connected
+  from its edit page on the Counterparties list (field "Company").
+{% endcomment %}
+
+{% block title %}{% translate "Companies" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Companies" as page_title %}
+  {% translate "Cash desk" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-end gap-2 mb-3">
+    {% if perms.cashbook.add_company %}
+      <a href="{% url 'cashbook:company_add' %}" class="btn btn-sm bg-success-subtle text-success">{% translate "New company" %}</a>
+    {% endif %}
+    <a href="{% url 'cashbook:companies_export' %}" class="btn btn-sm bg-success-subtle text-success">
+      <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+    </a>
+    {# The companies file kept with the code, for filling a new server #}
+    <a href="{% url 'cashbook:companies_seed' %}" class="btn btn-sm bg-secondary-subtle text-secondary" title="{% translate "The companies file kept in the project, to load into a new server" %}">
+      <iconify-icon icon="solar:archive-down-minimlistic-line-duotone"></iconify-icon> {% translate "Project file" %}
+    </a>
+    {% if perms.cashbook.change_company and perms.cashbook.change_counterparty %}
+      <button type="button" class="btn btn-sm bg-primary-subtle text-primary" data-bs-toggle="collapse" data-bs-target="#panel-upload" aria-expanded="false" aria-controls="panel-upload">
+        <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Load from Excel" %}
+      </button>
+    {% endif %}
+    <a href="{% url 'cashbook:counterparties' %}?company=none" class="btn btn-sm bg-warning-subtle text-warning">
+      {% blocktranslate count counter=unconnected_count %}{{ counter }} bank account is not connected{% plural %}{{ counter }} bank accounts are not connected{% endblocktranslate %}
+    </a>
+  </div>
+
+  {% if perms.cashbook.change_company and perms.cashbook.change_counterparty %}
+    {# Companies from Excel: the file of a Companies download (one row per bank account) #}
+    <div class="collapse mb-4" id="panel-upload">
+      <div class="card">
+        <div class="card-body p-4">
+          <form method="post" action="{% url 'cashbook:companies_import' %}" enctype="multipart/form-data" class="row g-2 align-items-end form-compact">
+            {% csrf_token %}
+            <div class="col-12 col-md">
+              <label for="upload-file" class="form-label">{% translate "Companies workbook (.xlsx)" %}</label>
+              <input type="file" name="file" id="upload-file" accept=".xlsx" class="form-control" required>
+            </div>
+            <div class="col-12 col-md-auto">
+              <div class="form-check mb-2">
+                <input type="checkbox" name="dry_run" id="upload-dry-run" class="form-check-input" checked>
+                <label class="form-check-label" for="upload-dry-run">{% translate "Only check, don't save" %}</label>
+              </div>
+            </div>
+            <div class="col-12 col-md-auto mb-3">
+              <button type="submit" class="btn btn-primary btn-sm px-4 w-100">{% translate "Upload" %}</button>
+            </div>
+          </form>
+          {# The project's file: cashbook/seed/companies.xlsx #}
+          <form method="post" action="{% url 'cashbook:companies_import' %}" class="d-flex flex-wrap align-items-center gap-3 border-top pt-3 mt-1">
+            {% csrf_token %}
+            <input type="hidden" name="seed" value="1">
+            <div class="form-check mb-0">
+              <input type="checkbox" name="dry_run" id="seed-dry-run" class="form-check-input" checked>
+              <label class="form-check-label" for="seed-dry-run">{% translate "Only check, don't save" %}</label>
+            </div>
+            <button type="submit" class="btn btn-sm bg-secondary-subtle text-secondary">
+              <iconify-icon icon="solar:archive-up-minimlistic-line-duotone"></iconify-icon> {% translate "Load the project file" %}
+            </button>
+          </form>
+          <p class="text-muted fs-2 mb-0 mt-3">
+            {% translate "A company is found by its INN, or created. Each bank account is connected by its statement reference (account/INN/name), as the counterparties list shows it. Nothing is saved if any row has an error." %}
+          </p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {% for company in companies %}
+    <div class="card mb-4">
+      <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h5 class="card-title mb-0">
+            {{ company.name }}
+            {% if company.is_own %}<span class="badge bg-success-subtle text-success fs-2 ms-1">{% translate "Our company" %}</span>{% endif %}
+          </h5>
+          <span class="text-muted fs-2">
+            {% translate "INN" %} {{ company.inn }} ·
+            {% if company.region %}{{ company.region.name }}{% else %}<span class="text-warning">{% translate "No region" %}</span>{% endif %}
+          </span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-body-tertiary text-body-emphasis">{% blocktranslate count counter=company.account_count %}{{ counter }} account{% plural %}{{ counter }} accounts{% endblocktranslate %}</span>
+          {% if perms.cashbook.change_company %}
+            <a href="{% url 'cashbook:company_edit' company.pk %}" class="btn btn-sm bg-primary-subtle text-primary" title="{% translate "Edit company" %}" aria-label="{% translate "Edit company" %}">
+              <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Account number" %}</th>
+                <th>{% translate "Name" %}</th>
+                <th class="num">{% translate "Lines" %}</th>
+                <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for account in company.accounts.all %}
+                <tr>
+                  <td class="num">{{ account.account_number }}</td>
+                  <td class="ledger-counterparty">{{ account.name }}</td>
+                  <td class="num">{{ account.lines }}</td>
+                  <td class="text-end">
+                    {% if perms.cashbook.change_counterparty %}<a href="{% url 'cashbook:counterparty_edit' account.pk %}?next={% url 'cashbook:companies' %}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}">
+                      <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                    </a>{% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">{% translate "No bank accounts connected yet." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="card"><div class="card-body text-center text-muted py-6">{% translate "No companies yet." %}</div></div>
+  {% endfor %}
+{% endblock %}
