@@ -268,12 +268,12 @@
         <div class="card">
           <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
             <h5 class="card-title mb-0">{% translate "Largest debtors" %}</h5>
-            <a href="{% url 'sales:debts' %}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "All" %}</a>
+            <a href="{% url 'settlements:balances' %}?show=debtors" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "All" %}</a>
           </div>
           <ul class="list-group list-group-flush">
             {% for row in debts.top %}
               <li class="list-group-item px-4 py-2 d-flex justify-content-between gap-2">
-                <a href="{% if row.payer %}{% url 'sales:statement' 'payer' row.payer.pk %}{% else %}{% url 'sales:statement' 'client' row.clients.0.pk %}{% endif %}" class="text-reset text-truncate">{{ row.name }}</a>
+                <a href="{% url 'settlements:statement' row.partner.pk %}" class="text-reset text-truncate">{{ row.partner.name }}</a>
                 <span class="text-danger fw-semibold text-nowrap">{{ row.balance|floatformat:"0g" }}</span>
               </li>
             {% empty %}

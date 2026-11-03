@@ -84,6 +84,7 @@
             <th>{% translate "Registration number" %}</th>
             <th>{% translate "Supplier" %}</th>
             <th>{% translate "Materials" %}</th>
+            <th class="num">{% translate "Amount" %}</th>
             <th>{% translate "Author" %}</th>
             <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
           </tr>
@@ -99,6 +100,7 @@
                   <span class="d-block">{{ line.material.name }} — <span class="fw-semibold">{{ line.quantity|floatformat:"-3g" }}</span> <span class="text-muted fs-1">{{ line.material.unit }}</span></span>
                 {% endfor %}
               </td>
+              <td class="num text-nowrap">{{ receipt.total|floatformat:"2g" }}</td>
               <td class="text-muted">{{ receipt.created_by|default:"" }}</td>
               <td class="text-end">
                 <a href="{% url 'production:receipt' receipt.pk %}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Open" %}" aria-label="{% translate "Open" %}">
@@ -107,7 +109,7 @@
               </td>
             </tr>
           {% empty %}
-            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No receipts found." %}</td></tr>
+            <tr><td colspan="7" class="text-center text-muted py-6">{% translate "No receipts found." %}</td></tr>
           {% endfor %}
         </tbody>
       </table>

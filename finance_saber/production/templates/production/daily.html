@@ -34,6 +34,11 @@
     {# Quantities per product, like one day's column in the Warehouse sheet #}
     <div class="col-xl-7">
       <div class="card">
+        {% if drafts %}
+          <div class="alert alert-warning py-2 mb-3" role="alert">
+            {% blocktranslate count counter=drafts|length %}{{ counter }} product of this day is a draft: it does not affect stock or reports until it is posted.{% plural %}{{ counter }} products of this day are drafts: they do not affect stock or reports until they are posted.{% endblocktranslate %}
+          </div>
+        {% endif %}
         <form method="post" novalidate>
           {% csrf_token %}
           <div class="table-responsive">
@@ -59,12 +64,28 @@
                     <td>
                       {{ field }}
                       {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                      {% if product.run.is_draft %}
+                        <span class="badge bg-warning-subtle text-warning mt-1">{% translate "Draft" %}</span>
+                      {% elif product.run.is_posted %}
+                        <span class="badge bg-success-subtle text-success mt-1">{% translate "Posted" %}</span>
+                      {% endif %}
                     </td>
-                    <td class="text-end">
+                    <td class="text-end text-nowrap">
                       {# The day's calculation: this production's own recipe, defect and quantities #}
                       <a href="{% url 'production:calculation' date=date.isoformat product_pk=product.pk %}" class="btn btn-sm bg-primary-subtle text-primary text-nowrap" title="{% translate "Production calculation" %}">
                         <iconify-icon icon="solar:calculator-minimalistic-line-duotone"></iconify-icon> {% translate "Calculation" %}
                       </a>
+                      {# Saved: its batch, with the deliveries its materials came from #}
+                      {% if product.run.is_draft and can_edit %}
+                        <button type="submit" formaction="{% url 'production:run_delete' product.run.pk %}" formnovalidate class="btn btn-sm bg-danger-subtle text-danger ledger-action" title="{% translate "Delete the draft" %}" aria-label="{% translate "Delete the draft" %}" data-confirm="{% translate "Delete this draft? It never affected stock." %}">
+                          <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon>
+                        </button>
+                      {% endif %}
+                      {% if product.batch %}
+                        <a href="{% url 'production:batch' product.batch.0.pk %}" class="btn btn-sm bg-secondary-subtle text-secondary text-nowrap" title="{% translate "Batch: materials and their deliveries" %}">
+                          <iconify-icon icon="solar:box-line-duotone"></iconify-icon> {{ product.batch.1 }}
+                        </a>
+                      {% endif %}
                     </td>
                   </tr>
                 {% empty %}
@@ -75,11 +96,15 @@
           </div>
           {% if can_edit %}
           <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+            {# Post: stock and reports change. Draft: nothing changes until it is posted. #}
             {% if shortage and request.method == "POST" %}
-              <button type="submit" name="confirm" value="1" class="btn btn-warning">{% translate "Save anyway" %}</button>
-              <a href="?date={{ date.isoformat }}" class="btn bg-primary-subtle text-primary">{% translate "Cancel" %}</a>
+              <button type="submit" name="confirm" value="1" class="btn btn-warning">{% translate "Post anyway" %}</button>
             {% else %}
-              <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+              <button type="submit" name="post" value="1" class="btn btn-primary">{% translate "Post" %}</button>
+            {% endif %}
+            <button type="submit" name="draft" value="1" class="btn bg-secondary-subtle text-secondary"{% if has_posted %} data-confirm="{% translate "Posted production of this day becomes a draft again: its materials go back to stock until it is posted. Continue?" %}"{% endif %}>{% translate "Save as draft" %}</button>
+            {% if shortage and request.method == "POST" %}
+              <a href="?date={{ date.isoformat }}" class="btn bg-primary-subtle text-primary">{% translate "Cancel" %}</a>
             {% endif %}
             <span class="text-muted fs-2 align-self-center">{% translate "Leave empty or 0 for products not made. Materials are written off by each production's own recipe; open “Calculation” to adjust it, the defect or the brewed quantity." %}</span>
           </div>

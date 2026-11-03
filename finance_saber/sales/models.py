@@ -1,4 +1,9 @@
-"""Sales (shipments to clients), what clients owe, and the monthly sales and production plan.
+"""The monthly sales and production plan; and the old daily sales and clients, kept as an archive.
+
+The daily sales and their clients were moved to Production › Shipments and the
+companies of the handbook (production migration 0013); nothing reads or writes them
+any more, and they will be dropped in a later release. What follows describes them
+as they were.
 
 A sale is one shipment line as SmartUp exports it: a day, a client, a product, a
 quantity and its total price. It is entered by hand or loaded from a SmartUp

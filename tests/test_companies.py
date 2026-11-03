@@ -33,25 +33,30 @@ def accounts(own):
     return connected, loose
 
 
-def test_page_lists_each_company_with_its_accounts(client, finance, own, accounts):
+# The company form posts its bank requisites too (an inline formset), empty here.
+REQUISITES = {"requisites-TOTAL_FORMS": "0", "requisites-INITIAL_FORMS": "0"}
+
+
+def test_page_lists_each_company_and_its_page_its_accounts(client, finance, own, accounts):
     client.force_login(finance)
     response = client.get(reverse("cashbook:companies"))
     assert response.status_code == 200
     page = response.content.decode()
-    assert escape(own.name) in page
-    assert "20208000700950671001" in page
-    assert "ООО Ромашка" not in page  # not connected: counted, not listed under a company
+    assert escape(own.name) in page and own.get_absolute_url() in page
+    assert "ООО Ромашка" not in page  # not connected: counted, not listed as a company
     assert response.context["unconnected_count"] == 1
+    assert "20208000700950671001" in client.get(own.get_absolute_url()).content.decode()
 
 
 def test_company_is_created_with_a_unique_inn(client, finance, own):
     client.force_login(finance)
-    response = client.post(reverse("cashbook:company_add"), {"name": "ООО Вторая", "inn": "123456789"})
+    response = client.post(reverse("cashbook:company_add"), {"name": "ООО Вторая", "inn": "123456789", **REQUISITES})
     assert response.status_code == 302
     assert Company.objects.filter(inn="123456789").exists()
 
-    response = client.post(reverse("cashbook:company_add"), {"name": "Дубль", "inn": own.inn})
+    response = client.post(reverse("cashbook:company_add"), {"name": "Дубль", "inn": own.inn, **REQUISITES})
     assert response.status_code == 200
+    assert response.context["form"].non_field_errors()  # a head company with this INN already exists
     assert Company.objects.filter(inn=own.inn).count() == 1
 
 
@@ -106,17 +111,20 @@ def upload(client, rows, dry_run=False):
     return client.post(reverse("cashbook:companies_import"), data)
 
 
-def test_download_has_one_row_per_account(client, finance, own, accounts):
+def test_download_has_smartups_columns_and_one_row_per_account(client, finance, own, accounts):
     client.force_login(finance)
     response = client.get(reverse("cashbook:companies_export"))
     assert response.status_code == 200
     assert response["Content-Type"].startswith("application/vnd.openxmlformats")
     sheet = openpyxl.load_workbook(BytesIO(response.content)).active
-    rows = [list(row) for row in sheet.iter_rows(min_row=2, values_only=True)]
+    header, *rows = [list(row) for row in sheet.iter_rows(values_only=True)]
+    assert header[:8] == ["ИД", "Код", "ИД владельца", "Владелец", "Штрих-код", "ИНН(*)", "Название(*)",
+                          "Альтернативное название"]  # fmt: skip
     assert len(rows) == 1
-    name, inn, region, is_own, reference = rows[0]
-    assert (name, inn, region, reference) == (own.name, own.inn, None, accounts[0].reference)
-    assert is_own in ("no", "нет")
+    row = dict(zip(header, rows[0], strict=True))
+    assert (row["Название(*)"], row["ИНН(*)"], row["Владелец"]) == (own.name, own.inn, "N")
+    assert row[header[-1]] == accounts[0].reference  # the statement reference, last
+    assert row[header[-2]] in ("no", "нет")
 
 
 def test_upload_dry_run_saves_nothing(client, finance):
@@ -215,8 +223,10 @@ def test_region_is_preferred_but_not_required(client, finance):
     client.force_login(finance)
     url = reverse("cashbook:company_add")
     assert "Tash reg" in client.get(url).content.decode()
-    assert client.post(url, {"name": "С регионом", "inn": "100000001", "region": tash.pk}).status_code == 302
-    assert client.post(url, {"name": "Без региона", "inn": "100000002", "region": ""}).status_code == 302
+    assert (
+        client.post(url, {"name": "С регионом", "inn": "100000001", "region": tash.pk, **REQUISITES}).status_code == 302
+    )
+    assert client.post(url, {"name": "Без региона", "inn": "100000002", "region": "", **REQUISITES}).status_code == 302
     assert Company.objects.get(inn="100000001").region == tash
     assert Company.objects.get(inn="100000002").region is None
 

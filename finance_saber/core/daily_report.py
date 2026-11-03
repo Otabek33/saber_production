@@ -155,7 +155,7 @@ def render(user, day: datetime.date | None = None) -> str:
     if "debts" in data and data["debts"]["top"]:
         lines += ["", f"👥 <b>{_('Largest debtors')}</b>"]
         for i, row in enumerate(data["debts"]["top"], 1):
-            lines.append(f"   {i}. {esc(row.name)} — {money(row.balance)}")
+            lines.append(f"   {i}. {esc(row.partner.name)} — {money(row.balance)}")
     if "stock" in data:
         stock = data["stock"]
         lines += ["", f"📦 <b>{_('Warehouse')}</b>"]

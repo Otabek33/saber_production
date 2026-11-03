@@ -18,6 +18,9 @@
         {% if request.GET.q %}<a href="{% url 'production:products' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>{% endif %}
         {% if perms.production.add_productmove %}
         <span class="ms-auto d-flex flex-wrap gap-2">
+          <a href="{% url 'production:shipments' %}" class="btn btn-sm bg-secondary-subtle text-secondary">
+            <iconify-icon icon="solar:document-text-line-duotone"></iconify-icon> {% translate "Shipments journal" %}
+          </a>
           <a href="{% url 'production:shipment' %}" class="btn btn-sm bg-success-subtle text-success">
             <iconify-icon icon="solar:delivery-line-duotone"></iconify-icon> {% translate "Shipment" %}
           </a>

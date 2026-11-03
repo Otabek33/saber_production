@@ -14,6 +14,7 @@ from .models import (
     ArticleKind,
     Category,
     Company,
+    CompanyBankAccount,
     Counterparty,
     DeskKind,
     Kind,
@@ -80,6 +81,7 @@ class OperationForm(BootstrapFormMixin, forms.ModelForm):
             "to_amount",
             "rate",
             "counterparty",
+            "partner",
             "document_number",
             "note",
         ]
@@ -108,8 +110,12 @@ class OperationForm(BootstrapFormMixin, forms.ModelForm):
         if desk.is_bank:
             self.fields["counterparty"].queryset = Counterparty.objects.select_related("article")
             self.fields["category"].label = _("Article")  # bank lines are classified by article
+            del self.fields["partner"]  # the bank's partner is its counterparty's company
         else:
             del self.fields["counterparty"], self.fields["document_number"]
+            # Whose money it is: counted in that company's settlement (Settlements).
+            self.fields["partner"].queryset = Company.objects.filter(is_own=False).order_by("name")
+            self.fields["partner"].widget.attrs["data-searchable"] = ""
 
     def category_groups(self):
         """Active categories grouped by article, for the <select> with <optgroup>s and type filtering."""
@@ -152,15 +158,50 @@ class CounterpartyForm(BootstrapFormMixin, forms.ModelForm):
         return cleaned
 
 
+class CompanyChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, company):
+        return f"{company.name} · {company.inn}" if company.inn else company.name
+
+
+# The company form's fields, in the groups its page shows (cashbook/company_form.html).
+COMPANY_SECTIONS = [
+    (_("Company"), ["name", "short_name", "inn", "parent", "region", "is_own"]),
+    (
+        _("Address"),
+        ["country", "area", "city", "district", "address", "postal_address", "landmark", "postal_code", "gps"],
+    ),
+    (_("Contacts and classification"), ["phone", "email", "group", "category", "kind", "work_zones"]),
+    (_("Codes"), ["smartup_id", "smartup_owner_id", "code", "barcode", "oked", "vat_number"]),
+]
+
+
 class CompanyForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Company
-        fields = ["name", "inn", "region", "is_own"]
+        fields = [name for _title, names in COMPANY_SECTIONS for name in names]
+        field_classes = {"parent": CompanyChoiceField}
+        widgets = {"parent": forms.Select(attrs={"data-searchable": ""})}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Active regions, plus the company's own if it was since deactivated.
         self.fields["region"].queryset = Region.objects.filter(Q(is_active=True) | Q(pk=self.instance.region_id))
+        # Any company but this one and its filials (a company can't be under its own filial).
+        self.fields["parent"].queryset = Company.objects.exclude(pk__in=self.instance.descendant_ids()).order_by("name")
+
+    def sections(self):
+        return [(title, [self[name] for name in names]) for title, names in COMPANY_SECTIONS]
+
+
+class CompanyBankAccountForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = CompanyBankAccount
+        fields = ["mfo", "account_number", "bank", "currency"]
+
+
+CompanyBankAccountFormSet = forms.inlineformset_factory(
+    Company, CompanyBankAccount, form=CompanyBankAccountForm, extra=1, can_delete=True
+)
 
 
 class RegionForm(BootstrapFormMixin, forms.ModelForm):

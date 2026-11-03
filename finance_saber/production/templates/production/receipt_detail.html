@@ -44,6 +44,8 @@
                 <th>{% translate "Material" %}</th>
                 <th class="num">{% translate "Quantity" %}</th>
                 <th>{% translate "Unit" %}</th>
+                <th class="num">{% translate "Price" %}</th>
+                <th class="num">{% translate "Amount" %}</th>
               </tr>
             </thead>
             <tbody>
@@ -53,9 +55,17 @@
                   <td>{{ line.material.name }}</td>
                   <td class="num fw-semibold">{{ line.quantity|floatformat:"-3g" }}</td>
                   <td class="text-muted">{{ line.material.unit }}</td>
+                  <td class="num">{{ line.price|floatformat:"2g" }}</td>
+                  <td class="num">{{ line.amount|floatformat:"2g" }}</td>
                 </tr>
               {% endfor %}
             </tbody>
+            <tfoot>
+              <tr class="fw-semibold">
+                <td></td><td>{% translate "Total" %}</td><td></td><td></td><td></td>
+                <td class="num">{{ receipt.total|floatformat:"2g" }}</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
         <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
@@ -81,4 +91,51 @@
       </div>
     </div>
   </div>
+
+  {# Forward tracing: where each line's material went, first in, first out (production/traceability.py) #}
+  {% if uses %}
+    <div class="card mt-4">
+      <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <h5 class="card-title mb-0">{% translate "Where these materials went" %}</h5>
+        {% if perms.production.view_productionrun %}
+          <a href="{% url 'production:batches' %}?receipt={{ receipt.pk }}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "All batches with this receipt" %}</a>
+        {% endif %}
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0 ledger-table">
+          <thead>
+            <tr>
+              <th>{% translate "Material" %}</th>
+              <th class="num">{% translate "Received" %}</th>
+              <th class="num">{% translate "Used" %}</th>
+              <th class="num">{% translate "In stock" %}</th>
+              <th>{% translate "Batches" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for use in uses %}
+              <tr>
+                <td>{{ use.line.material.name }} <span class="text-muted fs-1">{{ use.line.material.unit }}</span></td>
+                <td class="num">{{ use.line.quantity|floatformat:"-3g" }}</td>
+                <td class="num">{{ use.used|floatformat:"-3g" }}</td>
+                <td class="num fw-semibold">{{ use.remaining|floatformat:"-3g" }}</td>
+                <td>
+                  {% for run, code, quantity in use.batches %}
+                    <span class="d-block">
+                      {% if perms.production.view_productionrun %}<a href="{% url 'production:batch' run.pk %}" class="font-monospace">{{ code }}</a>{% else %}<span class="font-monospace">{{ code }}</span>{% endif %}
+                      {{ run.product.name }}, {{ run.date|date:"d.m.Y" }} — <span class="fw-semibold">{{ quantity|floatformat:"-3g" }}</span>
+                    </span>
+                  {% endfor %}
+                  {% for move, quantity in use.other %}
+                    <span class="d-block text-muted">{{ move.get_kind_display }}, {{ move.date|date:"d.m.Y" }} — {{ quantity|floatformat:"-3g" }}</span>
+                  {% endfor %}
+                  {% if not use.batches and not use.other %}<span class="text-muted">{% translate "Not used yet" %}</span>{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}

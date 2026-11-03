@@ -1,0 +1,166 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  One company: its head companies (a chain), details from SmartUp, filials, bank requisites and the
+  bank-statement accounts connected to it (Counterparties page, field "Company").
+{% endcomment %}
+
+{% block title %}{{ company.name }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Companies" as section %}
+  {% include "partials/_page_header.html" with title=company.name section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <nav aria-label="{% translate "Head companies" %}" class="fs-3">
+      <a href="{% url 'cashbook:companies' %}">{% translate "Companies" %}</a>
+      {% for head in chain %} › <a href="{{ head.get_absolute_url }}">{{ head.name }}</a>{% endfor %}
+      › <span class="text-muted">{{ company.name }}</span>
+    </nav>
+    <div class="d-flex flex-wrap gap-2">
+      {% if perms.production.view_productshipment and not company.is_own %}
+        <a href="{% url 'production:shipments' %}?customer={{ company.pk }}&status=all" class="btn btn-sm bg-secondary-subtle text-secondary">{% translate "Shipments" %}</a>
+      {% endif %}
+      {% if perms.settlements.view_openingbalance and not company.is_own %}
+        <a href="{% url 'settlements:statement' company.pk %}" class="btn btn-sm bg-secondary-subtle text-secondary">{% translate "Reconciliation statement" %}</a>
+      {% endif %}
+      {% if perms.cashbook.add_company %}
+        <a href="{% url 'cashbook:company_add' %}?parent={{ company.pk }}" class="btn btn-sm bg-success-subtle text-success">{% translate "New filial" %}</a>
+      {% endif %}
+      {% if perms.cashbook.change_company %}
+        <a href="{% url 'cashbook:company_edit' company.pk %}" class="btn btn-sm bg-primary-subtle text-primary">
+          <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon> {% translate "Edit company" %}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-xl-5">
+      <div class="card">
+        <div class="card-body p-4">
+          <h5 class="card-title mb-1">
+            {{ company.name }}
+            {% if company.is_own %}<span class="badge bg-success-subtle text-success fs-2 ms-1">{% translate "Our company" %}</span>{% endif %}
+            {% if company.parent %}<span class="badge bg-info-subtle text-info fs-2 ms-1">{% translate "Filial" %}</span>{% endif %}
+          </h5>
+          {% if company.short_name and company.short_name != company.name %}<p class="text-muted mb-3">{{ company.short_name }}</p>{% endif %}
+          {% if not company.parent and company.smartup_owner_id %}
+            <div class="alert alert-warning py-2 fs-2">{% blocktranslate with id=company.smartup_owner_id %}Its head company (SmartUp ID {{ id }}) isn't loaded yet; it is attached when a file with it is loaded.{% endblocktranslate %}</div>
+          {% endif %}
+          <dl class="row mb-0 fs-3">
+            <dt class="col-5 fw-normal text-muted">{% translate "INN" %}</dt><dd class="col-7">{{ company.inn|default:"—" }}</dd>
+            {% if company.parent %}<dt class="col-5 fw-normal text-muted">{% translate "Head company" %}</dt><dd class="col-7"><a href="{{ company.parent.get_absolute_url }}">{{ company.parent.name }}</a></dd>{% endif %}
+            <dt class="col-5 fw-normal text-muted">{% translate "Sales region" %}</dt><dd class="col-7">{% if company.region %}{{ company.region.name }}{% else %}<span class="text-warning">{% translate "No region" %}</span>{% endif %}</dd>
+            {% if company.oked %}<dt class="col-5 fw-normal text-muted">{% translate "OKED" %}</dt><dd class="col-7">{{ company.oked }}</dd>{% endif %}
+            {% if company.vat_number %}<dt class="col-5 fw-normal text-muted">{% translate "VAT registration code" as vat %}{{ vat|capfirst }}</dt><dd class="col-7">{{ company.vat_number }}</dd>{% endif %}
+            {% if company.country or company.area or company.city or company.district %}
+              <dt class="col-5 fw-normal text-muted">{% translate "Region (address)" %}</dt>
+              <dd class="col-7">{{ company.country }}{% if company.area %}, {{ company.area }}{% endif %}{% if company.city %}, {{ company.city }}{% endif %}{% if company.district %}, {{ company.district }}{% endif %}</dd>
+            {% endif %}
+            {% if company.address %}<dt class="col-5 fw-normal text-muted">{% translate "Address" %}</dt><dd class="col-7">{{ company.address }}</dd>{% endif %}
+            {% if company.postal_address %}<dt class="col-5 fw-normal text-muted">{% translate "Postal address" %}</dt><dd class="col-7">{{ company.postal_address }}{% if company.postal_code %}, {{ company.postal_code }}{% endif %}</dd>{% endif %}
+            {% if company.landmark %}<dt class="col-5 fw-normal text-muted">{% translate "Landmark" %}</dt><dd class="col-7">{{ company.landmark }}</dd>{% endif %}
+            {% if company.gps %}
+              <dt class="col-5 fw-normal text-muted">{% translate "GPS coordinates" %}</dt>
+              <dd class="col-7">{% if company.map_url %}<a href="{{ company.map_url }}" target="_blank" rel="noopener">{{ company.gps }}</a>{% else %}{{ company.gps }}{% endif %}</dd>
+            {% endif %}
+            {% if company.phone %}<dt class="col-5 fw-normal text-muted">{% translate "Phone" %}</dt><dd class="col-7">{{ company.phone }}</dd>{% endif %}
+            {% if company.email %}<dt class="col-5 fw-normal text-muted">{% translate "Email" %}</dt><dd class="col-7">{{ company.email }}</dd>{% endif %}
+            {% if company.group %}<dt class="col-5 fw-normal text-muted">{% translate "Group" %}</dt><dd class="col-7">{{ company.group }}</dd>{% endif %}
+            {% if company.category %}<dt class="col-5 fw-normal text-muted">{% translate "Category" %}</dt><dd class="col-7">{{ company.category }}</dd>{% endif %}
+            {% if company.kind %}<dt class="col-5 fw-normal text-muted">{% translate "Type" %}</dt><dd class="col-7">{{ company.kind }}</dd>{% endif %}
+            {% if company.work_zones %}<dt class="col-5 fw-normal text-muted">{% translate "Work zones" %}</dt><dd class="col-7">{{ company.work_zones }}</dd>{% endif %}
+            {% if company.smartup_id %}<dt class="col-5 fw-normal text-muted">{% translate "SmartUp ID" %}</dt><dd class="col-7">{{ company.smartup_id }}</dd>{% endif %}
+            {% if company.code %}<dt class="col-5 fw-normal text-muted">{% translate "Code" %}</dt><dd class="col-7">{{ company.code }}</dd>{% endif %}
+            {% if company.barcode %}<dt class="col-5 fw-normal text-muted">{% translate "Barcode" %}</dt><dd class="col-7">{{ company.barcode }}</dd>{% endif %}
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-7">
+      {# Requisites: the accounts the company gives (SmartUp) #}
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Bank requisites" %}</h5></div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead><tr><th>{% translate "MFO" %}</th><th>{% translate "Account number" %}</th><th>{% translate "Bank" %}</th><th>{% translate "Currency code" %}</th></tr></thead>
+              <tbody>
+                {% for requisite in requisites %}
+                  <tr><td class="num">{{ requisite.mfo }}</td><td class="num">{{ requisite.account_number }}</td><td>{{ requisite.bank }}</td><td class="num">{{ requisite.currency }}</td></tr>
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted py-3">{% translate "No bank requisites." %}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {# Bank-statement counterparties connected to the company #}
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Accounts in bank statements" %}</h5></div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+              <thead><tr><th>{% translate "Account number" %}</th><th>{% translate "Name" %}</th><th class="num">{% translate "Lines" %}</th><th><span class="visually-hidden">{% translate "Actions" %}</span></th></tr></thead>
+              <tbody>
+                {% for account in accounts %}
+                  <tr>
+                    <td class="num">{{ account.account_number }}</td>
+                    <td class="ledger-counterparty">{{ account.name }}</td>
+                    <td class="num">{{ account.lines }}</td>
+                    <td class="text-end">
+                      {% if perms.cashbook.change_counterparty %}<a href="{% url 'cashbook:counterparty_edit' account.pk %}?next={{ company.get_absolute_url }}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit" %}" aria-label="{% translate "Edit" %}">
+                        <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
+                      </a>{% endif %}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted py-3">{% translate "No bank accounts connected yet." %}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Filials: shops, warehouses, branches #}
+  <div class="card" id="filials">
+    <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+      <h5 class="card-title mb-0">{% translate "Filials" %} <span class="badge bg-body-tertiary text-body-emphasis ms-1">{{ filials|length }}</span></h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+          <thead>
+            <tr>
+              <th>{% translate "Name" %}</th><th>{% translate "INN" %}</th><th>{% translate "Address" %}</th>
+              <th>{% translate "Phone" %}</th><th>{% translate "Type" %}</th><th class="num">{% translate "Filials" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for filial in filials %}
+              <tr>
+                <td><a href="{{ filial.get_absolute_url }}" class="text-body fw-semibold">{{ filial.name }}</a></td>
+                <td class="num">{{ filial.inn|default:"—" }}</td>
+                <td class="fs-2">{{ filial.address|default:filial.city|truncatechars:70 }}</td>
+                <td class="fs-2">{{ filial.phone }}</td>
+                <td class="fs-2">{{ filial.kind }}</td>
+                <td class="num">{% if filial.filial_count %}{{ filial.filial_count }}{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="text-center text-muted py-3">{% translate "No filials." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

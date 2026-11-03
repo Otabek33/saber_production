@@ -28,7 +28,7 @@ PAGES = [
     ("cashbook:handbook", {}, True, False),
     ("cashbook:counterparties", {}, True, False),
     ("cashbook:article_add", {}, True, False),
-    ("sales:daily", {}, True, False),
+    ("settlements:balances", {}, True, False),
     ("sales:plan", {}, True, False),
     ("production:daily", {}, True, True),
     ("production:journal", {}, True, True),

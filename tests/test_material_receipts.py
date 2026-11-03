@@ -142,12 +142,12 @@ def test_the_date_is_today_by_default(client, technologist):
 def test_form_page_shows_the_lines_once_a_supplier_is_chosen(client, technologist, supplier, sugar):
     client.force_login(technologist)
     page = client.get(NEW).content.decode()
-    assert "data-supplier-first" in page
-    assert "data-after-supplier hidden" in page
+    assert "data-choose-first" in page
+    assert "data-after-choice hidden" in page
     assert 'id="material-units"' in page  # each line shows its material's unit
     # After an error, with a supplier already chosen, the lines stay visible.
     page = post_receipt(client, supplier, [(sugar, "0")]).content.decode()
-    assert "data-after-supplier hidden" not in page
+    assert "data-after-choice hidden" not in page
 
 
 # --- Journal, document, cancelling ------------------------------------------------------

@@ -31,8 +31,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductionRun)
 class ProductionRunAdmin(admin.ModelAdmin):
-    list_display = ["date", "product", "quantity", "affects_stock", "is_cancelled"]
-    list_filter = ["product", "is_cancelled"]
+    list_display = ["date", "product", "quantity", "affects_stock", "status"]
+    list_filter = ["product", "status"]
     date_hierarchy = "date"
 
     def has_delete_permission(self, request, obj=None):

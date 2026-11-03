@@ -40,7 +40,7 @@
     </div>
 
     {# The materials received #}
-    <div class="card" data-after-supplier{% if not form.supplier.value %} hidden{% endif %}>
+    <div class="card" data-after-choice{% if not form.supplier.value %} hidden{% endif %}>
       <div class="px-4 py-3 border-bottom">
         <h5 class="card-title mb-0">{% translate "Materials" %}</h5>
       </div>
@@ -54,6 +54,7 @@
               <th>{% translate "Material" %}</th>
               <th class="num receipt-col-quantity">{% translate "Quantity" %}</th>
               <th class="receipt-col-unit">{% translate "Unit" %}</th>
+              <th class="num receipt-col-quantity">{% translate "Amount" %}</th>
               <th class="receipt-col-remove"><span class="visually-hidden">{% translate "Remove" %}</span></th>
             </tr>
           </thead>
@@ -73,6 +74,10 @@
                   {% for error in line.quantity.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                 </td>
                 <td class="text-muted" data-unit></td>
+                <td>
+                  {{ line.amount }}
+                  {% for error in line.amount.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
                 <td class="text-end">
                   <button type="button" class="btn btn-sm bg-danger-subtle text-danger ledger-action" data-remove-line title="{% translate "Remove the line" %}" aria-label="{% translate "Remove the line" %}">
                     <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon>
@@ -89,6 +94,7 @@
           <td>{% for hidden in lines.empty_form.hidden_fields %}{{ hidden }}{% endfor %}{{ lines.empty_form.material }}</td>
           <td>{{ lines.empty_form.quantity }}</td>
           <td class="text-muted" data-unit></td>
+          <td>{{ lines.empty_form.amount }}</td>
           <td class="text-end">
             <button type="button" class="btn btn-sm bg-danger-subtle text-danger ledger-action" data-remove-line title="{% translate "Remove the line" %}" aria-label="{% translate "Remove the line" %}">
               <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon>

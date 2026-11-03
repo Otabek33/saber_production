@@ -14,6 +14,8 @@ urlpatterns = [
     path("production/", include("finance_saber.production.urls")),
     path("sales/", include("finance_saber.sales.urls")),
     path("planning/", include("finance_saber.planning.urls")),
+    path("settlements/", include("finance_saber.settlements.urls")),
+    path("purchases/", include("finance_saber.purchases.urls")),
     path("audit/", include("finance_saber.audit.urls")),
     # Language switcher target; public so the sign-in page can switch too.
     path("i18n/setlang/", login_not_required(set_language), name="set_language"),

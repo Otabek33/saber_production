@@ -103,7 +103,7 @@ def test_setting_the_standard_again_removes_the_change(client, superuser):
 
 def test_reset_to_standard(client, superuser):
     client.force_login(superuser)
-    client.post(url(Role.OPERATOR), form_data(Role.OPERATOR, plan=VIEW, clients=EDIT))
+    client.post(url(Role.OPERATOR), form_data(Role.OPERATOR, plan=VIEW, purchases=VIEW))
     response = client.post(url(Role.OPERATOR), {"reset": "1"})
     assert response.status_code == 302
     assert not RoleAccess.objects.filter(role=Role.OPERATOR).exists()

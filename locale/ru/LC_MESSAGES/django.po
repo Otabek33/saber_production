@@ -3780,3 +3780,1444 @@ msgstr "компания"
 #: finance_saber/cashbook/models.py
 msgid "companies"
 msgstr "компании"
+
+#: finance_saber/production/traceability
+msgid "All batches with this receipt"
+msgstr "Все партии с этим поступлением"
+
+#: finance_saber/production/traceability
+msgid "All products"
+msgstr "Вся продукция"
+
+#: finance_saber/production/traceability
+msgid "Batch"
+msgstr "Партия"
+
+#: finance_saber/production/traceability
+msgid "Batch %(code)s"
+msgstr "Партия %(code)s"
+
+#: finance_saber/production/traceability
+msgid "Batch code"
+msgstr "Код партии"
+
+#: finance_saber/production/traceability
+msgid "Batch traceability"
+msgstr "Прослеживаемость партий"
+
+#: finance_saber/production/traceability
+msgid "Batch: materials and their deliveries"
+msgstr "Партия: сырьё и его поставки"
+
+#: finance_saber/production/traceability
+msgid "Batches"
+msgstr "Партии"
+
+#: finance_saber/production/traceability
+msgid "Batches made with materials of receipt № %(number)s from %(supplier)s."
+msgstr "Партии, сделанные из сырья поступления № %(number)s от %(supplier)s."
+
+#: finance_saber/production/traceability
+msgid "Defect"
+msgstr "Брак"
+
+#: finance_saber/production/traceability
+msgid "Deliveries are matched first in, first out: the oldest stock is used first. «More than the recorded stock» means more was used than was received and counted, e.g. a delivery not yet entered."
+msgstr "Поставки подбираются по FIFO: первым расходуется самое старое сырьё. «Больше учтённого остатка» — израсходовано больше, чем поступило и посчитано, например поступление ещё не введено."
+
+#: finance_saber/production/traceability
+msgid "Delivery"
+msgstr "Поставка"
+
+#: finance_saber/production/traceability
+msgid "Delivery date"
+msgstr "Дата поставки"
+
+#: finance_saber/production/traceability
+msgid "From this delivery"
+msgstr "Из этой поставки"
+
+#: finance_saber/production/traceability
+msgid "Imported history: recorded before stock was kept, so its materials can't be traced to deliveries."
+msgstr "Загруженная история: записана до начала складского учёта, поэтому сырьё нельзя проследить до поставок."
+
+#: finance_saber/production/traceability
+msgid "In stock"
+msgstr "На складе"
+
+#: finance_saber/production/traceability
+msgid "Made with material"
+msgstr "Сделано из сырья"
+
+#: finance_saber/production/traceability
+msgid "Materials and their deliveries"
+msgstr "Сырьё и его поставки"
+
+#: finance_saber/production/traceability
+msgid "Materials from supplier"
+msgstr "Сырьё от поставщика"
+
+#: finance_saber/production/traceability
+msgid "More than the recorded stock"
+msgstr "Больше учтённого остатка"
+
+#: finance_saber/production/traceability
+msgid "No batches found."
+msgstr "Партий не найдено."
+
+#: finance_saber/production/traceability
+msgid "No materials recorded for this batch."
+msgstr "Для этой партии сырьё не записано."
+
+#: finance_saber/production/traceability
+msgid "Not traced"
+msgstr "Не прослежено"
+
+#: finance_saber/production/traceability
+msgid "Not tracked (history imported before stock was kept)"
+msgstr "Не отслеживается (история до начала складского учёта)"
+
+#: finance_saber/production/traceability
+msgid "Not used yet"
+msgstr "Ещё не использовано"
+
+#: finance_saber/production/traceability
+msgid "One row per batch, material and delivery"
+msgstr "Одна строка на партию, сырьё и поставку"
+
+#: finance_saber/production/traceability
+msgid "Production batches"
+msgstr "Партии выпуска"
+
+#: finance_saber/production/traceability
+msgid "Production date"
+msgstr "Дата выпуска"
+
+#: finance_saber/production/traceability
+msgid "Recorded by"
+msgstr "Записал"
+
+#: finance_saber/production/traceability
+msgid "Show all batches"
+msgstr "Показать все партии"
+
+#: finance_saber/production/traceability
+msgid "This production was cancelled: it used no materials."
+msgstr "Этот выпуск отменён: сырьё не списано."
+
+#: finance_saber/production/traceability
+msgid "Traceability register"
+msgstr "Реестр прослеживаемости"
+
+#: finance_saber/production/traceability
+msgid "Where its materials came from"
+msgstr "Откуда сырьё"
+
+#: finance_saber/production/traceability
+msgid "Where these materials went"
+msgstr "Куда ушло это сырьё"
+
+#: finance_saber/production/traceability
+msgid "brewed"
+msgstr "сварено"
+
+#: finance_saber/production
+msgid "A draft: not posted yet, so it has used no materials. Below is what it would use."
+msgstr "Черновик: ещё не проведён, сырьё не списано. Ниже — сколько он израсходует."
+
+#: finance_saber/production
+msgid "Delete the draft"
+msgstr "Удалить черновик"
+
+#: finance_saber/production
+msgid "Delete this draft? It never affected stock."
+msgstr "Удалить этот черновик? На склад он не влиял."
+
+#: finance_saber/production
+msgid "Draft"
+msgstr "Черновик"
+
+#: finance_saber/production
+msgid "Draft of %(product)s for %(date)s deleted."
+msgstr "Черновик «%(product)s» за %(date)s удалён."
+
+#: finance_saber/production
+msgid "Draft saved: %(quantity)s units of %(product)s on %(date)s; stock is not affected until it is posted."
+msgstr "Черновик сохранён: %(quantity)s шт. «%(product)s» за %(date)s; склад изменится только после проведения."
+
+#: finance_saber/production
+msgid "Draft: %(quantity)s units, stock not affected"
+msgstr "Черновик: %(quantity)s шт., склад не изменён"
+
+#: finance_saber/production
+msgid "Only a draft can be deleted; cancel posted production instead."
+msgstr "Удалить можно только черновик; проведённый выпуск отменяют."
+
+#: finance_saber/production
+msgid "Post"
+msgstr "Провести"
+
+#: finance_saber/production
+msgid "Post anyway"
+msgstr "Всё равно провести"
+
+#: finance_saber/production
+msgid "Posted production of this day becomes a draft again: its materials go back to stock until it is posted. Continue?"
+msgstr "Проведённый выпуск этого дня снова станет черновиком: сырьё вернётся на склад до проведения. Продолжить?"
+
+#: finance_saber/production
+msgid "Posted: %(quantity)s units"
+msgstr "Проведено: %(quantity)s шт."
+
+#: finance_saber/production
+msgid "Production for %(date)s posted: stock updated (%(count)s products changed)."
+msgstr "Выпуск за %(date)s проведён: склад обновлён (изменено продуктов: %(count)s)."
+
+#: finance_saber/production
+msgid "Production for %(date)s saved as a draft: stock is not affected until it is posted."
+msgstr "Выпуск за %(date)s сохранён как черновик: склад изменится только после проведения."
+
+#: finance_saber/production
+msgid "Production posted: %(quantity)s units of %(product)s on %(date)s; stock updated."
+msgstr "Выпуск проведён: %(quantity)s шт. «%(product)s» за %(date)s; склад обновлён."
+
+#: finance_saber/production
+msgid "Save as draft"
+msgstr "Сохранить черновик"
+
+#: finance_saber/production
+msgid "Some materials would go below zero. Check them, then post anyway or correct."
+msgstr "Остаток некоторого сырья уйдёт в минус. Проверьте и проведите всё равно или исправьте."
+
+#: finance_saber/production
+msgid "This posted production becomes a draft again: its materials go back to stock until it is posted. Continue?"
+msgstr "Этот проведённый выпуск снова станет черновиком: сырьё вернётся на склад до проведения. Продолжить?"
+
+#: finance_saber/production
+msgid "status"
+msgstr "статус"
+
+#: finance_saber/production
+msgid "Allowed, %"
+msgstr "Допустимо, %"
+
+#: finance_saber/production
+msgid "Loss, %"
+msgstr "Потери, %"
+
+#: finance_saber/production
+msgid "First set this production's recipe: raw materials per 1000 l of drink, packaging per unit (a fraction like 1/12 works). Then enter how much was brewed and how many units came out."
+msgstr "Сначала задайте рецептуру этого выпуска: сырьё на 1000 л напитка, упаковку на 1 шт. (можно дробью, например 1/12). Затем укажите, сколько сварено и сколько штук получено."
+
+#: finance_saber/production
+msgid "If it is the product's latest production, saving also makes these norms the product's recipe for the next production."
+msgstr "Если это последний выпуск продукта, эти нормы станут его рецептурой для следующего выпуска."
+
+#: finance_saber/production
+msgid "Leave empty or 0 for products not made. Materials are written off by each production's own recipe; open “Calculation” to adjust it, the defect or the brewed quantity."
+msgstr "Оставьте пустым или 0, если продукт не выпускался. Сырьё списывается по рецептуре каждого выпуска; откройте «Калькуляцию», чтобы изменить её, брак или количество сваренного."
+
+#: finance_saber/production
+msgid "Raw materials are written off for the drink brewed, packaging for the finished units; the production defect is written off on top. A loss above the allowed share is shown in red."
+msgstr "Сырьё списывается на сваренный напиток, упаковка — на готовые штуки; брак производства списывается сверху. Потери выше допустимых выделены красным."
+
+#: finance_saber/production
+msgid "Scrapped in production, in the material's unit; written off on top of the norm."
+msgstr "Брак в производстве, в единицах сырья; списывается сверх нормы."
+
+#: finance_saber/production
+msgid "%(counter)s product of this day is a draft: it does not affect stock or reports until it is posted."
+msgid_plural "%(counter)s products of this day are drafts: they do not affect stock or reports until they are posted."
+msgstr[0] "%(counter)s продукт этого дня — черновик: он не влияет на склад и отчёты, пока не проведён."
+msgstr[1] "%(counter)s продукта этого дня — черновики: они не влияют на склад и отчёты, пока не проведены."
+msgstr[2] "%(counter)s продуктов этого дня — черновики: они не влияют на склад и отчёты, пока не проведены."
+
+#: finance_saber/production/shipments
+msgid "%(item)s is already in this receipt: add its quantity to one line."
+msgstr "%(item)s уже есть в этом поступлении: укажите количество одной строкой."
+
+#: finance_saber/production/shipments
+msgid "%(item)s is already in this shipment: add its quantity to one line."
+msgstr "%(item)s уже есть в этой отгрузке: укажите количество одной строкой."
+
+#: finance_saber/production/shipments
+msgid "%(name)s: shipping %(wanted)s, in stock %(have)s"
+msgstr "%(name)s: отгружается %(wanted)s, на складе %(have)s"
+
+#: finance_saber/production/shipments
+msgid "A shipment takes its products out of stock, oldest batches first, so each batch's customers are known for a recall. A wrong shipment isn't edited or deleted: cancel it, and its goods return to stock; then enter it again."
+msgstr "Отгрузка списывает продукцию со склада, начиная с самых старых партий, поэтому для отзыва известно, кому ушла каждая партия. Ошибочную отгрузку не изменяют и не удаляют: отмените её — товар вернётся на склад, — и введите заново."
+
+#: finance_saber/production/shipments
+msgid "All customers"
+msgstr "Все покупатели"
+
+#: finance_saber/production/shipments
+msgid "Cancel the shipment"
+msgstr "Отменить отгрузку"
+
+#: finance_saber/production/shipments
+msgid "Cancel this shipment? Its goods return to stock."
+msgstr "Отменить эту отгрузку? Товар вернётся на склад."
+
+#: finance_saber/production/shipments
+msgid "Choose a customer"
+msgstr "Выберите покупателя"
+
+#: finance_saber/production/shipments
+msgid "Customer"
+msgstr "Покупатель"
+
+#: finance_saber/production/shipments
+msgid "Drink prepared, in units; raw materials are written off by it. Empty: same as finished."
+msgstr "Сварено напитка, в штуках; по нему списывается сырьё. Пусто — столько же, сколько выпущено."
+
+#: finance_saber/production/shipments
+msgid "Leave empty to number it automatically."
+msgstr "Оставьте пустым — номер присвоится автоматически."
+
+#: finance_saber/production/shipments
+msgid "Leave the waybill number empty to number it automatically."
+msgstr "Оставьте номер накладной пустым — он присвоится автоматически."
+
+#: finance_saber/production/shipments
+msgid "New shipment"
+msgstr "Новая отгрузка"
+
+#: finance_saber/production/shipments
+msgid "No shipments found."
+msgstr "Отгрузок не найдено."
+
+#: finance_saber/production/shipments
+msgid "Not enough in stock:"
+msgstr "Недостаточно на складе:"
+
+#: finance_saber/production/shipments
+msgid "Not shipped yet."
+msgstr "Ещё не отгружалась."
+
+#: finance_saber/production/shipments
+msgid "Nothing shipped for these filters."
+msgstr "По этим фильтрам ничего не отгружено."
+
+#: finance_saber/production/shipments
+msgid "Post the shipment"
+msgstr "Провести отгрузку"
+
+#: finance_saber/production/shipments
+msgid "Sale"
+msgstr "Продажа"
+
+#: finance_saber/production/shipments
+msgid "Ship anyway"
+msgstr "Всё равно отгрузить"
+
+#: finance_saber/production/shipments
+msgid "Shipment cancelled."
+msgstr "Отгрузка отменена."
+
+#: finance_saber/production/shipments
+msgid "Shipment restored."
+msgstr "Отгрузка восстановлена."
+
+#: finance_saber/production/shipments
+msgid "Shipment № %(number)s"
+msgstr "Отгрузка № %(number)s"
+
+#: finance_saber/production/shipments
+msgid "Shipment № %(number)s to %(customer)s recorded: %(count)s products."
+msgstr "Отгрузка № %(number)s для %(customer)s проведена: позиций — %(count)s."
+
+#: finance_saber/production/shipments
+msgid "Shipments"
+msgstr "Отгрузки"
+
+#: finance_saber/production/shipments
+msgid "Shipments journal"
+msgstr "Журнал отгрузок"
+
+#: finance_saber/production/shipments
+msgid "Shipped, units"
+msgstr "Отгружено, шт."
+
+#: finance_saber/production/shipments
+msgid "Some products would go below zero in stock. Check them, then ship anyway or correct."
+msgstr "Остаток некоторой продукции уйдёт в минус. Проверьте и отгрузите всё равно или исправьте."
+
+#: finance_saber/production/shipments
+msgid "Still in stock"
+msgstr "Ещё на складе"
+
+#: finance_saber/production/shipments
+msgid "Waybill number"
+msgstr "Номер накладной"
+
+#: finance_saber/production/shipments
+msgid "Waybill № %(number)s is already used."
+msgstr "Накладная № %(number)s уже есть."
+
+#: finance_saber/production/shipments
+msgid "Who got this batch"
+msgstr "Кому отгружена партия"
+
+#: finance_saber/production/shipments
+msgid "customer"
+msgstr "покупатель"
+
+#: finance_saber/production/shipments
+msgid "shipment"
+msgstr "отгрузка"
+
+#: finance_saber/production/shipments
+msgid "shipment line"
+msgstr "строка отгрузки"
+
+#: finance_saber/production/shipments
+msgid "shipment lines"
+msgstr "строки отгрузки"
+
+#: finance_saber/production/shipments
+msgid "shipments"
+msgstr "отгрузки"
+
+#: finance_saber/production/shipments
+msgid "waybill number"
+msgstr "номер накладной"
+
+#: finance_saber/cashbook/companies
+msgid "Unique among head companies; a filial may repeat its head's."
+msgstr "Уникален среди головных компаний; у филиала может совпадать с ИНН головной."
+
+#: finance_saber/cashbook/companies
+msgid "head company"
+msgstr "головная компания"
+
+#: finance_saber/cashbook/companies
+msgid "Fill in for a filial: a shop, a warehouse or a branch of that company."
+msgstr "Укажите для филиала: магазина, склада или отделения этой компании."
+
+#: finance_saber/cashbook/companies
+msgid "SmartUp ID"
+msgstr "ИД SmartUp"
+
+#: finance_saber/cashbook/companies
+msgid "owner's SmartUp ID"
+msgstr "ИД владельца в SmartUp"
+
+#: finance_saber/cashbook/companies
+msgid "The head company's ID in SmartUp."
+msgstr "ИД головной компании в SmartUp."
+
+#: finance_saber/cashbook/companies
+msgid "code"
+msgstr "код"
+
+#: finance_saber/cashbook/companies
+msgid "barcode"
+msgstr "штрих-код"
+
+#: finance_saber/cashbook/companies
+msgid "alternative name"
+msgstr "альтернативное название"
+
+#: finance_saber/cashbook/companies
+msgid "OKED"
+msgstr "ОКЭД"
+
+#: finance_saber/cashbook/companies
+msgid "Activity code."
+msgstr "Код вида деятельности."
+
+#: finance_saber/cashbook/companies
+msgid "VAT registration code"
+msgstr "регистрационный код НДС"
+
+#: finance_saber/cashbook/companies
+msgid "country"
+msgstr "страна"
+
+#: finance_saber/cashbook/companies
+msgid "region (address)"
+msgstr "регион (адрес)"
+
+#: finance_saber/cashbook/companies
+msgid "city / settlement"
+msgstr "город / посёлок"
+
+#: finance_saber/cashbook/companies
+msgid "street / district"
+msgstr "улица / район"
+
+#: finance_saber/cashbook/companies
+msgid "address"
+msgstr "адрес"
+
+#: finance_saber/cashbook/companies
+msgid "postal address"
+msgstr "почтовый адрес"
+
+#: finance_saber/cashbook/companies
+msgid "landmark"
+msgstr "ориентир"
+
+#: finance_saber/cashbook/companies
+msgid "postal code"
+msgstr "почтовый индекс"
+
+#: finance_saber/cashbook/companies
+msgid "group"
+msgstr "группа"
+
+#: finance_saber/cashbook/companies
+msgid "phone"
+msgstr "телефон"
+
+#: finance_saber/cashbook/companies
+msgid "email"
+msgstr "email"
+
+#: finance_saber/cashbook/companies
+msgid "GPS coordinates"
+msgstr "GPS-координаты"
+
+#: finance_saber/cashbook/companies
+msgid "work zones"
+msgstr "рабочие зоны"
+
+#: finance_saber/cashbook/companies
+msgid "A head company with this INN already exists. To add a shop or branch of it, choose it as the head company."
+msgstr "Головная компания с таким ИНН уже есть. Чтобы добавить её магазин или отделение, выберите её головной компанией."
+
+#: finance_saber/cashbook/companies
+msgid "Another company already has this SmartUp ID."
+msgstr "Этот ИД SmartUp уже есть у другой компании."
+
+#: finance_saber/cashbook/companies
+msgid "A company can't be a filial of itself or of its own filial."
+msgstr "Компания не может быть филиалом самой себя или своего филиала."
+
+#: finance_saber/cashbook/companies
+msgid "MFO"
+msgstr "МФО"
+
+#: finance_saber/cashbook/companies
+msgid "Bank code."
+msgstr "Код банка."
+
+#: finance_saber/cashbook/companies
+msgid "bank"
+msgstr "банк"
+
+#: finance_saber/cashbook/companies
+msgid "currency code"
+msgstr "код валюты"
+
+#: finance_saber/cashbook/companies
+msgid "Empty: the base currency."
+msgstr "Пусто — базовая валюта."
+
+#: finance_saber/cashbook/companies
+msgid "bank account"
+msgstr "банковский счёт"
+
+#: finance_saber/cashbook/companies
+msgid "bank accounts"
+msgstr "банковские счета"
+
+#: finance_saber/cashbook/companies
+msgid "Head company INN"
+msgstr "ИНН головной компании"
+
+#: finance_saber/cashbook/companies
+msgid "Head company"
+msgstr "Головная компания"
+
+#: finance_saber/cashbook/companies
+msgid "Sales region"
+msgstr "Регион продаж"
+
+#: finance_saber/cashbook/companies
+msgid "the company has no name."
+msgstr "у компании нет названия."
+
+#: finance_saber/cashbook/companies
+#, python-format
+msgid "“%(name)s” would be a filial of its own filial."
+msgstr "«%(name)s» стала бы филиалом своего же филиала."
+
+#: finance_saber/cashbook/companies
+msgid "Address"
+msgstr "Адрес"
+
+#: finance_saber/cashbook/companies
+msgid "Contacts and classification"
+msgstr "Контакты и классификация"
+
+#: finance_saber/cashbook/companies
+msgid "Codes"
+msgstr "Коды"
+
+#: finance_saber/cashbook/companies
+#, python-format
+msgid "Loaded: %(created)s companies created, %(updated)s updated, %(filials)s put under their head company; %(requisites)s bank requisites added, %(linked)s bank accounts connected."
+msgstr "Загружено: создано компаний — %(created)s, обновлено — %(updated)s, привязано к головной компании — %(filials)s; добавлено банковских реквизитов — %(requisites)s, подключено счетов из выписок — %(linked)s."
+
+#: finance_saber/cashbook/companies
+#, python-format
+msgid "Checked, nothing was saved: %(created)s companies to create, %(updated)s to update, %(filials)s to put under their head company; %(requisites)s bank requisites to add, %(linked)s bank accounts to connect."
+msgstr "Проверено, ничего не сохранено: будет создано компаний — %(created)s, обновлено — %(updated)s, привязано к головной компании — %(filials)s; добавлено банковских реквизитов — %(requisites)s, подключено счетов из выписок — %(linked)s."
+
+#: finance_saber/cashbook/companies
+#, python-format
+msgid "Some filials' head companies aren't in the file (SmartUp ID %(ids)s). They are kept as they are and put under their head company when a file with it is loaded."
+msgstr "Головных компаний некоторых филиалов нет в файле (ИД SmartUp %(ids)s). Филиалы сохранены и будут привязаны к головной компании, когда загрузится файл с ней."
+
+#: finance_saber/cashbook/companies
+msgid "SmartUp «Юридическое лицо» export or this page's download (.xlsx)"
+msgstr "Выгрузка SmartUp «Юридическое лицо» или файл, скачанный с этой страницы (.xlsx)"
+
+#: finance_saber/cashbook/companies
+msgid "A company is found by its SmartUp ID («ИД»), else by its INN; otherwise it is created. A company found by INN keeps its name, everything else is updated from the file."
+msgstr "Компания ищется по ИД SmartUp («ИД»), затем по ИНН; если не найдена — создаётся. Найденная по ИНН компания сохраняет своё название, остальное обновляется из файла."
+
+#: finance_saber/cashbook/companies
+msgid "«Владелец» Y is a filial: it goes under the company whose ID is in «ИД владельца». A filial whose head company isn't in the file waits for it."
+msgstr "«Владелец» Y — филиал: он привязывается к компании, чей ИД указан в «ИД владельца». Если головной компании нет в файле, филиал ждёт её."
+
+#: finance_saber/cashbook/companies
+msgid "The bank account (МФО, расчетный счет) is added to the company, and the bank-statement counterparty with that account number is connected to it."
+msgstr "Банковский счёт (МФО, расчётный счёт) добавляется компании, а контрагент из выписок с этим номером счёта подключается к ней."
+
+#: finance_saber/cashbook/companies
+msgid "Nothing is saved if any row has an error."
+msgstr "Если в какой-либо строке ошибка, ничего не сохраняется."
+
+#: finance_saber/cashbook/companies
+msgid "Name, INN, SmartUp ID, phone or address"
+msgstr "Название, ИНН, ИД SmartUp, телефон или адрес"
+
+#: finance_saber/cashbook/companies
+msgid "Show"
+msgstr "Показать"
+
+#: finance_saber/cashbook/companies
+msgid "Head companies"
+msgstr "Головные компании"
+
+#: finance_saber/cashbook/companies
+msgid "Filials"
+msgstr "Филиалы"
+
+#: finance_saber/cashbook/companies
+msgid "Waiting for their head company"
+msgstr "Ждут головную компанию"
+
+#: finance_saber/cashbook/companies
+msgid "Filial of"
+msgstr "Филиал компании"
+
+#: finance_saber/cashbook/companies
+msgid "No companies found."
+msgstr "Компаний не найдено."
+
+#: finance_saber/cashbook/companies
+#, python-format
+msgid "%(total)s companies and filials, %(heads)s of them head companies."
+msgstr "Компаний и филиалов: %(total)s, из них головных: %(heads)s."
+
+#: finance_saber/cashbook/companies
+#, python-format
+msgid "Head company (SmartUp ID %(id)s) not loaded yet"
+msgstr "Головная компания (ИД SmartUp %(id)s) ещё не загружена"
+
+#: finance_saber/cashbook/companies
+msgid "New filial"
+msgstr "Новый филиал"
+
+#: finance_saber/cashbook/companies
+msgid "Filial"
+msgstr "Филиал"
+
+#: finance_saber/cashbook/companies
+msgid "Region (address)"
+msgstr "Регион (адрес)"
+
+#: finance_saber/cashbook/companies
+msgid "Postal address"
+msgstr "Почтовый адрес"
+
+#: finance_saber/cashbook/companies
+msgid "Landmark"
+msgstr "Ориентир"
+
+#: finance_saber/cashbook/companies
+msgid "Phone"
+msgstr "Телефон"
+
+#: finance_saber/cashbook/companies
+msgid "Email"
+msgstr "Email"
+
+#: finance_saber/cashbook/companies
+msgid "Group"
+msgstr "Группа"
+
+#: finance_saber/cashbook/companies
+msgid "Work zones"
+msgstr "Рабочие зоны"
+
+#: finance_saber/cashbook/companies
+msgid "Code"
+msgstr "Код"
+
+#: finance_saber/cashbook/companies
+msgid "Barcode"
+msgstr "Штрих-код"
+
+#: finance_saber/cashbook/companies
+msgid "Bank requisites"
+msgstr "Банковские реквизиты"
+
+#: finance_saber/cashbook/companies
+msgid "Currency code"
+msgstr "Код валюты"
+
+#: finance_saber/cashbook/companies
+msgid "No bank requisites."
+msgstr "Банковских реквизитов нет."
+
+#: finance_saber/cashbook/companies
+msgid "Accounts in bank statements"
+msgstr "Счета в банковских выписках"
+
+#: finance_saber/cashbook/companies
+msgid "No filials."
+msgstr "Филиалов нет."
+
+#: finance_saber/cashbook/companies
+#, python-format
+msgid "Its head company (SmartUp ID %(id)s) isn't loaded yet; it is attached when a file with it is loaded."
+msgstr "Головная компания (ИД SmartUp %(id)s) ещё не загружена; привязка произойдёт, когда загрузится файл с ней."
+
+#: finance_saber/cashbook/companies
+msgid "Fill in the empty row to add an account; save to get another empty row."
+msgstr "Чтобы добавить счёт, заполните пустую строку; после сохранения появится ещё одна."
+
+#: finance_saber/production/shipment_import
+msgid "skipped name"
+msgstr "пропускаемое название"
+
+#: finance_saber/production/shipment_import
+msgid "skipped names"
+msgstr "пропускаемые названия"
+
+#: finance_saber/production/shipment_import
+msgid "Customer return"
+msgstr "Возврат от покупателя"
+
+#: finance_saber/production/shipment_import
+msgid "SmartUp report"
+msgstr "Отчёт SmartUp"
+
+#: finance_saber/production/shipment_import
+msgid "customer return"
+msgstr "возврат от покупателя"
+
+#: finance_saber/production/shipment_import
+msgid "Goods the customer sent back: they return to stock."
+msgstr "Товар, который вернул покупатель: он возвращается на склад."
+
+#: finance_saber/production/shipment_import
+msgid "project"
+msgstr "проект"
+
+#: finance_saber/production/shipment_import
+msgid "SmartUp's project, e.g. Key Account."
+msgstr "Проект в SmartUp, например Key Account."
+
+#: finance_saber/production/shipment_import
+msgid "external key"
+msgstr "внешний ключ"
+
+#: finance_saber/production/shipment_import
+msgid "With discount, in UZS."
+msgstr "Со скидкой, в сумах."
+
+#: finance_saber/production/shipment_import
+msgid "No SmartUp sales report found: the file needs the columns Дата доставки, ТМЦ, Клиент, Количество, Сумма."
+msgstr "Отчёт SmartUp по продажам не найден: в файле нужны столбцы Дата доставки, ТМЦ, Клиент, Количество, Сумма."
+
+#: finance_saber/production/shipment_import
+msgid "Return"
+msgstr "Возврат"
+
+#: finance_saber/production/shipment_import
+msgid "Project"
+msgstr "Проект"
+
+#: finance_saber/production/shipment_import
+msgid "Price"
+msgstr "Цена"
+
+#: finance_saber/production/shipment_import
+msgid "Choose the report as an .xlsx file."
+msgstr "Выберите отчёт в формате .xlsx."
+
+#: finance_saber/production/shipment_import
+msgid "Names matched; the next report will be matched by itself."
+msgstr "Названия сопоставлены; следующий отчёт сопоставится сам."
+
+#: finance_saber/production/shipment_import
+#, python-format
+msgid "Report loaded: %(new)s new documents, %(changed)s updated, %(same)s unchanged."
+msgstr "Отчёт загружен: новых документов — %(new)s, обновлено — %(changed)s, без изменений — %(same)s."
+
+#: finance_saber/production/shipment_import
+msgid "Choose a match for every name, then save."
+msgstr "Выберите соответствие для каждого названия и сохраните."
+
+#: finance_saber/production/shipment_import
+msgid "company alias"
+msgstr "другое название компании"
+
+#: finance_saber/production/shipment_import
+msgid "company aliases"
+msgstr "другие названия компаний"
+
+#: finance_saber/production/shipment_import
+msgid "Load shipments from SmartUp"
+msgstr "Загрузка отгрузок из SmartUp"
+
+#: finance_saber/production/shipment_import
+msgid "SmartUp «Конструктор отчётов по продажам» (.xlsx)"
+msgstr "SmartUp «Конструктор отчётов по продажам» (.xlsx)"
+
+#: finance_saber/production/shipment_import
+msgid "Read the file"
+msgstr "Прочитать файл"
+
+#: finance_saber/production/shipment_import
+msgid "The report needs the columns Дата доставки, Название проекта, ТМЦ, Клиент, Количество продажи and Сумма."
+msgstr "В отчёте нужны столбцы Дата доставки, Название проекта, ТМЦ, Клиент, Количество продажи и Сумма."
+
+#: finance_saber/production/shipment_import
+msgid "Each day, customer and project becomes one shipment; its products leave the warehouse. A negative quantity is a customer return: the goods come back."
+msgstr "Каждый день, покупатель и проект — одна отгрузка; её товар списывается со склада. Отрицательное количество — возврат от покупателя: товар возвращается на склад."
+
+#: finance_saber/production/shipment_import
+msgid "Nothing is saved until you check the documents and press Load. A report loaded again updates its documents instead of adding them twice."
+msgstr "Ничего не сохраняется, пока вы не проверите документы и не нажмёте «Загрузить». Повторно загруженный отчёт обновляет свои документы, а не добавляет их второй раз."
+
+#: finance_saber/production/shipment_import
+msgid "These rows couldn't be read and are left out:"
+msgstr "Эти строки не удалось прочитать, они пропущены:"
+
+#: finance_saber/production/shipment_import
+msgid "Match the new names"
+msgstr "Сопоставьте новые названия"
+
+#: finance_saber/production/shipment_import
+msgid "SmartUp calls these differently from the system. Match each once: it is remembered for the next reports."
+msgstr "В SmartUp они называются иначе, чем в системе. Сопоставьте каждое один раз — это запомнится для следующих отчётов."
+
+#: finance_saber/production/shipment_import
+msgid "In the report"
+msgstr "В отчёте"
+
+#: finance_saber/production/shipment_import
+msgid "Product in the system"
+msgstr "Продукция в системе"
+
+#: finance_saber/production/shipment_import
+msgid "Choose…"
+msgstr "Выберите…"
+
+#: finance_saber/production/shipment_import
+msgid "Not our product: skip its rows"
+msgstr "Не наша продукция: пропускать"
+
+#: finance_saber/production/shipment_import
+msgid "Company in the handbook"
+msgstr "Компания в справочнике"
+
+#: finance_saber/production/shipment_import
+msgid "Add as a new company"
+msgstr "Добавить как новую компанию"
+
+#: finance_saber/production/shipment_import
+msgid "Save the matches"
+msgstr "Сохранить сопоставления"
+
+#: finance_saber/production/shipment_import
+msgid "New documents"
+msgstr "Новые документы"
+
+#: finance_saber/production/shipment_import
+msgid "To update"
+msgstr "Будут обновлены"
+
+#: finance_saber/production/shipment_import
+msgid "Already loaded"
+msgstr "Уже загружены"
+
+#: finance_saber/production/shipment_import
+msgid "Cancelled here, left alone"
+msgstr "Отменены в системе, не меняются"
+
+#: finance_saber/production/shipment_import
+msgid "Not enough in stock"
+msgstr "Недостаточно на складе"
+
+#: finance_saber/production/shipment_import
+msgid "After loading, these products go below zero: the warehouse has less than the report shipped. Loading is still allowed; record the missing production or a stock count."
+msgstr "После загрузки остаток этой продукции уйдёт в минус: на складе меньше, чем отгружено по отчёту. Загрузить всё равно можно; внесите недостающий выпуск или инвентаризацию."
+
+#: finance_saber/production/shipment_import
+msgid "Shipped by the report"
+msgstr "Отгружено по отчёту"
+
+#: finance_saber/production/shipment_import
+msgid "Documents"
+msgstr "Документы"
+
+#: finance_saber/production/shipment_import
+msgid "Returned"
+msgstr "Возвращено"
+
+#: finance_saber/production/shipment_import
+msgid "Will be updated"
+msgstr "Будет обновлён"
+
+#: finance_saber/production/shipment_import
+msgid "Loaded already"
+msgstr "Уже загружен"
+
+#: finance_saber/production/shipment_import
+msgid "Cancelled here"
+msgstr "Отменён в системе"
+
+#: finance_saber/production/shipment_import
+msgid "Everything in this report is loaded already."
+msgstr "Всё из этого отчёта уже загружено."
+
+#: finance_saber/production/shipment_import
+msgid "Load from SmartUp"
+msgstr "Загрузить из SmartUp"
+
+#: finance_saber/production/shipment_import
+#, python-format
+msgid "%(counter)s row read"
+msgid_plural "%(counter)s rows read"
+msgstr[0] "Прочитана %(counter)s строка"
+msgstr[1] "Прочитано %(counter)s строки"
+msgstr[2] "Прочитано %(counter)s строк"
+msgstr[3] "Прочитано %(counter)s строки"
+
+#: finance_saber/production/shipment_import
+#, python-format
+msgid "%(counter)s row of other products skipped"
+msgid_plural "%(counter)s rows of other products skipped"
+msgstr[0] "%(counter)s строка другой продукции пропущена"
+msgstr[1] "%(counter)s строки другой продукции пропущены"
+msgstr[2] "%(counter)s строк другой продукции пропущено"
+msgstr[3] "%(counter)s строки другой продукции пропущены"
+
+#: finance_saber/production/shipment_import
+#, python-format
+msgid "Load %(counter)s document"
+msgid_plural "Load %(counter)s documents"
+msgstr[0] "Загрузить %(counter)s документ"
+msgstr[1] "Загрузить %(counter)s документа"
+msgstr[2] "Загрузить %(counter)s документов"
+msgstr[3] "Загрузить %(counter)s документа"
+
+#: finance_saber/production/shipment_import
+msgid "New document"
+msgstr "Новый"
+
+#: finance_saber/production/shipment_import
+msgid "Cancel this return? Its goods leave stock again."
+msgstr "Отменить этот возврат? Товар снова спишется со склада."
+
+#: finance_saber/production/shipment_import
+msgid "Cancel the return"
+msgstr "Отменить возврат"
+
+#: finance_saber/production/shipment_import
+msgid "A customer return brings its products back into stock and lowers what the customer owes. A wrong return isn't edited or deleted: cancel it, then enter it again."
+msgstr "Возврат от покупателя возвращает товар на склад и уменьшает долг покупателя. Ошибочный возврат не изменяют и не удаляют: отмените его и введите заново."
+
+#: finance_saber/settlements
+msgid "Reconciliation statement"
+msgstr "Акт сверки"
+
+#: finance_saber/settlements
+msgid "RECONCILIATION STATEMENT"
+msgstr "АКТ СВЕРКИ"
+
+#: finance_saber/settlements
+#, python-format
+msgid "of mutual settlements for the period from %(start)s to %(end)s"
+msgstr "взаимных расчётов за период с %(start)s по %(end)s"
+
+#: finance_saber/settlements
+#, python-format
+msgid "between %(ours)s and %(partner)s"
+msgstr "между %(ours)s и %(partner)s"
+
+#: finance_saber/settlements
+#, python-format
+msgid "Partner's INN: %(inn)s"
+msgstr "ИНН контрагента: %(inn)s"
+
+#: finance_saber/settlements
+#, python-format
+msgid "According to %(name)s, UZS"
+msgstr "По данным %(name)s, сум"
+
+#: finance_saber/settlements
+msgid "Debit"
+msgstr "Дебет"
+
+#: finance_saber/settlements
+msgid "Credit"
+msgstr "Кредит"
+
+#: finance_saber/settlements
+msgid "Turnover for the period"
+msgstr "Обороты за период"
+
+#: finance_saber/settlements
+msgid "Closing balance"
+msgstr "Сальдо конечное"
+
+#: finance_saber/settlements
+#, python-format
+msgid "According to %(ours)s, on %(date)s %(partner)s owes %(ours)s %(amount)s UZS."
+msgstr "По данным %(ours)s на %(date)s задолженность в пользу %(ours)s составляет %(amount)s сум (должник — %(partner)s)."
+
+#: finance_saber/settlements
+#, python-format
+msgid "According to %(ours)s, on %(date)s %(ours)s owes %(partner)s %(amount)s UZS."
+msgstr "По данным %(ours)s на %(date)s задолженность в пользу %(partner)s составляет %(amount)s сум."
+
+#: finance_saber/settlements
+#, python-format
+msgid "According to %(ours)s, on %(date)s there is no debt between the parties."
+msgstr "По данным %(ours)s на %(date)s задолженность между сторонами отсутствует."
+
+#: finance_saber/settlements
+#, python-format
+msgid "For %(name)s"
+msgstr "От %(name)s"
+
+#: finance_saber/settlements
+msgid "Chief accountant"
+msgstr "Главный бухгалтер"
+
+#: finance_saber/settlements
+msgid "Stamp"
+msgstr "М.П."
+
+#: finance_saber/settlements
+msgid "Positive: the partner owes us. Negative: we owe the partner."
+msgstr "Положительное: контрагент должен нам. Отрицательное: мы должны контрагенту."
+
+#: finance_saber/settlements
+#, python-format
+msgid "Return № %(number)s"
+msgstr "Возврат № %(number)s"
+
+#: finance_saber/settlements
+msgid "partner"
+msgstr "контрагент"
+
+#: finance_saber/settlements
+msgid "The balance at the start of this day."
+msgstr "Сальдо на начало этого дня."
+
+#: finance_saber/settlements
+msgid "opening balances"
+msgstr "начальные сальдо"
+
+#: finance_saber/settlements
+#, python-format
+msgid "no company with INN «%(inn)s» or name «%(name)s»."
+msgstr "нет компании с ИНН «%(inn)s» или названием «%(name)s»."
+
+#: finance_saber/settlements
+msgid "the date isn't a date."
+msgstr "дата указана неверно."
+
+#: finance_saber/settlements
+msgid "the opening balance isn't a number."
+msgstr "сальдо — не число."
+
+#: finance_saber/settlements
+msgid "Partner"
+msgstr "Контрагент"
+
+#: finance_saber/settlements
+msgid "Last movement"
+msgstr "Последнее движение"
+
+#: finance_saber/settlements
+msgid "Settlements"
+msgstr "Взаиморасчёты"
+
+#: finance_saber/settlements
+msgid "Opening balance removed."
+msgstr "Начальное сальдо удалено."
+
+#: finance_saber/settlements
+msgid "Opening balance saved."
+msgstr "Начальное сальдо сохранено."
+
+#: finance_saber/settlements
+#, python-format
+msgid "Opening balances loaded: %(count)s."
+msgstr "Начальные сальдо загружены: %(count)s."
+
+#: finance_saber/settlements
+#, python-format
+msgid "Checked, nothing was saved: %(count)s opening balances."
+msgstr "Проверено, ничего не сохранено: начальных сальдо — %(count)s."
+
+#: finance_saber/settlements
+msgid "Partners owe us"
+msgstr "Нам должны"
+
+#: finance_saber/settlements
+msgid "We owe partners (prepaid)"
+msgstr "Мы должны (предоплата)"
+
+#: finance_saber/settlements
+msgid "Name or INN"
+msgstr "Название или ИНН"
+
+#: finance_saber/settlements
+msgid "At the end of"
+msgstr "На конец дня"
+
+#: finance_saber/settlements
+msgid "With a balance"
+msgstr "С ненулевым сальдо"
+
+#: finance_saber/settlements
+msgid "Creditors (prepaid)"
+msgstr "Кредиторы (предоплата)"
+
+#: finance_saber/settlements
+msgid "Opening balances are where counting starts: each partner's balance on a date from the books kept before. Download the list, fill in the date and balance (positive: the partner owes us; negative: we owe it), and load it back."
+msgstr "Начальное сальдо — точка, с которой начинается расчёт: долг каждого контрагента на дату по прежнему учёту. Скачайте список, заполните дату и сальдо (положительное — контрагент должен нам, отрицательное — мы ему) и загрузите обратно."
+
+#: finance_saber/settlements
+msgid "Download opening balances"
+msgstr "Скачать начальные сальдо"
+
+#: finance_saber/settlements
+msgid "Opening balances (.xlsx)"
+msgstr "Начальные сальдо (.xlsx)"
+
+#: finance_saber/settlements
+msgid "No partners with a balance."
+msgstr "Нет контрагентов с сальдо."
+
+#: finance_saber/settlements
+msgid "Balance: positive, the partner owes us; negative, it paid in advance and we owe it. Shipments and returns come from Production › Shipments; money from the bank (by the counterparty's company) and the cash desks (by the partner chosen on the line)."
+msgstr "Сальдо: положительное — контрагент должен нам; отрицательное — он заплатил вперёд, и мы должны ему. Отгрузки и возвраты берутся из «Производство › Отгрузки»; деньги — из банка (по компании контрагента выписки) и касс (по контрагенту, выбранному в строке)."
+
+#: finance_saber/settlements
+#, python-format
+msgid "Net, at the end of %(date)s"
+msgstr "Итого на конец %(date)s"
+
+#: finance_saber/settlements
+msgid "Reconciliation statement (Excel)"
+msgstr "Акт сверки (Excel)"
+
+#: finance_saber/settlements
+msgid "Company card"
+msgstr "Карточка компании"
+
+#: finance_saber/settlements
+msgid "No shipments or payments in this period."
+msgstr "За период нет отгрузок и оплат."
+
+#: finance_saber/settlements
+msgid "The partner owes us"
+msgstr "Контрагент должен нам"
+
+#: finance_saber/settlements
+msgid "We owe the partner"
+msgstr "Мы должны контрагенту"
+
+#: finance_saber/settlements
+msgid "No debt"
+msgstr "Долга нет"
+
+#: finance_saber/settlements
+msgid "Earlier documents and payments are in this figure and aren't counted again."
+msgstr "Более ранние документы и оплаты входят в эту сумму и повторно не считаются."
+
+#: finance_saber/settlements
+msgid "None: counting starts from the first shipment or payment. Enter the balance from the books kept before, if there is one."
+msgstr "Нет: расчёт начинается с первой отгрузки или оплаты. Внесите сальдо из прежнего учёта, если оно есть."
+
+#: finance_saber/settlements
+msgid "Remove the opening balance?"
+msgstr "Удалить начальное сальдо?"
+
+#: finance_saber/settlements
+#, python-format
+msgid "From %(start)s to %(end)s"
+msgstr "С %(start)s по %(end)s"
+
+#: finance_saber/settlements
+#, python-format
+msgid "%(amount)s at the start of %(date)s."
+msgstr "%(amount)s на начало %(date)s."
+
+#: finance_saber/settlements
+msgid "Whose money it is (cash desks); on the bank, the company of its counterparty."
+msgstr "Чьи это деньги (кассы); в банке — компания контрагента выписки."
+
+#: finance_saber/settlements
+msgid "Settlements with partners and reconciliation statements"
+msgstr "Взаиморасчёты с контрагентами и акты сверки"
+
+#: finance_saber/settlements
+#, python-format
+msgid "%(counter)s filial"
+msgid_plural "%(counter)s filials"
+msgstr[0] "%(counter)s филиал"
+msgstr[1] "%(counter)s филиала"
+msgstr[2] "%(counter)s филиалов"
+msgstr[3] "%(counter)s филиала"
+
+#: finance_saber/settlements
+#, python-format
+msgid "with its %(counter)s filial"
+msgid_plural "with its %(counter)s filials"
+msgstr[0] "с %(counter)s филиалом"
+msgstr[1] "с %(counter)s филиалами"
+msgstr[2] "с %(counter)s филиалами"
+msgstr[3] "с %(counter)s филиалами"
+
+#: finance_saber/settlements
+#, python-format
+msgid "A partner without an opening balance is counted from %(date)s, the first shipment in the system: money it paid before then settled debts the system doesn't know. Enter opening balances to count from your books."
+msgstr "Контрагент без начального сальдо считается с %(date)s — первой отгрузки в системе: оплаты до этой даты закрывали долги, которых система не знает. Внесите начальные сальдо, чтобы считать по вашему учёту."
+
+#: finance_saber/settlements
+msgid "Balance at the start"
+msgstr "Сальдо начальное"
+
+#: finance_saber/settlements
+msgid "Head of the company"
+msgstr "Руководитель"
+
+#: finance_saber/settlements
+msgid "Balance"
+msgstr "Сальдо"
+
+#: finance_saber/settlements
+msgid "None: counted from the first shipment in the system. Enter the balance from the books kept before, if there is one."
+msgstr "Нет: расчёт ведётся с первой отгрузки в системе. Внесите сальдо из прежнего учёта, если оно есть."
+
+#: finance_saber/purchases
+msgid "With VAT, in UZS."
+msgstr "С НДС, в сумах."
+
+#: finance_saber/purchases
+#, python-format
+msgid "This supplier's bill № %(number)s is already entered."
+msgstr "Счёт № %(number)s этого поставщика уже внесён."
+
+#: finance_saber/purchases
+msgid "bill number"
+msgstr "номер счёта"
+
+#: finance_saber/purchases
+msgid "The number on the supplier's bill."
+msgstr "Номер на счёте поставщика."
+
+#: finance_saber/purchases
+msgid "what for"
+msgstr "за что"
+
+#: finance_saber/purchases
+msgid "e.g. transport, rent, repairs."
+msgstr "например, доставка, аренда, ремонт."
+
+#: finance_saber/purchases
+msgid "bill"
+msgstr "счёт поставщика"
+
+#: finance_saber/purchases
+msgid "bills"
+msgstr "счета поставщиков"
+
+#: finance_saber/purchases
+msgid "Purchased"
+msgstr "Закуплено"
+
+#: finance_saber/purchases
+msgid "Number"
+msgstr "Номер"
+
+#: finance_saber/purchases
+msgid "What for"
+msgstr "За что"
+
+#: finance_saber/purchases
+msgid "Bill"
+msgstr "Счёт"
+
+#: finance_saber/purchases
+#, python-format
+msgid "Bill № %(number)s of %(supplier)s saved."
+msgstr "Счёт № %(number)s от %(supplier)s сохранён."
+
+#: finance_saber/purchases
+msgid "Bill cancelled."
+msgstr "Счёт отменён."
+
+#: finance_saber/purchases
+msgid "Bill restored."
+msgstr "Счёт восстановлен."
+
+#: finance_saber/purchases
+msgid "Document no."
+msgstr "№ документа"
+
+#: finance_saber/purchases
+msgid "Amount, UZS"
+msgstr "Сумма, сум"
+
+#: finance_saber/purchases
+msgid "New bill"
+msgstr "Новый счёт"
+
+#: finance_saber/purchases
+msgid "A bill is what a supplier charges for anything that isn't a material received: services, transport, rent, repairs. Materials are entered on Production › Material receipts with their amounts. Both count as owed to the supplier until it is paid from the bank or a cash desk."
+msgstr "Счёт — это то, что поставщик выставляет не за сырьё: услуги, доставка, аренда, ремонт. Сырьё вносится в «Производство › Поступления сырья» с суммами. И то и другое — наш долг поставщику, пока он не оплачен из банка или кассы."
+
+#: finance_saber/purchases
+msgid "With cancelled bills"
+msgstr "С отменёнными счетами"
+
+#: finance_saber/purchases
+msgid "Cancel this bill? It stops counting."
+msgstr "Отменить этот счёт? Он перестанет учитываться."
+
+#: finance_saber/purchases
+msgid "No bills found."
+msgstr "Счетов не найдено."
+
+#: finance_saber/purchases
+msgid "No exchange rate for that day"
+msgstr "Нет курса на этот день"
+
+#: finance_saber/purchases
+msgid "No payments to suppliers found."
+msgstr "Оплат поставщикам не найдено."
+
+#: finance_saber/purchases
+msgid "We owe suppliers"
+msgstr "Мы должны поставщикам"
+
+#: finance_saber/purchases
+msgid "Paid to suppliers in advance"
+msgstr "Авансы поставщикам"
+
+#: finance_saber/purchases
+msgid "We owe them"
+msgstr "Мы должны"
+
+#: finance_saber/purchases
+msgid "No suppliers yet: they appear with their first material receipt or bill."
+msgstr "Поставщиков пока нет: они появляются с первым поступлением сырья или счётом."
+
+#: finance_saber/purchases
+msgid "Balance: negative, we owe the supplier; positive, we paid in advance (or it is also a customer that owes us). Purchased: material receipts with their amounts and bills."
+msgstr "Сальдо: отрицательное — мы должны поставщику; положительное — мы заплатили вперёд (или он ещё и покупатель, который должен нам). Закуплено: поступления сырья с суммами и счета."
+
+#: finance_saber/purchases
+#, python-format
+msgid "Also a customer: shipped %(amount)s"
+msgstr "Также покупатель: отгружено %(amount)s"
+
+#: finance_saber/purchases
+#, python-format
+msgid "Without an opening balance a supplier is counted from %(date)s."
+msgstr "Поставщик без начального сальдо считается с %(date)s."
+
+#: finance_saber/purchases
+#, python-format
+msgid "Material receipt № %(number)s"
+msgstr "Поступление сырья № %(number)s"
+
+#: finance_saber/purchases
+#, python-format
+msgid "Bill № %(number)s: %(what)s"
+msgstr "Счёт № %(number)s: %(what)s"
+
+#: finance_saber/purchases
+msgid "Balance: positive, the partner owes us; negative, we owe it (it paid in advance, or supplied us). Shipments and returns come from Production › Shipments, purchases from material receipts and Purchases › Bills; money from the bank (by the counterparty's company) and the cash desks (by the partner chosen on the line)."
+msgstr "Сальдо: положительное — контрагент должен нам; отрицательное — мы должны ему (он заплатил вперёд или поставил нам товар). Отгрузки и возвраты — из «Производство › Отгрузки», закупки — из поступлений сырья и «Закупки › Счета»; деньги — из банка (по компании контрагента выписки) и касс (по контрагенту, выбранному в строке)."
+
+#: finance_saber/purchases
+#, python-format
+msgid "A partner without an opening balance is counted from %(date)s, the first document in the system: money from before then settled debts the system doesn't know. Enter opening balances to count from your books."
+msgstr "Контрагент без начального сальдо считается с %(date)s — первого документа в системе: деньги до этой даты закрывали долги, которых система не знает. Внесите начальные сальдо, чтобы считать по вашему учёту."
+
+#: finance_saber/purchases
+msgid "No documents or payments in this period."
+msgstr "За период нет документов и оплат."
+
+#: finance_saber/purchases
+msgid "None: counted from the first document in the system. Enter the balance from the books kept before, if there is one."
+msgstr "Нет: расчёт ведётся с первого документа в системе. Внесите сальдо из прежнего учёта, если оно есть."
+
+#: finance_saber/purchases
+msgid "Purchases: vendors, bills and payments made"
+msgstr "Закупки: поставщики, счета и оплаты"
+
+#: finance_saber/purchases
+#, python-format
+msgid "%(counter)s material receipt has no amounts yet, so it isn't counted as owed to its supplier."
+msgid_plural "%(counter)s material receipts have no amounts yet, so they aren't counted as owed to their suppliers."
+msgstr[0] "%(counter)s поступление сырья ещё без сумм, поэтому не учитывается как долг поставщику."
+msgstr[1] "%(counter)s поступления сырья ещё без сумм, поэтому не учитываются как долг поставщикам."
+msgstr[2] "%(counter)s поступлений сырья ещё без сумм, поэтому не учитываются как долг поставщикам."
+msgstr[3] "%(counter)s поступления сырья ещё без сумм, поэтому не учитываются как долг поставщикам."
+
+#: finance_saber/sales
+msgid "Sales are shipments now: load SmartUp's sales report on"
+msgstr "Продажи теперь — это отгрузки: загружайте отчёт SmartUp по продажам на странице"
+
+#: finance_saber/sales
+msgid "Off for shipments from before the warehouse was counted (history from the old Sales module)."
+msgstr "Выключено для отгрузок до инвентаризации склада (история из прежнего модуля «Продажи»)."
+
+#: finance_saber/sales
+msgid "Shipments to customers and the SmartUp sales report"
+msgstr "Отгрузки покупателям и отчёт SmartUp по продажам"
+
+#: finance_saber/production/shipment_import
+msgid "The report isn't loaded yet."
+msgstr "Отчёт ещё не загружен."
+
+#: finance_saber/production/shipment_import
+msgid "Check the documents below, then load them: only then do the products leave the warehouse."
+msgstr "Проверьте документы ниже и загрузите их: только после этого продукция спишется со склада."
+
+#: finance_saber/production/shipment_import
+#, python-format
+msgid "The SmartUp report «%(file)s» was read but not loaded: its products haven't left the warehouse yet."
+msgstr "Отчёт SmartUp «%(file)s» прочитан, но не загружен: продукция ещё не списана со склада."
+
+#: finance_saber/production/shipment_import
+msgid "Finish loading"
+msgstr "Завершить загрузку"

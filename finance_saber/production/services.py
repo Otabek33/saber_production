@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from .models import (
     Material,
@@ -87,25 +88,45 @@ def material_needs(quantities: dict[Product, int], date=None) -> list[MaterialNe
 
 
 @transaction.atomic
-def save_day(date, quantities: dict[Product, int], user=None) -> int:
-    """Record each product's output for ``date`` (0 cancels it). Returns how many runs changed."""
+def save_day(date, quantities: dict[Product, int], user=None, post: bool = True) -> int:
+    """Record each product's output for ``date``: posted (stock moves) or as a draft (it doesn't).
+
+    0 removes a product from the day: a draft is deleted (it never moved stock), a
+    posted run is cancelled (kept, so the history stays). Saving a draft over a
+    posted run unposts it: its stock movements are removed until it is posted
+    again. Returns how many runs changed.
+    """
+    Status = ProductionRun.Status
+    wanted = Status.POSTED if post else Status.DRAFT
     changed = 0
     runs = {run.product_id: run for run in ProductionRun.objects.filter(date=date, product__in=quantities)}
     for product, quantity in quantities.items():
         run = runs.get(product.pk)
-        if run is None:
-            if not quantity:
+        if not quantity:
+            if run is None or run.is_cancelled:
                 continue
-            run = ProductionRun(date=date, product=product, quantity=quantity, created_by=user)
-        elif run.quantity == quantity and run.is_cancelled == (not quantity):
+            if run.is_draft:
+                run.delete()
+                changed += 1
+                continue
+            run.status = Status.CANCELLED
+        elif run is None:
+            run = ProductionRun(date=date, product=product, quantity=quantity, status=wanted, created_by=user)
+        elif run.quantity == quantity and run.status == wanted:
             continue
         else:
-            run.quantity = quantity or run.quantity
-            run.is_cancelled = not quantity
+            run.quantity, run.status = quantity, wanted
         run.save()
         run.rebuild_moves()
         changed += 1
     return changed
+
+
+def delete_draft(run: ProductionRun) -> None:
+    """Delete a draft: it never moved stock or counted anywhere. Posted runs are cancelled instead."""
+    if not run.is_draft:
+        raise ValueError(_("Only a draft can be deleted; cancel posted production instead."))
+    run.delete()
 
 
 @dataclass
@@ -127,6 +148,7 @@ def save_calculation(
     lines: list[CalculationLine],
     user=None,
     update_recipe: bool = True,
+    post: bool = True,
 ) -> tuple[ProductionRun, bool]:
     """Record a product's production for a day with the recipe it was made with.
 
@@ -140,7 +162,7 @@ def save_calculation(
         run = ProductionRun(date=date, product=product, created_by=user)
     run.quantity = quantity
     run.batch_quantity = batch_quantity if batch_quantity and batch_quantity != quantity else None
-    run.is_cancelled = False
+    run.status = ProductionRun.Status.POSTED if post else ProductionRun.Status.DRAFT
     run.save()
     run.lines.all().delete()
     RunLine.objects.bulk_create(
@@ -156,7 +178,7 @@ def save_calculation(
     )
     run.rebuild_moves()
 
-    is_latest = not product.runs.filter(is_cancelled=False, date__gt=date).exists()
+    is_latest = not product.runs.not_cancelled().filter(date__gt=date).exists()
     if not (update_recipe and is_latest):
         return run, False
     current = {line.material_id: line for line in product.recipe.all()}

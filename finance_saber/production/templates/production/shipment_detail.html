@@ -1,0 +1,123 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  One shipment: the customer, the products, and the batches each came from (oldest stock
+  shipped first). A wrong shipment isn't edited or deleted: it is cancelled (its goods
+  return to stock) and entered again.
+{% endcomment %}
+
+{% block title %}{% translate "Shipment" %} № {{ shipment.number }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Shipments" as section %}
+  {% blocktranslate with number=shipment.number asvar page_title %}Shipment № {{ number }}{% endblocktranslate %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-xl-8">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div>
+            <h5 class="card-title mb-1">{{ shipment.customer.name }}</h5>
+            <span class="text-muted fs-2">{% translate "INN" %} {{ shipment.customer.inn }}</span>
+          </div>
+          {% if shipment.is_return %}<span class="badge bg-info-subtle text-info">{% translate "Customer return" %}</span>{% endif %}
+          {% if shipment.is_cancelled %}
+            <span class="badge bg-danger-subtle text-danger">{% translate "Cancelled" %}</span>
+          {% else %}
+            <span class="badge bg-success-subtle text-success">{% translate "Posted" %}</span>
+          {% endif %}
+        </div>
+        <div class="card-body px-4 py-3 border-bottom">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">{% translate "Waybill number" %}</dt><dd class="col-sm-8">№ {{ shipment.number }}</dd>
+            <dt class="col-sm-4">{% translate "Date" %}</dt><dd class="col-sm-8">{{ shipment.date|date:"d.m.Y" }}</dd>
+            {% if shipment.channel %}<dt class="col-sm-4">{% translate "Project" %}</dt><dd class="col-sm-8">{{ shipment.channel }}</dd>{% endif %}
+            <dt class="col-sm-4">{% translate "Source" %}</dt><dd class="col-sm-8">{{ shipment.get_source_display }}</dd>
+            {% if shipment.note %}<dt class="col-sm-4">{% translate "Note" %}</dt><dd class="col-sm-8">{{ shipment.note }}</dd>{% endif %}
+            <dt class="col-sm-4">{% translate "Author" %}</dt><dd class="col-sm-8 mb-0">{{ shipment.created_by|default:"—" }}, {{ shipment.created_at|date:"d.m.Y H:i" }}</dd>
+          </dl>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th style="width: 50px">№</th>
+                <th>{% translate "Product" %}</th>
+                <th class="num">{% translate "Units" %}</th>
+                <th class="num">{% translate "Price" %}</th>
+                <th class="num">{% translate "Amount" %}</th>
+                {% if not shipment.is_return %}<th>{% translate "Batches" %}</th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for line, pieces in rows %}
+                <tr>
+                  <td class="text-muted">{{ forloop.counter }}</td>
+                  <td>{{ line.product.name }}</td>
+                  <td class="num fw-semibold">{{ line.quantity|floatformat:"0g" }}</td>
+                  <td class="num">{{ line.price|floatformat:"2g" }}</td>
+                  <td class="num">{{ line.amount|floatformat:"2g" }}</td>
+                  {% if not shipment.is_return %}<td>
+                    {% for piece in pieces %}
+                      <span class="d-block">
+                        {% if piece.lot.run %}
+                          <a href="{% url 'production:batch' piece.lot.run.pk %}" class="font-monospace">{{ piece.lot.label }}</a>
+                        {% elif piece.lot %}
+                          {{ piece.lot.label }}
+                        {% else %}
+                          <span class="badge bg-warning-subtle text-warning">{% translate "More than the recorded stock" %}</span>
+                        {% endif %}
+                        — {{ piece.quantity|floatformat:"0g" }}
+                      </span>
+                    {% empty %}
+                      <span class="text-muted">—</span>
+                    {% endfor %}
+                  </td>{% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="fw-semibold">
+                <td></td><td>{% translate "Total" %}</td>
+                <td class="num">{{ units|floatformat:"0g" }}</td><td></td>
+                <td class="num">{{ shipment.total|floatformat:"2g" }}</td>
+                {% if not shipment.is_return %}<td></td>{% endif %}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+          <a href="{% url 'production:shipments' %}" class="btn bg-primary-subtle text-primary">{% translate "Back" %}</a>
+          {% if perms.production.change_productshipment %}
+            <form method="post" action="{% url 'production:shipment_cancel' shipment.pk %}" class="d-inline">
+              {% csrf_token %}
+              {% if shipment.is_cancelled %}
+                <button type="submit" class="btn bg-success-subtle text-success">{% translate "Restore" %}</button>
+              {% else %}
+                {% if shipment.is_return %}
+                  <button type="submit" class="btn bg-danger-subtle text-danger" data-confirm="{% translate "Cancel this return? Its goods leave stock again." %}">{% translate "Cancel the return" %}</button>
+                {% else %}
+                  <button type="submit" class="btn bg-danger-subtle text-danger" data-confirm="{% translate "Cancel this shipment? Its goods return to stock." %}">{% translate "Cancel the shipment" %}</button>
+                {% endif %}
+              {% endif %}
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card bg-info-subtle shadow-none">
+        <div class="card-body p-4">
+          {% if shipment.is_return %}
+            <p class="mb-0">{% translate "A customer return brings its products back into stock and lowers what the customer owes. A wrong return isn't edited or deleted: cancel it, then enter it again." %}</p>
+          {% else %}
+            <p class="mb-0">{% translate "A shipment takes its products out of stock, oldest batches first, so each batch's customers are known for a recall. A wrong shipment isn't edited or deleted: cancel it, and its goods return to stock; then enter it again." %}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

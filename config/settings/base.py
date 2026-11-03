@@ -91,6 +91,8 @@ LOCAL_APPS = [
     "finance_saber.production",
     "finance_saber.sales",
     "finance_saber.planning",
+    "finance_saber.settlements",
+    "finance_saber.purchases",
     "finance_saber.audit",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

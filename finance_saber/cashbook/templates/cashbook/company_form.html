@@ -1,0 +1,76 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+{% comment %}
+  A company's form: its fields in groups (CompanyForm.sections), and its bank requisites as an
+  inline formset (an empty row adds one, "Delete" removes one).
+{% endcomment %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Companies" as section %}
+  {% include "partials/_page_header.html" with section=section %}
+{% endblock %}
+
+{% block content %}
+  <form method="post" novalidate class="form-compact">
+    {% csrf_token %}
+    {% for error in form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
+    <div class="row">
+      {% for title, fields in form.sections %}
+        <div class="col-xl-6">
+          <div class="card">
+            <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{{ title }}</h5></div>
+            <div class="card-body p-4 pb-1">
+              {% for field in fields %}{% include "forms/_field.html" %}{% endfor %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Bank requisites" %}</h5></div>
+      <div class="card-body p-4">
+        {{ requisites.management_form }}
+        {% for error in requisites.non_form_errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th>{% translate "MFO" %}</th><th>{% translate "Account number" %}</th><th>{% translate "Bank" %}</th>
+                <th>{% translate "Currency code" %}</th><th class="text-center">{% translate "Delete" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for line in requisites %}
+                <tr>
+                  {% for hidden in line.hidden_fields %}{{ hidden }}{% endfor %}
+                  <td>{{ line.mfo }}{% for error in line.mfo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</td>
+                  <td>{{ line.account_number }}{% for error in line.account_number.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% for error in line.non_field_errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</td>
+                  <td>{{ line.bank }}</td>
+                  <td style="width: 7rem">{{ line.currency }}</td>
+                  <td class="text-center">{% if line.instance.pk %}{{ line.DELETE }}{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="form-text mb-0">{% translate "Fill in the empty row to add an account; save to get another empty row." %}</p>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+      <button type="submit" class="btn btn-primary">{% translate "Save Changes" %}</button>
+      <a href="{% if object.pk %}{{ object.get_absolute_url }}{% else %}{{ section_url }}{% endif %}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

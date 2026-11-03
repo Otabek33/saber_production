@@ -110,15 +110,23 @@
       </template>
       <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
         {% if can_edit %}
-          <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+          <button type="submit" name="post" value="1" class="btn btn-primary">{% translate "Post" %}</button>
+          <button type="submit" name="draft" value="1" class="btn bg-secondary-subtle text-secondary"{% if run.is_posted %} data-confirm="{% translate "This posted production becomes a draft again: its materials go back to stock until it is posted. Continue?" %}"{% endif %}>{% translate "Save as draft" %}</button>
+          {% if run.is_draft %}
+            <button type="submit" formaction="{% url 'production:run_delete' run.pk %}" formnovalidate class="btn bg-danger-subtle text-danger" data-confirm="{% translate "Delete this draft? It never affected stock." %}">{% translate "Delete the draft" %}</button>
+          {% endif %}
           <button type="button" class="btn bg-success-subtle text-success" data-calc-add-line>
             <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon> {% translate "Add a line" %}
           </button>
         {% endif %}
         <a href="{% url 'production:daily' %}?date={{ date.isoformat }}" class="btn bg-primary-subtle text-primary">{% translate "Back to the day" %}</a>
-        {% if run %}
+        {% if run.is_draft %}
+          <span class="badge bg-warning-subtle text-warning align-self-center ms-auto">
+            {% blocktranslate with quantity=run.quantity|floatformat:"0g" %}Draft: {{ quantity }} units, stock not affected{% endblocktranslate %}
+          </span>
+        {% elif run %}
           <span class="badge bg-success-subtle text-success align-self-center ms-auto">
-            {% blocktranslate with quantity=run.quantity|floatformat:"0g" %}Saved: {{ quantity }} units{% endblocktranslate %}
+            {% blocktranslate with quantity=run.quantity|floatformat:"0g" %}Posted: {{ quantity }} units{% endblocktranslate %}
           </span>
         {% else %}
           <span class="badge bg-secondary-subtle text-secondary align-self-center ms-auto">{% translate "Not saved yet: the norms come from the product's recipe" %}</span>

@@ -99,15 +99,15 @@ def test_import_command(db, workbooks):
     call_command("import_production_xlsx", *map(str, workbooks), "--stock-date", "2026-10-22", stdout=out)
 
     tea = Product.objects.get(name="Green Tea мёд 0,450 л")
+    # Saved under the official names (material_names.py); glue is no longer used.
     assert {line.material.name: line.quantity_per_unit for line in tea.recipe.select_related("material")} == {
-        "Сахар": D("0.0355500000"),
-        "банка Green Tea мёд 0,450 л": D("1.0000000000"),
-        "Золотой кришка 202": D("1.0000000000"),
-        "Гофра паддон sakura 450 мл\\12 шт": D("0.0833300000"),
-        "клей": D("0.0000765000"),
+        "Сахар-песок белый кристаллический": D("0.0355500000"),
+        "Банки алюминевые A Sakura green tea honey (мёд) 0,45л": D("1.0000000000"),
+        "Алюминиевая крышка тип 202 gold": D("1.0000000000"),
+        "гофра поддон 3-сл. 25,5*19,2*5 см для 450 мл напиток (12 шт) C": D("0.0833300000"),
     }
-    assert material_stock()[Material.objects.get(name="Сахар").pk] == D("20482.15")
-    assert Material.objects.get(name="клей").moves.count() == 0  # not in the stock list: no stock
+    assert material_stock()[Material.objects.get(name="Сахар-песок белый кристаллический").pk] == D("20482.15")
+    assert not Material.objects.filter(name="клей").exists()
 
     run = ProductionRun.objects.get()
     assert (run.date, run.quantity, run.affects_stock) == (datetime.date(2026, 8, 3), 43848, False)
@@ -117,7 +117,7 @@ def test_import_command(db, workbooks):
     # Running again adds nothing.
     call_command("import_production_xlsx", *map(str, workbooks), "--stock-date", "2026-10-22", stdout=StringIO())
     assert MaterialMove.objects.count() == 4
-    assert tea.recipe.count() == 5
+    assert tea.recipe.count() == 4
     assert ProductionRun.objects.count() == 1
 
 

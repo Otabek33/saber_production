@@ -1,0 +1,146 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+{% comment %}
+  Production batches: each product's run of a day, with the code printed on the bottles.
+  Trace backward (open a batch: what it was made of, from which deliveries) or forward
+  (filter by supplier or receipt: every batch that used their materials).
+{% endcomment %}
+
+{% block title %}{% translate "Production batches" %}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Production batches" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="row g-2 align-items-end form-compact">
+        {% if receipt %}<input type="hidden" name="receipt" value="{{ receipt.pk }}">{% endif %}
+        <div class="col-6 col-md-2">
+          <label for="code" class="form-label">{% translate "Batch code" %}</label>
+          <input type="search" name="code" id="code" value="{{ request.GET.code }}" class="form-control" placeholder="261022-007">
+        </div>
+        <div class="col-6 col-md-3">
+          <label for="product" class="form-label">{% translate "Product" %}</label>
+          <select name="product" id="product" class="form-select" data-searchable>
+            <option value="">{% translate "All products" %}</option>
+            {% for product in products %}
+              <option value="{{ product.pk }}"{% if request.GET.product == product.pk|stringformat:"s" %} selected{% endif %}>{{ product.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label for="material" class="form-label">{% translate "Made with material" %}</label>
+          <select name="material" id="material" class="form-select" data-searchable>
+            <option value="">{% translate "All materials" %}</option>
+            {% for material in materials %}
+              <option value="{{ material.pk }}"{% if request.GET.material == material.pk|stringformat:"s" %} selected{% endif %}>{{ material.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label for="supplier" class="form-label">{% translate "Materials from supplier" %}</label>
+          <select name="supplier" id="supplier" class="form-select" data-searchable>
+            <option value="">{% translate "All suppliers" %}</option>
+            {% for supplier in suppliers %}
+              <option value="{{ supplier.pk }}"{% if request.GET.supplier == supplier.pk|stringformat:"s" %} selected{% endif %}>{{ supplier.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="from" class="form-label">{% translate "From" %}</label>
+          <input type="date" name="from" id="from" value="{{ request.GET.from }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="to" class="form-label">{% translate "To" %}</label>
+          <input type="date" name="to" id="to" value="{{ request.GET.to }}" class="form-control">
+        </div>
+        <div class="col-12 col-md-auto d-flex flex-wrap gap-2 mb-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+          <a href="{% url 'production:batches' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
+          <a href="{% url 'production:batches_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-sm bg-success-subtle text-success" title="{% translate "One row per batch, material and delivery" %}">
+            <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Traceability register" %}
+          </a>
+        </div>
+      </form>
+      {% if receipt %}
+        <div class="alert alert-info py-2 mt-2 mb-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <span>{% blocktranslate with number=receipt.number supplier=receipt.supplier.name %}Batches made with materials of receipt № {{ number }} from {{ supplier }}.{% endblocktranslate %}</span>
+          <a href="{% url 'production:batches' %}" class="btn btn-sm btn-info">{% translate "Show all batches" %}</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Batch" %}</th>
+            <th>{% translate "Production date" %}</th>
+            <th>{% translate "Product" %}</th>
+            <th class="num">{% translate "Units" %}</th>
+            <th>{% translate "Author" %}</th>
+            <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for run in page_obj %}
+            <tr>
+              <td class="text-nowrap fw-semibold font-monospace">{{ run.code }}</td>
+              <td class="text-nowrap">{{ run.date|date:"d.m.Y" }}</td>
+              <td>{{ run.product.name }}</td>
+              <td class="num">{{ run.quantity|floatformat:"0g" }}</td>
+              <td class="text-muted">{{ run.created_by|default:"" }}</td>
+              <td class="text-end">
+                <a href="{% url 'production:batch' run.pk %}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Where its materials came from" %}" aria-label="{% translate "Open" %}">
+                  <iconify-icon icon="solar:document-text-line-duotone"></iconify-icon>
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No batches found." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-4 py-3 border-top">
+        <span class="text-muted fs-2">
+          {% blocktranslate with start=page_obj.start_index end=page_obj.end_index total=page_obj.paginator.count %}Rows {{ start }}–{{ end }} of {{ total }}{% endblocktranslate %}
+        </span>
+        <nav aria-label="{% translate "Pages" %}">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item{% if not page_obj.has_previous %} disabled{% endif %}">
+              <a class="page-link" href="{% if page_obj.has_previous %}{% querystring page=page_obj.previous_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Previous page" %}">‹</a>
+            </li>
+            {% for number in page_obj.paginator.get_elided_page_range %}
+              {% if number == page_obj.paginator.ELLIPSIS %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+              {% elif number == page_obj.number %}
+                <li class="page-item active" aria-current="page"><span class="page-link">{{ number }}</span></li>
+              {% else %}
+                <li class="page-item"><a class="page-link" href="{% querystring page=number %}">{{ number }}</a></li>
+              {% endif %}
+            {% endfor %}
+            <li class="page-item{% if not page_obj.has_next %} disabled{% endif %}">
+              <a class="page-link" href="{% if page_obj.has_next %}{% querystring page=page_obj.next_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Next page" %}">›</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

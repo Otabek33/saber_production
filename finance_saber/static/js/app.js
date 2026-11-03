@@ -57,6 +57,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // Buttons and links with data-confirm="<question>" ask before they act.
+  document.addEventListener("click", function (event) {
+    var target = event.target.closest && event.target.closest("[data-confirm]");
+    if (target && !window.confirm(target.dataset.confirm)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, true);
+
   // Number inputs (data-number="<decimals>"): digits grouped by spaces and a decimal comma
   // as they are typed, "1250.5" -> "1 250,5", the way the server reads them (QuantityField).
   function formatNumber(text, decimals) {

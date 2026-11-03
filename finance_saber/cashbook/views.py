@@ -11,7 +11,7 @@ from django.utils.functional import cached_property
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 
 from finance_saber.core.permissions import PermissionMixin, permission
 
@@ -19,6 +19,7 @@ from . import bank, company_files, exports, handbooks, importer, workbook
 from .forms import (
     ArticleForm,
     CategoryForm,
+    CompanyBankAccountFormSet,
     CompanyForm,
     CounterpartyForm,
     HandbookUploadForm,
@@ -572,31 +573,89 @@ class CounterpartyUpdateView(CounterpartyFormMixin, UpdateView):
     extra_context = {"title": _("Edit counterparty"), "section_url": reverse_lazy("cashbook:counterparties")}
 
 
+def filter_companies(companies, params):
+    """Narrow companies by the list's filters: search, head companies or filials, region, category."""
+    if query := params.get("q", "").strip():
+        companies = companies.filter(
+            Q(name__icontains=query) | Q(short_name__icontains=query) | Q(inn__icontains=query)
+            | Q(smartup_id=query) | Q(phone__icontains=query) | Q(address__icontains=query)
+        )  # fmt: skip
+    show = params.get("show", "" if query else "heads")
+    if show == "heads":
+        companies = companies.filter(parent__isnull=True)
+    elif show == "filials":
+        companies = companies.filter(parent__isnull=False)
+    elif show == "waiting":
+        companies = companies.filter(parent__isnull=True).exclude(smartup_owner_id="")
+    if params.get("region") == "none":
+        companies = companies.filter(region__isnull=True)
+    elif params.get("region", "").isdigit():
+        companies = companies.filter(region_id=params["region"])
+    if category := params.get("category"):
+        companies = companies.filter(category=category)
+    return companies
+
+
 class CompanyListView(PermissionMixin, ListView):
-    """Our companies, each with the bank accounts connected to it; accounts not yet connected are listed at the top."""
+    """Companies, ours first: head companies with their filial and bank account counts (search finds filials too)."""
 
     template_name = "cashbook/companies.html"
     permission_required = "cashbook.view_company"
     context_object_name = "companies"
+    paginate_by = 50
 
     def get_queryset(self):
-        accounts = Counterparty.objects.annotate(lines=Count("operations")).order_by("name")
-        return (
-            Company.objects.select_related("region")
-            .annotate(account_count=Count("accounts", distinct=True))
-            .prefetch_related(Prefetch("accounts", queryset=accounts))
+        companies = (
+            Company.objects.select_related("region", "parent")
+            .annotate(
+                filial_count=Count("filials", distinct=True),
+                account_count=Count("accounts", distinct=True) + Count("bank_accounts", distinct=True),
+            )
+            .order_by("-is_own", "name")
         )
+        return filter_companies(companies, self.request.GET)
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
+            show=self.request.GET.get("show", "" if self.request.GET.get("q") else "heads"),
+            regions=Region.objects.order_by("name"),
+            categories=Company.objects.exclude(category="").order_by("category").values_list("category", flat=True)
+            .distinct(),
+            total=Company.objects.count(),
+            head_count=Company.objects.heads().count(),
+            waiting_count=Company.objects.heads().exclude(smartup_owner_id="").count(),
             unconnected_count=Counterparty.objects.filter(company__isnull=True).count(),
+            **kwargs,
+        )  # fmt: skip
+
+
+class CompanyDetailView(PermissionMixin, DetailView):
+    """One company: its details, head company and filials, bank requisites and bank-statement accounts."""
+
+    template_name = "cashbook/company_detail.html"
+    permission_required = "cashbook.view_company"
+    context_object_name = "company"
+    queryset = Company.objects.select_related("region", "parent__parent")
+
+    def get_context_data(self, **kwargs):
+        company = self.object
+        filials = company.filials.select_related("region").annotate(filial_count=Count("filials")).order_by("name")
+        chain, head = [], company.parent
+        while head is not None and head not in chain:  # its head company, that one's head, ...
+            chain.insert(0, head)
+            head = head.parent
+        return super().get_context_data(
+            chain=chain,
+            filials=filials,
+            requisites=company.bank_accounts.all(),
+            accounts=company.accounts.annotate(lines=Count("operations")).order_by("name"),
             **kwargs,
         )
 
 
 @permission(view="cashbook.view_company")
 def companies_export(request):
-    """The companies and their bank accounts as an .xlsx file (see company_files.py)."""
+    """The companies, their filials and bank accounts as an .xlsx file (see company_files.py)."""
     return exports.xlsx_response(exports.dated_filename(_("Companies")), [company_files.companies_sheet()])
 
 
@@ -612,7 +671,7 @@ def companies_seed(request):
 @require_POST
 @permission(change=("cashbook.change_company", "cashbook.change_counterparty"))
 def companies_import(request):
-    """Create companies from Excel (an upload, or the project's file) and connect their bank accounts."""
+    """Create or update companies and filials from Excel (an upload, or the project's file), with their accounts."""
     if "seed" in request.POST:
         if not company_files.SEED_PATH.is_file():
             messages.error(
@@ -635,45 +694,80 @@ def companies_import(request):
     if report.errors:
         shown = " ".join(report.errors[:10]) + (" …" if len(report.errors) > 10 else "")
         messages.error(request, _("Nothing was saved: %(errors)s") % {"errors": shown})
-    elif report.saved:
+        return redirect("cashbook:companies")
+    counts = {
+        "created": report.created, "updated": report.updated, "filials": report.filials,
+        "requisites": report.requisites, "linked": report.linked,
+    }  # fmt: skip
+    if report.saved:
         messages.success(
             request,
-            _("Loaded: %(created)s companies created, %(linked)s bank accounts connected.")
-            % {"created": report.created, "linked": report.linked},
-        )
+            _(
+                "Loaded: %(created)s companies created, %(updated)s updated, %(filials)s put under their head "
+                "company; %(requisites)s bank requisites added, %(linked)s bank accounts connected."
+            ) % counts,
+        )  # fmt: skip
     else:
         messages.info(
             request,
-            _("Checked, nothing was saved: %(created)s companies to create, %(linked)s bank accounts to connect.")
-            % {"created": report.created, "linked": report.linked},
-        )
+            _(
+                "Checked, nothing was saved: %(created)s companies to create, %(updated)s to update, %(filials)s to "
+                "put under their head company; %(requisites)s bank requisites to add, %(linked)s bank accounts to "
+                "connect."
+            ) % counts,
+        )  # fmt: skip
+    if report.waiting:
+        messages.warning(
+            request,
+            _(
+                "Some filials' head companies aren't in the file (SmartUp ID %(ids)s). They are kept as they are and "
+                "put under their head company when a file with it is loaded."
+            ) % {"ids": ", ".join(sorted(report.waiting))},
+        )  # fmt: skip
     return redirect("cashbook:companies")
 
 
-class CompanyFormMixin(PermissionMixin, SuccessMessageMixin):
+class CompanyFormMixin(PermissionMixin):
+    """The company form with its bank requisites (an inline formset)."""
+
     model = Company
     form_class = CompanyForm
-    template_name = "cashbook/handbook_form.html"
-    success_url = reverse_lazy("cashbook:companies")
-    success_message = _("Saved.")
+    template_name = "cashbook/company_form.html"
+
+    def get_context_data(self, **kwargs):
+        kwargs.setdefault("requisites", CompanyBankAccountFormSet(instance=self.object, prefix="requisites"))
+        return super().get_context_data(section_url=reverse("cashbook:companies"), **kwargs)
+
+    def get_initial(self):
+        # "New filial" on a company's page: /companies/add/?parent=<pk>
+        initial = super().get_initial()
+        if self.request.GET.get("parent", "").isdigit():
+            initial["parent"] = self.request.GET["parent"]
+        return initial
+
+    def form_valid(self, form):
+        requisites = CompanyBankAccountFormSet(self.request.POST, instance=form.instance, prefix="requisites")
+        if not requisites.is_valid():
+            return self.render_to_response(self.get_context_data(form=form, requisites=requisites))
+        self.object = form.save()
+        requisites.instance = self.object
+        requisites.save()
+        messages.success(self.request, _("Saved."))
+        return redirect(self.object)
+
+    def form_invalid(self, form):
+        requisites = CompanyBankAccountFormSet(self.request.POST, instance=form.instance, prefix="requisites")
+        return self.render_to_response(self.get_context_data(form=form, requisites=requisites))
 
 
 class CompanyCreateView(CompanyFormMixin, CreateView):
     permission_required = "cashbook.add_company"
-    extra_context = {
-        "title": _("New company"),
-        "section_url": reverse_lazy("cashbook:companies"),
-        "section_label": _("Companies"),
-    }
+    extra_context = {"title": _("New company")}
 
 
 class CompanyUpdateView(CompanyFormMixin, UpdateView):
     permission_required = "cashbook.change_company"
-    extra_context = {
-        "title": _("Edit company"),
-        "section_url": reverse_lazy("cashbook:companies"),
-        "section_label": _("Companies"),
-    }
+    extra_context = {"title": _("Edit company")}
 
 
 class RegionFormMixin(PermissionMixin, SuccessMessageMixin):

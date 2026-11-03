@@ -16,8 +16,9 @@ changes.
 * Superuser — everything, including users, roles and the admin site.
   Not a group: Django's ``is_superuser`` flag, and not editable.
 * Finance — the money side: cash desks, bank, the handbook and counterparties,
-  exchange rates, the cash plan and collections, and sales (sales, clients and
-  their payers, plans, imports); production and stock read-only.
+  exchange rates, the cash plan and collections, sales (sales, clients and their
+  payers, plans, imports), purchases (bills, vendors, payments made) and settlements
+  with partners; production and stock read-only.
 * Planner and Technologist — Production only: daily production and its
   journal, raw materials (stock, receipts, movements), finished goods, recipes
   and norms. Nothing outside Production, not even read-only; the production
@@ -163,19 +164,6 @@ AREAS = [
         _perms("planning", "add_collectionplan", "change_collectionplan", "delete_collectionplan"),
     ),
     Area(
-        "sales",
-        _("Daily sales and imports"),
-        _perms("sales", "view_sale"),
-        # New clients are created by the entry itself.
-        _perms("sales", "add_sale", "change_sale", "import_sales"),
-    ),
-    Area(
-        "clients",
-        _("Clients, debtors and creditors"),
-        _perms("sales", "view_client", "view_channel"),
-        _perms("sales", "add_client", "change_client", "add_channel", "change_channel"),
-    ),
-    Area(
         "plan",
         _("Sales and production plan"),
         _perms("sales", "view_plan"),
@@ -224,7 +212,25 @@ AREAS = [
         _perms("production", "view_product", "view_productmove"),
         _perms("production", "add_productmove", "change_productmove"),
     ),
+    Area(
+        "shipments",
+        _("Shipments to customers and the SmartUp sales report"),
+        _perms("production", "view_productshipment"),
+        _perms("production", "add_productshipment", "change_productshipment"),
+    ),
     Area("production_import", _("Production import from Excel"), edit=_perms("production", "import_excel")),
+    Area(
+        "purchases",
+        _("Purchases: vendors, bills and payments made"),
+        _perms("purchases", "view_bill"),
+        _perms("purchases", "add_bill", "change_bill"),
+    ),
+    Area(
+        "settlements",
+        _("Settlements with partners and reconciliation statements"),
+        _perms("settlements", "view_openingbalance"),
+        _perms("settlements", "add_openingbalance", "change_openingbalance"),
+    ),
     Area(
         "users",
         _("Users, roles and permissions"),
@@ -239,17 +245,17 @@ AREAS_BY_KEY = {area.key: area for area in AREAS}
 STANDARD_ACCESS: dict[str, dict[str, str]] = {
     Role.FINANCE: {
         "cash": EDIT, "handbook": EDIT, "counterparties": EDIT, "rates": EDIT, "cash_plan": EDIT,
-        "collections": EDIT, "sales": EDIT, "clients": EDIT, "plan": EDIT,
+        "collections": EDIT, "plan": EDIT, "shipments": EDIT, "settlements": EDIT, "purchases": EDIT,
         "recipes": VIEW, "production": VIEW, "materials": VIEW, "goods": VIEW,
     },
     # Production only: Выпуск за день, Журнал выпуска, Сырьё на складе, Поступления сырья,
     # Готовая продукция, Рецептуры и нормы, Движения склада.
-    Role.PLANNER: {"recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT},
-    Role.TECHNOLOGIST: {"recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT},
-    Role.OPERATOR: {"sales": EDIT, "clients": VIEW},
+    Role.PLANNER: {"recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT, "shipments": EDIT},
+    Role.TECHNOLOGIST: {"recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT, "shipments": EDIT},
+    Role.OPERATOR: {"shipments": EDIT, "settlements": VIEW},
     Role.MANAGER: {
         "cash": EDIT, "handbook": EDIT, "counterparties": EDIT, "rates": EDIT, "cash_plan": EDIT,
-        "collections": EDIT, "sales": EDIT, "clients": EDIT, "plan": EDIT,
+        "collections": EDIT, "plan": EDIT, "shipments": EDIT, "settlements": EDIT, "purchases": EDIT,
         "recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT, "production_import": EDIT,
     },
 }  # fmt: skip

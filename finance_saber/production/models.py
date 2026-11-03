@@ -2,8 +2,14 @@
 
 Stock is never stored as a number to edit. It is the sum of movements, like a
 ledger: an opening balance, receipts, consumption by production, shipments and
-stock-count adjustments. Recording a day's production of a product (a
+stock-count adjustments. Posting a day's production of a product (a
 ProductionRun) adds the cans to finished-goods stock and writes off each material.
+
+A production run is a document with a status, like 1C's «проведён»: a draft is
+being prepared (quantities and norms can change, and it can be deleted) and
+moves no stock; posting it writes off its materials and adds its output, and only
+posted runs count in stock and reports; a posted run is not deleted but
+cancelled, so the history stays complete.
 
 Each run keeps the recipe it was made with (RunLine: norm, production defect,
 allowed loss), copied from the product's recipe and adjustable for that run, so
@@ -24,6 +30,7 @@ from django.db.models import Q, Sum
 from django.utils.translation import gettext_lazy as _
 
 QUANTITY = {"max_digits": 18, "decimal_places": 4}
+MONEY = {"max_digits": 18, "decimal_places": 2}
 NORM = {"max_digits": 20, "decimal_places": 10}  # norms per can go down to millionths of a kilogram
 PERCENT = {"max_digits": 5, "decimal_places": 2}
 QUANTITY_STEP = Decimal("0.0001")
@@ -112,6 +119,22 @@ def product_lookup() -> dict:
     return found
 
 
+class SkippedName(models.Model):
+    """A name in an outside system's file that isn't one of our products (e.g. resold water): its rows are skipped."""
+
+    name = models.CharField(_("name"), max_length=200, unique=True)
+    source = models.CharField(_("source"), max_length=50, blank=True, help_text=_("e.g. SmartUp"))
+    created_at = models.DateTimeField(_("created"), auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = _("skipped name")
+        verbose_name_plural = _("skipped names")
+
+    def __str__(self):
+        return self.name
+
+
 class RecipeLine(models.Model):
     """How much of a material one unit (can) of a product uses: the production norm."""
 
@@ -148,8 +171,23 @@ def round_quantity(value) -> Decimal:
     return Decimal(value).quantize(QUANTITY_STEP, rounding=ROUND_HALF_UP)
 
 
+class ProductionRunQuerySet(models.QuerySet):
+    def posted(self):
+        """Runs that count: in stock, the journal and every report."""
+        return self.filter(status=ProductionRun.Status.POSTED)
+
+    def not_cancelled(self):
+        """Drafts and posted runs: what a day's page shows."""
+        return self.exclude(status=ProductionRun.Status.CANCELLED)
+
+
 class ProductionRun(models.Model):
     """How many units of a product were produced on a day. One per product and day."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", _("Draft")
+        POSTED = "posted", _("Posted")
+        CANCELLED = "cancelled", _("Cancelled")
 
     date = models.DateField(_("date"), db_index=True)
     product = models.ForeignKey(Product, models.PROTECT, related_name="runs", verbose_name=_("product"))
@@ -166,12 +204,14 @@ class ProductionRun(models.Model):
     note = models.CharField(_("note"), max_length=255, blank=True)
     # Imported history: stock at the time already included it, so it doesn't move stock again.
     affects_stock = models.BooleanField(_("affects stock"), default=True, editable=False)
-    is_cancelled = models.BooleanField(_("cancelled"), default=False)
+    status = models.CharField(_("status"), max_length=10, choices=Status.choices, default=Status.DRAFT, db_index=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, models.PROTECT, null=True, blank=True, related_name="+", verbose_name=_("created by")
     )
     created_at = models.DateTimeField(_("created"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated"), auto_now=True)
+
+    objects = ProductionRunQuerySet.as_manager()
 
     class Meta:
         ordering = ["date", "product__position", "id"]
@@ -181,6 +221,18 @@ class ProductionRun(models.Model):
 
     def __str__(self):
         return f"{self.date} {self.product} {self.quantity}"
+
+    @property
+    def is_draft(self) -> bool:
+        return self.status == self.Status.DRAFT
+
+    @property
+    def is_posted(self) -> bool:
+        return self.status == self.Status.POSTED
+
+    @property
+    def is_cancelled(self) -> bool:
+        return self.status == self.Status.CANCELLED
 
     @property
     def brewed(self) -> int:
@@ -212,8 +264,8 @@ class ProductionRun(models.Model):
         for line in lines:
             line.consumed = line.consumption(self)
         RunLine.objects.bulk_update(lines, ["consumed"])
-        if not self.affects_stock or self.is_cancelled or not self.quantity:
-            return
+        if not self.affects_stock or not self.is_posted or not self.quantity:
+            return  # a draft or cancelled run moves no stock; its lines still show what it would use
         ProductMove.objects.create(
             product=self.product,
             date=self.date,
@@ -322,7 +374,7 @@ class Move(models.Model):
     objects = MoveQuerySet.as_manager()
 
     # Movements a document made (a production run, a sale) change with that document, not by hand.
-    DOCUMENT_SOURCES = ("sale:", "receipt:")
+    DOCUMENT_SOURCES = ("sale:", "receipt:", "shipment:")
 
     class Meta:
         abstract = True
@@ -365,7 +417,8 @@ class MaterialReceipt(models.Model):
 
     Like 1C's «Поступление»: the document is the record, and its lines make the stock
     movements (rebuild_moves), so they change only with the document. A wrong document
-    isn't deleted: it is cancelled, and its movements stop counting.
+    isn't deleted: it is cancelled, and its movements stop counting. Its amounts are
+    what we owe the supplier for it (Settlements).
     """
 
     date = models.DateField(_("date"), db_index=True)
@@ -401,6 +454,10 @@ class MaterialReceipt(models.Model):
         return f"№ {self.number} {self.date:%d.%m.%Y} {self.supplier}"
 
     @property
+    def total(self) -> Decimal:
+        return sum((line.amount for line in self.lines.all()), Decimal(0))
+
+    @property
     def stock_source(self) -> str:
         """Prefix of its movements' source: "receipt:<document>:<line>"."""
         return f"receipt:{self.pk}:"
@@ -432,6 +489,9 @@ class MaterialReceiptLine(models.Model):
     receipt = models.ForeignKey(MaterialReceipt, models.CASCADE, related_name="lines", verbose_name=_("receipt"))
     material = models.ForeignKey(Material, models.PROTECT, related_name="receipt_lines", verbose_name=_("material"))
     quantity = models.DecimalField(_("quantity"), **QUANTITY, validators=[MinValueValidator(QUANTITY_STEP)])
+    amount = models.DecimalField(
+        _("amount"), **MONEY, default=0, validators=[MinValueValidator(0)], help_text=_("With VAT, in UZS.")
+    )
 
     class Meta:
         ordering = ["id"]
@@ -444,12 +504,17 @@ class MaterialReceiptLine(models.Model):
     def __str__(self):
         return f"{self.material} {self.quantity}"
 
+    @property
+    def price(self) -> Decimal | None:
+        return (self.amount / self.quantity).quantize(Decimal("0.01")) if self.quantity else None
+
 
 class ProductMove(Move):
     class Kind(models.TextChoices):
         OPENING = "opening", _("Opening balance")
         OUTPUT = "output", _("Produced")
         SHIPMENT = "shipment", _("Shipment")
+        RETURN = "return", _("Customer return")
         ADJUSTMENT = "adjustment", _("Stock count")
         WRITE_OFF = "write_off", _("Write-off")
 
@@ -465,6 +530,138 @@ class ProductMove(Move):
 
     def __str__(self):
         return f"{self.date} {self.product} {self.quantity}"
+
+
+class ProductShipmentQuerySet(models.QuerySet):
+    def posted(self):
+        return self.filter(is_cancelled=False)
+
+
+class ProductShipment(models.Model):
+    """Finished goods shipped to a customer: one document (the waybill) with its lines.
+
+    Like 1C's «Реализация»: the customer is a company of the handbook (Cash desk ›
+    Companies), and the lines make the stock movements (rebuild_moves), so they change
+    only with the document. A wrong shipment isn't deleted: it is cancelled, and its
+    goods return to stock.
+
+    Entered by hand, or loaded from SmartUp's sales report: one document per day,
+    customer and project, found again by ``external_key`` when a report is loaded
+    again (shipment_import.py). A customer return (``is_return``) is the same document
+    the other way: its goods come back into stock.
+    """
+
+    class Source(models.TextChoices):
+        MANUAL = "manual", _("Entered by hand")
+        SMARTUP = "smartup", _("SmartUp report")
+
+    date = models.DateField(_("date"), db_index=True)
+    customer = models.ForeignKey(
+        "cashbook.Company", models.PROTECT, related_name="product_shipments", verbose_name=_("customer")
+    )
+    number = models.CharField(
+        _("waybill number"), max_length=50, blank=True, help_text=_("Leave empty to number it automatically.")
+    )
+    note = models.CharField(_("note"), max_length=255, blank=True)
+    is_return = models.BooleanField(
+        _("customer return"), default=False, help_text=_("Goods the customer sent back: they return to stock.")
+    )
+    channel = models.CharField(
+        _("project"), max_length=100, blank=True, help_text=_("SmartUp's project, e.g. Key Account.")
+    )
+    source = models.CharField(_("source"), max_length=10, choices=Source.choices, default=Source.MANUAL)
+    external_key = models.CharField(_("external key"), max_length=200, blank=True, editable=False)
+    affects_stock = models.BooleanField(
+        _("affects stock"),
+        default=True,
+        editable=False,
+        help_text=_("Off for shipments from before the warehouse was counted (history from the old Sales module)."),
+    )
+    is_cancelled = models.BooleanField(_("cancelled"), default=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, models.PROTECT, null=True, blank=True, related_name="+", verbose_name=_("created by")
+    )
+    created_at = models.DateTimeField(_("created"), auto_now_add=True)
+
+    objects = ProductShipmentQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        verbose_name = _("shipment")
+        verbose_name_plural = _("shipments")
+        constraints = [
+            # A waybill number is used once (cancelled ones free theirs).
+            models.UniqueConstraint(
+                fields=["number"], condition=Q(is_cancelled=False) & ~Q(number=""), name="unique_shipment_number"
+            ),
+            # A report's document (day, customer, project) is loaded once, then updated.
+            models.UniqueConstraint(fields=["external_key"], condition=~Q(external_key=""), name="unique_shipment_key"),
+        ]
+
+    def __str__(self):
+        return f"№ {self.number} {self.date:%d.%m.%Y} {self.customer}"
+
+    def assign_number(self):
+        """A number for a document saved without one: "ОТ-00042" from its id ("ВЗ-00042" for a return)."""
+        if not self.number:
+            self.number = f"{'ВЗ' if self.is_return else 'ОТ'}-{self.pk:05d}"
+            self.save(update_fields=["number"])
+
+    @property
+    def total(self) -> Decimal:
+        return sum((line.amount for line in self.lines.all()), Decimal(0))
+
+    @property
+    def stock_source(self) -> str:
+        """Prefix of its movements' source: "shipment:<document>:<line>"."""
+        return f"shipment:{self.pk}:"
+
+    def moves(self):
+        return ProductMove.objects.filter(source__startswith=self.stock_source)
+
+    def rebuild_moves(self):
+        """(Re)create one shipment movement per line; none while the document is cancelled, or for history."""
+        self.moves().delete()
+        if self.is_cancelled or not self.affects_stock:
+            return
+        note = f"{self.customer.name}, № {self.number}"[:255]
+        kind, sign = (ProductMove.Kind.RETURN, 1) if self.is_return else (ProductMove.Kind.SHIPMENT, -1)
+        ProductMove.objects.bulk_create(
+            ProductMove(
+                product_id=line.product_id,
+                date=self.date,
+                kind=kind,
+                quantity=sign * line.quantity,
+                note=note,
+                source=f"{self.stock_source}{line.pk}",
+                created_by=self.created_by,
+            )
+            for line in self.lines.all()
+        )
+
+
+class ProductShipmentLine(models.Model):
+    shipment = models.ForeignKey(ProductShipment, models.CASCADE, related_name="lines", verbose_name=_("shipment"))
+    product = models.ForeignKey(Product, models.PROTECT, related_name="shipment_lines", verbose_name=_("product"))
+    quantity = models.PositiveIntegerField(_("quantity"), validators=[MinValueValidator(1)])
+    amount = models.DecimalField(
+        _("amount"), **MONEY, default=0, validators=[MinValueValidator(0)], help_text=_("With discount, in UZS.")
+    )
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = _("shipment line")
+        verbose_name_plural = _("shipment lines")
+        constraints = [
+            models.UniqueConstraint(fields=["shipment", "product"], name="unique_product_per_shipment"),
+        ]
+
+    def __str__(self):
+        return f"{self.product} {self.quantity}"
+
+    @property
+    def price(self) -> Decimal | None:
+        return (self.amount / self.quantity).quantize(Decimal("0.01")) if self.quantity else None
 
 
 def material_stock(on_date=None) -> dict[int, Decimal]:

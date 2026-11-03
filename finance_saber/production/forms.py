@@ -20,7 +20,8 @@ from .models import (
     MaterialReceipt,
     MaterialReceiptLine,
     Product,
-    ProductMove,
+    ProductShipment,
+    ProductShipmentLine,
     RecipeLine,
 )
 
@@ -148,8 +149,8 @@ class MaterialReceiptForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = MaterialReceipt
         fields = ["supplier", "date", "number", "note"]
-        # data-supplier-first: production.js shows the material lines once a supplier is chosen
-        widgets = {"date": DATE_WIDGET, "supplier": forms.Select(attrs={**SEARCHABLE, "data-supplier-first": ""})}
+        # data-choose-first: production.js shows the material lines once a supplier is chosen
+        widgets = {"date": DATE_WIDGET, "supplier": forms.Select(attrs={**SEARCHABLE, "data-choose-first": ""})}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -184,15 +185,27 @@ class ReceiptLineForm(BootstrapFormMixin, forms.ModelForm):
 
     class Meta:
         model = MaterialReceiptLine
-        fields = ["material", "quantity"]
-        widgets = {"material": forms.Select(attrs=SEARCHABLE)}
+        fields = ["material", "quantity", "amount"]
+        field_classes = {"amount": MoneyField}
+        widgets = {"material": forms.Select(attrs=SEARCHABLE), "amount": forms.TextInput(attrs={"data-number": "2"})}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["material"].queryset = Material.objects.filter(is_active=True)
+        self.fields["amount"].required = False  # empty: not priced yet (the amount is 0)
+        if not self.instance.pk:
+            self.initial["amount"] = None  # a new line starts empty, so an untouched extra line is skipped
+
+    def clean_amount(self):
+        return self.cleaned_data.get("amount") or Decimal(0)
 
 
-class BaseReceiptLineFormSet(forms.BaseInlineFormSet):
+class BaseDocumentLineFormSet(forms.BaseInlineFormSet):
+    """A document's lines: removable anywhere (production.js), each item on one line only."""
+
+    item_field = "material"
+    duplicate_message = _("%(item)s is already in this receipt: add its quantity to one line.")
+
     def add_fields(self, form, index):
         super().add_fields(form, index)
         # A removed line stays in the page, hidden, with DELETE set by production.js: the
@@ -200,26 +213,33 @@ class BaseReceiptLineFormSet(forms.BaseInlineFormSet):
         form.fields[DELETION_FIELD_NAME].widget = forms.HiddenInput(attrs={"data-delete": ""})
 
     def clean(self):
-        # Before Django's own unique check, so a repeated material gets this message on its line.
+        # Before Django's own unique check, so a repeated item gets this message on its line.
         seen = set()
         for form in self.forms:
             if self._should_delete_form(form):
                 continue
-            material = form.cleaned_data.get("material") if form.has_changed() else None
-            if material is None:
+            item = form.cleaned_data.get(self.item_field) if form.has_changed() else None
+            if item is None:
                 continue
-            if material in seen:
-                message = _("%(material)s is already in this receipt: add its quantity to one line.")
-                form.add_error("material", message % {"material": material})
-            seen.add(material)
+            if item in seen:
+                form.add_error(self.item_field, self.duplicate_message % {"item": item})
+            seen.add(item)
         super().clean()
+
+    def items(self) -> dict:
+        """{item: quantity} of the lines kept (for checking stock before saving)."""
+        return {
+            form.cleaned_data[self.item_field]: form.cleaned_data["quantity"]
+            for form in self.forms
+            if form.has_changed() and not self._should_delete_form(form) and form.cleaned_data.get(self.item_field)
+        }
 
 
 ReceiptLineFormSet = inlineformset_factory(
     MaterialReceipt,
     MaterialReceiptLine,
     form=ReceiptLineForm,
-    formset=BaseReceiptLineFormSet,
+    formset=BaseDocumentLineFormSet,
     extra=2,
     can_delete=True,
     min_num=1,
@@ -235,19 +255,72 @@ class MaterialWriteOffForm(MaterialMoveForm):
 
 
 class ShipmentForm(BootstrapFormMixin, forms.ModelForm):
-    kind, sign = ProductMove.Kind.SHIPMENT, -1
-    quantity = QuantityField(label=_("Quantity"), decimal_places=0)
+    """The shipment document's header: the customer (a company of the handbook), its date and waybill number."""
 
     class Meta:
-        model = ProductMove
-        fields = ["date", "product", "quantity", "note"]
-        widgets = {"date": DATE_WIDGET, "product": forms.Select(attrs=SEARCHABLE)}
-        labels = {"note": _("Customer / note")}
+        model = ProductShipment
+        fields = ["customer", "date", "number", "is_return", "note"]
+        # data-choose-first: production.js shows the product lines once a customer is chosen
+        widgets = {"date": DATE_WIDGET, "customer": forms.Select(attrs={**SEARCHABLE, "data-choose-first": ""})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Customers are the companies of Cash desk › Companies, other than our own.
+        self.fields["customer"].queryset = Company.objects.filter(is_own=False).order_by("name")
+        self.fields["customer"].empty_label = _("Choose a customer")
+        # Today by default. Not field.initial: with an instance, its empty date would win.
+        self.initial["date"] = self.initial.get("date") or timezone.localdate()
+
+    def clean_number(self):
+        return " ".join(self.cleaned_data["number"].split()).upper()  # capitals: one number on any database
+
+    def clean(self):
+        cleaned = super().clean()
+        number = cleaned.get("number")
+        used = ProductShipment.objects.posted().filter(number=number).exclude(pk=self.instance.pk)
+        if number and used.exists():
+            self.add_error("number", _("Waybill № %(number)s is already used.") % {"number": number})
+        return cleaned
+
+
+class ShipmentLineForm(BootstrapFormMixin, forms.ModelForm):
+    # data-number: app.js groups the digits as they are typed ("12 000")
+    quantity = QuantityField(
+        label=_("Quantity"), decimal_places=0, min_value=1, widget=forms.TextInput(attrs={"data-number": "0"})
+    )
+
+    class Meta:
+        model = ProductShipmentLine
+        fields = ["product", "quantity", "amount"]
+        field_classes = {"amount": MoneyField}
+        widgets = {"product": forms.Select(attrs=SEARCHABLE), "amount": forms.TextInput(attrs={"data-number": "2"})}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["product"].queryset = Product.objects.filter(is_active=True)
-        self.fields["date"].initial = timezone.localdate()
+        self.fields["amount"].required = False  # empty: no price (the amount is 0)
+        if not self.instance.pk:
+            self.initial["amount"] = None  # a new line starts empty, so an untouched extra line is skipped
+
+    def clean_amount(self):
+        return self.cleaned_data.get("amount") or Decimal(0)
+
+
+class BaseShipmentLineFormSet(BaseDocumentLineFormSet):
+    item_field = "product"
+    duplicate_message = _("%(item)s is already in this shipment: add its quantity to one line.")
+
+
+ShipmentLineFormSet = inlineformset_factory(
+    ProductShipment,
+    ProductShipmentLine,
+    form=ShipmentLineForm,
+    formset=BaseShipmentLineFormSet,
+    extra=2,
+    can_delete=True,
+    min_num=1,
+    validate_min=True,
+)
 
 
 class StockCountForm(BootstrapFormMixin, forms.Form):

@@ -215,11 +215,36 @@ class Region(models.Model):
         return self.name
 
 
+class CompanyQuerySet(models.QuerySet):
+    def heads(self):
+        """Companies that aren't a filial of another one."""
+        return self.filter(parent__isnull=True)
+
+
 class Company(models.Model):
-    """A company by its INN, ours or a counterparty; its bank accounts are connected to it (Counterparty.company)."""
+    """A company, ours or a counterparty, or a filial of one (a shop, a warehouse, a branch).
+
+    A head company is found by its INN, unique among head companies; a filial may repeat
+    its head's INN or have none. Companies from SmartUp keep its ID ("ИД") and their
+    owner's ("ИД владельца"), so a file loaded again updates them and a filial whose
+    owner comes later is attached then. Bank accounts are connected to a company in two
+    ways: the requisites it gives (CompanyBankAccount) and the counterparties of bank
+    statements (Counterparty.company).
+    """
 
     name = models.CharField(_("name"), max_length=255)
-    inn = models.CharField(_("INN"), max_length=20, unique=True)
+    inn = models.CharField(
+        _("INN"), max_length=20, blank=True, help_text=_("Unique among head companies; a filial may repeat its head's.")
+    )
+    parent = models.ForeignKey(
+        "self",
+        models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="filials",
+        verbose_name=_("head company"),
+        help_text=_("Fill in for a filial: a shop, a warehouse or a branch of that company."),
+    )
     is_own = models.BooleanField(_("our company"), default=False, help_text=_("One of our own companies."))
     region = models.ForeignKey(
         Region,
@@ -230,15 +255,139 @@ class Company(models.Model):
         verbose_name=_("region"),
         help_text=_("Not required, but please choose one: reports by region count the company there."),
     )
+    # As SmartUp's "Юридическое лицо" export gives them.
+    smartup_id = models.CharField(_("SmartUp ID"), max_length=20, blank=True)
+    smartup_owner_id = models.CharField(
+        _("owner's SmartUp ID"), max_length=20, blank=True, help_text=_("The head company's ID in SmartUp.")
+    )
+    code = models.CharField(_("code"), max_length=50, blank=True)
+    barcode = models.CharField(_("barcode"), max_length=50, blank=True)
+    short_name = models.CharField(_("alternative name"), max_length=255, blank=True)
+    oked = models.CharField(_("OKED"), max_length=20, blank=True, help_text=_("Activity code."))
+    vat_number = models.CharField(_("VAT registration code"), max_length=20, blank=True)
+    country = models.CharField(_("country"), max_length=100, blank=True)
+    area = models.CharField(_("region (address)"), max_length=100, blank=True)
+    city = models.CharField(_("city / settlement"), max_length=100, blank=True)
+    district = models.CharField(_("street / district"), max_length=255, blank=True)
+    address = models.CharField(_("address"), max_length=500, blank=True)
+    postal_address = models.CharField(_("postal address"), max_length=500, blank=True)
+    landmark = models.CharField(_("landmark"), max_length=255, blank=True)
+    postal_code = models.CharField(_("postal code"), max_length=20, blank=True)
+    group = models.CharField(_("group"), max_length=100, blank=True)
+    category = models.CharField(_("category"), max_length=100, blank=True)
+    kind = models.CharField(_("type"), max_length=100, blank=True)
+    phone = models.CharField(_("phone"), max_length=100, blank=True)
+    email = models.CharField(_("email"), max_length=254, blank=True)
+    gps = models.CharField(_("GPS coordinates"), max_length=100, blank=True)
+    work_zones = models.CharField(_("work zones"), max_length=255, blank=True)
     created_at = models.DateTimeField(_("created"), auto_now_add=True)
+
+    objects = CompanyQuerySet.as_manager()
 
     class Meta:
         ordering = ["-is_own", "name"]  # ours first
         verbose_name = _("company")
         verbose_name_plural = _("companies")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["inn"],
+                condition=models.Q(parent__isnull=True) & ~models.Q(inn=""),
+                name="unique_head_inn",
+                violation_error_message=_(
+                    "A head company with this INN already exists. To add a shop or branch of it, choose it as the "
+                    "head company."
+                ),
+            ),
+            models.UniqueConstraint(
+                fields=["smartup_id"],
+                condition=~models.Q(smartup_id=""),
+                name="unique_smartup_id",
+                violation_error_message=_("Another company already has this SmartUp ID."),
+            ),
+            models.CheckConstraint(
+                condition=models.Q(parent__isnull=True) | ~models.Q(parent=models.F("pk")),
+                name="company_not_own_filial",
+            ),
+        ]
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse("cashbook:company", args=[self.pk])
+
+    @property
+    def is_filial(self) -> bool:
+        return self.parent_id is not None
+
+    @property
+    def head(self) -> "Company":
+        """The top of the company's chain of head companies (itself for a head company)."""
+        company, seen = self, {self.pk}
+        while company.parent_id and company.parent_id not in seen:
+            seen.add(company.parent_id)
+            company = company.parent
+        return company
+
+    @property
+    def map_url(self) -> str:
+        """A map link for the GPS coordinates ("lat,lon[,zoom]"), or ""."""
+        parts = [part.strip() for part in self.gps.split(",")]
+        if len(parts) >= 2 and all(part.replace(".", "", 1).lstrip("-").isdigit() for part in parts[:2]):
+            return f"https://maps.google.com/?q={parts[0]},{parts[1]}"
+        return ""
+
+    def descendant_ids(self) -> set[int]:
+        """This company's pk and those of its filials, theirs, and so on (empty for an unsaved company)."""
+        if not self.pk:
+            return set()
+        found, level = {self.pk}, {self.pk}
+        while level:
+            level = set(Company.objects.filter(parent__in=level).exclude(pk__in=found).values_list("pk", flat=True))
+            found |= level
+        return found
+
+    def clean(self):
+        super().clean()
+        if self.parent_id and self.parent_id in self.descendant_ids():
+            raise ValidationError({"parent": _("A company can't be a filial of itself or of its own filial.")})
+
+
+class CompanyAlias(models.Model):
+    """Another name a company goes by in an outside system's file, e.g. a SmartUp report's «Клиент»."""
+
+    name = models.CharField(_("name"), max_length=255, unique=True)
+    company = models.ForeignKey(Company, models.CASCADE, related_name="aliases", verbose_name=_("company"))
+    source = models.CharField(_("source"), max_length=50, blank=True, help_text=_("e.g. SmartUp"))
+
+    class Meta:
+        ordering = ["company", "name"]
+        verbose_name = _("company alias")
+        verbose_name_plural = _("company aliases")
+
+    def __str__(self):
+        return f"{self.name} → {self.company}"
+
+
+class CompanyBankAccount(models.Model):
+    """A bank account the company gives as its requisites (SmartUp: МФО, расчетный счет, банк, валюта)."""
+
+    company = models.ForeignKey(Company, models.CASCADE, related_name="bank_accounts", verbose_name=_("company"))
+    mfo = models.CharField(_("MFO"), max_length=10, blank=True, help_text=_("Bank code."))
+    account_number = models.CharField(_("account number"), max_length=40)
+    bank = models.CharField(_("bank"), max_length=255, blank=True)
+    currency = models.CharField(_("currency code"), max_length=3, blank=True, help_text=_("Empty: the base currency."))
+
+    class Meta:
+        ordering = ["company", "account_number"]
+        verbose_name = _("bank account")
+        verbose_name_plural = _("bank accounts")
+        constraints = [
+            models.UniqueConstraint(fields=["company", "mfo", "account_number"], name="unique_company_bank_account")
+        ]
+
+    def __str__(self):
+        return f"{self.account_number} ({self.mfo})" if self.mfo else self.account_number
 
 
 class Counterparty(models.Model):
@@ -338,6 +487,15 @@ class Operation(models.Model):
         verbose_name=_("counterparty"),
     )
     document_number = models.CharField(_("document no."), max_length=50, blank=True)
+    partner = models.ForeignKey(
+        Company,
+        models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="operations",
+        verbose_name=_("partner"),
+        help_text=_("Whose money it is (cash desks); on the bank, the company of its counterparty."),
+    )
     # Where an imported operation came from, e.g. "Situation.xlsx/Касса Бон/2000/1" (file/sheet/row/part).
     # Lets an import be re-run without creating duplicates. Empty for operations entered in the app.
     source = models.CharField(_("source"), max_length=200, blank=True, editable=False)

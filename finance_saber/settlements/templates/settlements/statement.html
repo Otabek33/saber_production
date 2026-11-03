@@ -1,0 +1,140 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  A partner's акт сверки (reconciliation statement) for a period: the balance at its start,
+  every shipment, return and payment with the balance after it, and the closing balance.
+  Debit: the partner owes us more; credit: less. The Excel file is the usual two-sided
+  form for both parties to sign (settlements/akt.py).
+{% endcomment %}
+
+{% block title %}{% translate "Reconciliation statement" %} · {{ partner.name }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Settlements" as section %}
+  {% include "partials/_page_header.html" with title=partner.name section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="row g-2 align-items-end form-compact">
+        <div class="col-6 col-md-auto">
+          <label for="from" class="form-label">{% translate "From" %}</label>
+          <input type="date" name="from" id="from" value="{{ statement.date_from|date:"Y-m-d" }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="to" class="form-label">{% translate "To" %}</label>
+          <input type="date" name="to" id="to" value="{{ date_to|date:"Y-m-d" }}" class="form-control">
+        </div>
+        <div class="col-12 col-md-auto d-flex flex-wrap gap-2 mb-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+          {% for key, period in periods.items %}
+            <a href="?from={{ period.0|date:"Y-m-d" }}&to={{ period.1|date:"Y-m-d" }}" class="btn btn-sm bg-primary-subtle text-primary">
+              {% if key == "month" %}{% translate "This month" %}{% elif key == "quarter" %}{% translate "This quarter" %}{% else %}{% translate "This year" %}{% endif %}
+            </a>
+          {% endfor %}
+          <a href="?from={{ statement.date_from|date:"Y-m-d" }}&to={{ date_to|date:"Y-m-d" }}&export=xlsx" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Reconciliation statement (Excel)" %}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-xl-9">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom d-flex flex-wrap justify-content-between gap-2">
+          <div>
+            <h5 class="card-title mb-1">{% translate "Reconciliation statement" %}</h5>
+            <span class="text-muted fs-2">
+              {% blocktranslate with start=statement.date_from|date:"d.m.Y"|default:"…" end=date_to|date:"d.m.Y" %}From {{ start }} to {{ end }}{% endblocktranslate %}
+              {% if partner.inn %} · {% translate "INN" %} {{ partner.inn }}{% endif %}
+              {% if filials %} · {% blocktranslate count counter=filials %}with its {{ counter }} filial{% plural %}with its {{ counter }} filials{% endblocktranslate %}{% endif %}
+            </span>
+          </div>
+          <a href="{{ partner.get_absolute_url }}" class="btn btn-sm bg-secondary-subtle text-secondary align-self-start">{% translate "Company card" %}</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Date" %}</th>
+                <th>{% translate "Document" %}</th>
+                <th class="num">{% translate "Debit" %}</th>
+                <th class="num">{% translate "Credit" %}</th>
+                <th class="num">{% translate "Balance" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="fw-semibold bg-body-tertiary">
+                <td>{{ statement.date_from|date:"d.m.Y" }}</td>
+                <td>{% translate "Balance at the start" %}</td>
+                <td class="num">{% if statement.opening > 0 %}{{ statement.opening|floatformat:"2g" }}{% endif %}</td>
+                <td class="num">{% if statement.opening < 0 %}{{ statement.opening_credit|floatformat:"2g" }}{% endif %}</td>
+                <td class="num">{{ statement.opening|floatformat:"2g" }}</td>
+              </tr>
+              {% for entry in statement.entries %}
+                <tr>
+                  <td class="text-nowrap">{{ entry.date|date:"d.m.Y" }}</td>
+                  <td>
+                    <a href="{{ entry.url }}" class="text-body">{{ entry.text }}</a>
+                    {% if entry.company != partner %}<span class="d-block text-muted fs-2">{{ entry.company.name }}</span>{% endif %}
+                  </td>
+                  <td class="num">{% if entry.debit %}{{ entry.debit|floatformat:"2g" }}{% endif %}</td>
+                  <td class="num">{% if entry.credit %}{{ entry.credit|floatformat:"2g" }}{% endif %}</td>
+                  <td class="num {% if entry.balance < 0 %}text-danger{% endif %}">{{ entry.balance|floatformat:"2g" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">{% translate "No documents or payments in this period." %}</td></tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="fw-semibold">
+                <td></td><td>{% translate "Turnover for the period" %}</td>
+                <td class="num">{{ statement.debit|floatformat:"2g" }}</td>
+                <td class="num">{{ statement.credit|floatformat:"2g" }}</td>
+                <td></td>
+              </tr>
+              <tr class="fw-semibold">
+                <td>{{ date_to|date:"d.m.Y" }}</td><td>{% translate "Closing balance" %}</td>
+                <td colspan="2" class="text-muted fw-normal">
+                  {% if statement.closing > 0 %}{% translate "The partner owes us" %}{% elif statement.closing < 0 %}{% translate "We owe the partner" %}{% else %}{% translate "No debt" %}{% endif %}
+                </td>
+                <td class="num {% if statement.closing > 0 %}text-success{% elif statement.closing < 0 %}text-danger{% endif %}">{{ statement.closing|floatformat:"2g" }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Opening balance" %}</h5></div>
+        <div class="card-body p-4">
+          {% if opening_balance %}
+            <p class="mb-3">
+              {% blocktranslate with date=opening_balance.date|date:"d.m.Y" amount=opening_balance.amount|floatformat:"2g" %}{{ amount }} at the start of {{ date }}.{% endblocktranslate %}
+              <span class="d-block text-muted fs-2">{% translate "Earlier documents and payments are in this figure and aren't counted again." %}</span>
+            </p>
+          {% else %}
+            <p class="text-muted fs-2">{% translate "None: counted from the first document in the system. Enter the balance from the books kept before, if there is one." %}</p>
+          {% endif %}
+          {% if perms.settlements.change_openingbalance %}
+            <form method="post" novalidate class="form-compact">
+              {% csrf_token %}
+              {% include "forms/_fields.html" %}
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary">{% translate "Save" %}</button>
+                {% if opening_balance and perms.settlements.delete_openingbalance %}
+                  <button type="submit" name="remove" class="btn btn-sm bg-danger-subtle text-danger" formnovalidate data-confirm="{% translate "Remove the opening balance?" %}">{% translate "Remove" %}</button>
+                {% endif %}
+              </div>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

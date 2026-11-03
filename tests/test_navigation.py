@@ -46,14 +46,12 @@ def test_each_cash_desk_has_its_own_menu_item(client, user, desk):
 
 def test_sales_pages_are_in_the_sales_section(client, user):
     client.force_login(user)
-    response = client.get(reverse("sales:debts"))
+    response = client.get(reverse("settlements:balances"))
     active = [entry for entry in response.context["nav_menu"] if entry.active]
     assert [entry.label for entry in active] == ["Продажи"]
-    assert [child.url for child in active[0].children][:4] == [
-        reverse("sales:daily"),
-        reverse("sales:debts"),
+    assert [child.url for child in active[0].children][:2] == [
+        reverse("settlements:balances"),
         reverse("sales:plan"),
-        reverse("sales:clients"),
     ]
     production = next(entry for entry in response.context["nav_menu"] if entry.label == "Производство")
     assert not any(child.url.startswith("/sales/") for child in production.children)

@@ -8,9 +8,10 @@ from finance_saber.cashbook.handbooks import HandbookError
 
 class Command(BaseCommand):
     help = (
-        "Load companies and connect their bank accounts from an .xlsx file written by export_companies or the "
-        "Companies page's Download Excel (the project's file if no path is given). Load the counterparties "
-        "first: accounts are found by their statement reference. Safe to re-run: companies are matched by INN."
+        "Load companies, their filials and bank accounts from an .xlsx file: SmartUp's «Юридическое лицо» export, "
+        "the Companies page's Download Excel or export_companies (the project's file if no path is given). Load the "
+        "counterparties first: accounts are found by their statement reference. Safe to re-run: companies are "
+        "matched by SmartUp ID, then by INN."
     )
 
     def add_arguments(self, parser):
@@ -24,7 +25,13 @@ class Command(BaseCommand):
             report = company_files.load_companies(path, dry_run=dry_run)
         except HandbookError as error:
             raise CommandError(str(error)) from error
-        self.stdout.write(f"Companies created: {report.created}, bank accounts connected: {report.linked}")
+        self.stdout.write(
+            f"Companies created: {report.created}, updated: {report.updated}, put under a head company: "
+            f"{report.filials}; bank requisites added: {report.requisites}, bank accounts connected: {report.linked}"
+        )
+        if report.waiting:
+            waiting = ", ".join(sorted(report.waiting))
+            self.stdout.write(self.style.WARNING(f"Filials waiting for a head company not loaded yet: {waiting}"))
         if report.errors:
             for error in report.errors:
                 self.stdout.write(self.style.ERROR(f"  {error}"))

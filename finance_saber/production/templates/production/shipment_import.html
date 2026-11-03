@@ -1,0 +1,241 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+{% comment %}
+  Shipments from SmartUp's sales report (production/shipment_import.py), in steps:
+  upload the file; match the names SmartUp uses that the system doesn't know yet (kept
+  for the next report); check the documents it makes and the stock; load them.
+{% endcomment %}
+
+{% block title %}{% translate "Load shipments from SmartUp" %}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Load shipments from SmartUp" as page_title %}
+  {% translate "Shipments" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {% if step == "upload" %}
+    <div class="row">
+      <div class="col-xl-6">
+        <div class="card">
+          <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data" class="form-compact">
+              {% csrf_token %}
+              <label for="report-file" class="form-label">{% translate "SmartUp «Конструктор отчётов по продажам» (.xlsx)" %}</label>
+              <input type="file" name="file" id="report-file" accept=".xlsx" class="form-control mb-3" required>
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">{% translate "Read the file" %}</button>
+                <a href="{% url 'production:shipments' %}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-6">
+        <div class="card bg-info-subtle shadow-none">
+          <div class="card-body p-4">
+            <ul class="mb-0 ps-3">
+              <li>{% translate "The report needs the columns Дата доставки, Название проекта, ТМЦ, Клиент, Количество продажи and Сумма." %}</li>
+              <li>{% translate "Each day, customer and project becomes one shipment; its products leave the warehouse. A negative quantity is a customer return: the goods come back." %}</li>
+              <li>{% translate "Nothing is saved until you check the documents and press Load. A report loaded again updates its documents instead of adding them twice." %}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    {# What was read #}
+    <div class="card mb-3">
+      <div class="card-body px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+          <h5 class="card-title mb-1">{{ data.file }}</h5>
+          <span class="text-muted fs-2">{{ data.title|join:" · " }}</span>
+        </div>
+        <span class="badge bg-body-tertiary text-body-emphasis">{% blocktranslate count counter=rows %}{{ counter }} row read{% plural %}{{ counter }} rows read{% endblocktranslate %}</span>
+      </div>
+      {% if data.errors %}
+        <div class="alert alert-warning mx-4 mb-3">
+          <p class="mb-1">{% translate "These rows couldn't be read and are left out:" %}</p>
+          <span class="fs-2">{{ data.errors|join:" " }}</span>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if not matching.complete %}
+      {# Names the system doesn't know yet: matched once, remembered #}
+      <form method="post" class="form-compact">
+        {% csrf_token %}
+        <div class="card">
+          <div class="px-4 py-3 border-bottom">
+            <h5 class="card-title mb-1">{% translate "Match the new names" %}</h5>
+            <p class="text-muted fs-2 mb-0">{% translate "SmartUp calls these differently from the system. Match each once: it is remembered for the next reports." %}</p>
+          </div>
+          <div class="card-body p-4">
+            {% if matching.unknown_products %}
+              <h6 class="mb-2">{% translate "Products" %}</h6>
+              <div class="table-responsive mb-4">
+                <table class="table table-sm align-middle mb-0">
+                  <thead><tr><th>{% translate "In the report" %}</th><th style="width: 45%">{% translate "Product in the system" %}</th></tr></thead>
+                  <tbody>
+                    {% for name in matching.unknown_products %}
+                      <tr>
+                        <td>{{ name }}</td>
+                        <td>
+                          <select name="product-{{ forloop.counter0 }}" class="form-select" data-searchable required aria-label="{{ name }}">
+                            <option value="">{% translate "Choose…" %}</option>
+                            <option value="skip">{% translate "Not our product: skip its rows" %}</option>
+                            {% for product in products %}<option value="{{ product.pk }}">{{ product.name }}</option>{% endfor %}
+                          </select>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+            {% if matching.unknown_customers %}
+              <h6 class="mb-2">{% translate "Customers" %}</h6>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead><tr><th>{% translate "In the report" %}</th><th style="width: 45%">{% translate "Company in the handbook" %}</th></tr></thead>
+                  <tbody>
+                    {% for name in matching.unknown_customers %}
+                      <tr>
+                        <td>{{ name }}</td>
+                        <td>
+                          <select name="customer-{{ forloop.counter0 }}" class="form-select" data-searchable required aria-label="{{ name }}">
+                            <option value="">{% translate "Choose…" %}</option>
+                            <option value="new">{% translate "Add as a new company" %}</option>
+                            {% for company in companies %}<option value="{{ company.pk }}">{{ company.name }}{% if company.inn %} · {{ company.inn }}{% endif %}</option>{% endfor %}
+                          </select>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
+          <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+            <button type="submit" name="match" class="btn btn-primary">{% translate "Save the matches" %}</button>
+            <button type="submit" name="discard" class="btn bg-danger-subtle text-danger" formnovalidate>{% translate "Cancel" %}</button>
+          </div>
+        </div>
+      </form>
+    {% else %}
+      {# Not loaded yet: say so at the top, with the button, so the step isn't missed #}
+      {% if counts.new or counts.changed %}
+        <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div>
+            <p class="fw-semibold mb-1">{% translate "The report isn't loaded yet." %}</p>
+            <span>{% translate "Check the documents below, then load them: only then do the products leave the warehouse." %}</span>
+          </div>
+          <form method="post" class="d-flex gap-2">
+            {% csrf_token %}
+            <button type="submit" name="load" class="btn btn-primary">
+              {% blocktranslate count counter=counts.new|add:counts.changed %}Load {{ counter }} document{% plural %}Load {{ counter }} documents{% endblocktranslate %}
+            </button>
+            <button type="submit" name="discard" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</button>
+          </form>
+        </div>
+      {% endif %}
+
+      {# The documents the report makes, compared with what is loaded already #}
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+          <span class="text-muted fs-2">{% translate "New documents" %}</span><h4 class="mb-0 text-success">{{ counts.new }}</h4>
+        </div></div></div>
+        <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+          <span class="text-muted fs-2">{% translate "To update" %}</span><h4 class="mb-0 text-warning">{{ counts.changed }}</h4>
+        </div></div></div>
+        <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+          <span class="text-muted fs-2">{% translate "Already loaded" %}</span><h4 class="mb-0">{{ counts.same }}</h4>
+        </div></div></div>
+        <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+          <span class="text-muted fs-2">{% translate "Cancelled here, left alone" %}</span><h4 class="mb-0 text-muted">{{ counts.cancelled }}</h4>
+        </div></div></div>
+      </div>
+
+      {% if short %}
+        <div class="card border border-warning">
+          <div class="px-4 py-3 border-bottom">
+            <h5 class="card-title mb-1 text-warning">{% translate "Not enough in stock" %}</h5>
+            <p class="text-muted fs-2 mb-0">{% translate "After loading, these products go below zero: the warehouse has less than the report shipped. Loading is still allowed; record the missing production or a stock count." %}</p>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead><tr><th>{% translate "Product" %}</th><th class="num">{% translate "In stock" %}</th><th class="num">{% translate "Shipped by the report" %}</th><th class="num">{% translate "Stock after" %}</th></tr></thead>
+              <tbody>
+                {% for product, units, have, after in short %}
+                  <tr><td>{{ product.name }}</td><td class="num">{{ have|floatformat:"0g" }}</td><td class="num">{{ units|floatformat:"0g" }}</td><td class="num text-danger fw-semibold">{{ after|floatformat:"0g" }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="card">
+        <div class="px-4 py-3 border-bottom d-flex flex-wrap justify-content-between gap-2">
+          <h5 class="card-title mb-0">{% translate "Documents" %}</h5>
+          <span class="text-muted">
+            {% translate "Shipped" %}: <span class="fw-semibold">{{ totals.shipped_units|floatformat:"0g" }}</span> {% translate "units" %}, <span class="fw-semibold">{{ totals.shipped_amount|floatformat:"2g" }}</span>
+            {% if totals.returned_units %} · {% translate "Returned" %}: <span class="fw-semibold">{{ totals.returned_units|floatformat:"0g" }}</span>, <span class="fw-semibold">{{ totals.returned_amount|floatformat:"2g" }}</span>{% endif %}
+            {% if plan.skipped_rows %} · {% blocktranslate count counter=plan.skipped_rows %}{{ counter }} row of other products skipped{% plural %}{{ counter }} rows of other products skipped{% endblocktranslate %}{% endif %}
+          </span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Date" %}</th><th>{% translate "Customer" %}</th><th>{% translate "Project" %}</th>
+                <th>{% translate "Products" %}</th><th class="num">{% translate "Units" %}</th><th class="num">{% translate "Amount" %}</th><th>{% translate "Status" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for document in documents %}
+                <tr>
+                  <td class="text-nowrap">{{ document.date|date:"d.m.Y" }}</td>
+                  <td class="ledger-counterparty">
+                    {{ document.customer.name }}
+                    {% if document.is_return %}<span class="badge bg-info-subtle text-info fs-1 ms-1">{% translate "Return" %}</span>{% endif %}
+                  </td>
+                  <td class="fs-2">{{ document.channel }}</td>
+                  <td class="fs-2">{% for product, values in document.lines.items %}<span class="d-block">{{ product.name }} — {{ values.0|floatformat:"0g" }}</span>{% endfor %}</td>
+                  <td class="num">{{ document.quantity|floatformat:"0g" }}</td>
+                  <td class="num">{{ document.amount|floatformat:"2g" }}</td>
+                  <td>
+                    {% if document.status == "new" %}<span class="badge bg-success-subtle text-success">{% translate "New document" %}</span>
+                    {% elif document.status == "changed" %}<a href="{% url 'production:shipment_detail' document.existing.pk %}" class="badge bg-warning-subtle text-warning">{% translate "Will be updated" %}</a>
+                    {% elif document.status == "same" %}<a href="{% url 'production:shipment_detail' document.existing.pk %}" class="badge bg-body-tertiary text-body-emphasis">{% translate "Loaded already" %}</a>
+                    {% else %}<a href="{% url 'production:shipment_detail' document.existing.pk %}" class="badge bg-danger-subtle text-danger">{% translate "Cancelled here" %}</a>{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <form method="post" class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+          {% csrf_token %}
+          {% if counts.new or counts.changed %}
+            <button type="submit" name="load" class="btn btn-primary">
+              {% blocktranslate count counter=counts.new|add:counts.changed %}Load {{ counter }} document{% plural %}Load {{ counter }} documents{% endblocktranslate %}
+            </button>
+          {% else %}
+            <span class="text-muted align-self-center">{% translate "Everything in this report is loaded already." %}</span>
+          {% endif %}
+          <button type="submit" name="discard" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</button>
+        </form>
+      </div>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

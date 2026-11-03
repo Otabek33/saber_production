@@ -16,7 +16,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from decimal import Decimal
 
-from django.db.models import Q, Sum
+from django.db.models import Case, F, Q, Sum, Value, When
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.utils.translation import gettext_lazy as _
@@ -284,17 +284,23 @@ def daily_chart(period: Period, rate) -> dict:
 
 
 def sales_summary(period: Period) -> dict:
-    from finance_saber.sales.models import Sale
+    """Shipped in the period (Production › Shipments), less customer returns."""
+    from finance_saber.production.models import ProductShipmentLine
 
-    sales = Sale.objects.posted().filter(date__gte=period.date_from, date__lte=period.date_to)
-    totals = sales.aggregate(amount=Sum("amount"), quantity=Sum("quantity"))
+    lines = ProductShipmentLine.objects.filter(
+        shipment__is_cancelled=False, shipment__date__gte=period.date_from, shipment__date__lte=period.date_to
+    )
+    sign = Case(When(shipment__is_return=True, then=Value(-1)), default=Value(1))
+    totals = lines.aggregate(amount=Sum(F("amount") * sign), quantity=Sum(F("quantity") * sign))
     by_channel = (
-        sales.values("channel__name").annotate(amount=Sum("amount"), quantity=Sum("quantity")).order_by("-amount")
+        lines.values(channel=F("shipment__channel"))
+        .annotate(amount=Sum(F("amount") * sign), quantity=Sum(F("quantity") * sign))
+        .order_by("-amount")
     )
     return {
         "amount": totals["amount"] or ZERO,
         "quantity": totals["quantity"] or 0,
-        "clients": sales.values("client").distinct().count(),
+        "clients": lines.filter(shipment__is_return=False).values("shipment__customer").distinct().count(),
         "by_channel": list(by_channel),
     }
 
@@ -305,21 +311,18 @@ def products_month(period: Period, show_sales: bool, show_production: bool):
     Like the right-hand side of the SWOT sheet: production and sales, month plan against fact.
     """
     from finance_saber.production.models import Product, ProductionRun
-    from finance_saber.sales.models import Plan, Sale
+    from finance_saber.sales.models import Plan
+    from finance_saber.sales.services import shipped_units
 
     month_end = period.date_to
     month_start = period.month_start
     plans = defaultdict(dict)
     for plan in Plan.objects.filter(year=month_end.year, month=month_end.month):
         plans[plan.kind][plan.product_id] = plan.quantity
-    sold = dict(
-        Sale.objects.posted()
-        .filter(date__gte=month_start, date__lte=month_end)
-        .values_list("product_id")
-        .annotate(total=Sum("quantity"))
-    )
+    sold = shipped_units(month_start, month_end)
     produced = dict(
-        ProductionRun.objects.filter(is_cancelled=False, date__gte=month_start, date__lte=month_end)
+        ProductionRun.objects.posted()
+        .filter(date__gte=month_start, date__lte=month_end)
         .values_list("product_id")
         .annotate(total=Sum("quantity"))
     )
@@ -353,9 +356,10 @@ def products_month(period: Period, show_sales: bool, show_production: bool):
 
 
 def debts(on_date) -> dict:
-    from finance_saber.sales import services
+    """What partners owe us and what we owe them (Settlements), at the end of ``on_date``."""
+    from finance_saber.settlements import ledger
 
-    rows = services.debt_rows(on_date=on_date)
+    rows = ledger.balances(on_date)
     debtors = sorted((row for row in rows if row.balance > 0), key=lambda row: -row.balance)
     creditors = [row for row in rows if row.balance < 0]
     return {
@@ -452,9 +456,9 @@ def build(user, period: Period) -> dict:
         context["net_negative"] = context["cash_flow"]["net"] < 0
         context["net_tone"] = "danger" if context["net_negative"] else "success"
         context["chart"] = daily_chart(period, rate)
-    if can("sales.view_sale"):
+    if can("production.view_productshipment") and can("settlements.view_openingbalance"):
         context["sales"] = sales_summary(period)
-    if can("sales.view_sale") and can("sales.view_client"):
+    if can("settlements.view_openingbalance"):
         context["debts"] = debts(period.date_to)
     show_sales = can("sales.view_plan")
     show_production = can("sales.view_plan") and can("production.view_productionrun")

@@ -1,0 +1,104 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Vendors: companies that supplied us (a material receipt or a bill), with what they
+  supplied, what we paid them and what we owe, at the end of a day (settlements/ledger.py).
+  A row opens the supplier's акт сверки.
+{% endcomment %}
+
+{% block title %}{% translate "Vendors" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Vendors" as page_title %}
+  {% translate "Purchases" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row g-3 mb-3">
+    <div class="col-md-6"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "We owe suppliers" %}</span>
+      <h4 class="mb-0 text-danger">{{ owed|floatformat:"2g" }}</h4>
+    </div></div></div>
+    <div class="col-md-6"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Paid to suppliers in advance" %}</span>
+      <h4 class="mb-0 text-success">{{ prepaid|floatformat:"2g" }}</h4>
+    </div></div></div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="row g-2 align-items-end form-compact">
+        <div class="col-12 col-md">
+          <label for="q" class="form-label">{% translate "Search" %}</label>
+          <input type="search" name="q" id="q" value="{{ request.GET.q }}" class="form-control" placeholder="{% translate "Name or INN" %}">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="date" class="form-label">{% translate "At the end of" %}</label>
+          <input type="date" name="date" id="date" value="{{ on_date|date:"Y-m-d" }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="show" class="form-label">{% translate "Show" %}</label>
+          <select name="show" id="show" class="form-select">
+            <option value="">{% translate "All" %}</option>
+            <option value="owed"{% if request.GET.show == "owed" %} selected{% endif %}>{% translate "We owe them" %}</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-auto d-flex flex-wrap gap-2 mb-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+          <a href="{% url 'purchases:vendors' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
+          <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=xlsx" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Supplier" %}</th>
+            <th class="num">{% translate "Opening balance" %}</th>
+            <th class="num">{% translate "Purchased" %}</th>
+            <th class="num">{% translate "Paid" %}</th>
+            <th class="num">{% translate "Balance" %}</th>
+            <th>{% translate "Last movement" %}</th>
+            <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>
+                <a href="{% url 'settlements:statement' row.partner.pk %}?to={{ on_date|date:"Y-m-d" }}" class="fw-semibold text-body">{{ row.partner.name }}</a>
+                {% if row.partner.inn %}<span class="d-block text-muted fs-2">{% translate "INN" %} {{ row.partner.inn }}</span>{% endif %}
+                {% if row.shipped %}<span class="d-block text-muted fs-2">{% blocktranslate with amount=row.shipped|floatformat:"2g" %}Also a customer: shipped {{ amount }}{% endblocktranslate %}</span>{% endif %}
+              </td>
+              <td class="num">{{ row.opening|floatformat:"2g" }}</td>
+              <td class="num">{{ row.purchased|floatformat:"2g" }}</td>
+              <td class="num">{{ row.paid|floatformat:"2g" }}</td>
+              <td class="num fw-semibold {% if row.balance < 0 %}text-danger{% elif row.balance > 0 %}text-success{% endif %}">{{ row.balance|floatformat:"2g" }}</td>
+              <td class="text-nowrap">{{ row.last_date|date:"d.m.Y"|default:"—" }}</td>
+              <td class="text-end text-nowrap">
+                {% if perms.purchases.add_bill %}
+                  <a href="{% url 'purchases:bill_new' %}?supplier={{ row.partner.pk }}" class="btn btn-sm bg-success-subtle text-success ledger-action" title="{% translate "New bill" %}" aria-label="{% translate "New bill" %}">
+                    <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon>
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-5">{% translate "No suppliers yet: they appear with their first material receipt or bill." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="text-muted fs-2 mt-2">
+    {% translate "Balance: negative, we owe the supplier; positive, we paid in advance (or it is also a customer that owes us). Purchased: material receipts with their amounts and bills." %}
+    {% if counting_start %}{% blocktranslate with date=counting_start|date:"d.m.Y" %}Without an opening balance a supplier is counted from {{ date }}.{% endblocktranslate %}{% endif %}
+  </p>
+{% endblock %}

@@ -46,6 +46,11 @@
     <div class="col-6 col-md-3 col-xl-auto">
       {% include "forms/_field.html" with field=form.document_number %}
     </div>
+  {% elif form.partner %}
+    {# Cash desks: whose money it is, for that company's settlement #}
+    <div class="col-12 col-md-5 col-xl-3">
+      {% include "forms/_field.html" with field=form.partner %}
+    </div>
   {% endif %}
   <div class="col-12 col-md-5 col-xl-2">
     <div class="mb-3">

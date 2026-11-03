@@ -71,7 +71,7 @@ def test_role_limits_the_blocks(db):
         text = daily_report.render(user, datetime.date(2026, 10, 22))
     assert Group.objects.filter(user=user).exists()
     assert ("Money at day end" in text) == user.has_perm("cashbook.view_operation")
-    assert ("Shipped" in text) == user.has_perm("sales.view_sale")
+    assert ("Shipped" in text) == user.has_perm("settlements.view_openingbalance")
 
 
 def test_money_is_short_and_uses_a_real_minus():
@@ -88,7 +88,7 @@ def test_names_are_escaped_for_telegram_html(boss, monkeypatch):
 
     def with_debtor(user, period):
         data = original(user, period)
-        row = type("Row", (), {"name": "<A&B>", "balance": Decimal(5)})()
+        row = type("Row", (), {"partner": type("Partner", (), {"name": "<A&B>"})(), "balance": Decimal(5)})()
         data["debts"] = {"receivable": 5, "payable": 0, "debtor_count": 1, "top": [row]}
         return data
 

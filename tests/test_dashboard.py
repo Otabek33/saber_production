@@ -13,6 +13,7 @@ from finance_saber.cashbook.models import (
     ArticleKind,
     CashDesk,
     Category,
+    Company,
     Counterparty,
     ExchangeRate,
     Kind,
@@ -23,8 +24,8 @@ from finance_saber.core import dashboard
 from finance_saber.planning import services
 from finance_saber.planning.importer import import_workbook
 from finance_saber.planning.models import CashPlan, CollectionPlan
-from finance_saber.production.models import Product
-from finance_saber.sales.models import Client, Plan, Sale
+from finance_saber.production.models import Product, ProductShipment, ProductShipmentLine
+from finance_saber.sales.models import Plan
 
 D = Decimal
 MONDAY = datetime.date(2026, 10, 19)
@@ -173,9 +174,10 @@ def test_collections_by_region(bank):
 def test_month_production_and_sales_plan(db):
     product = Product.objects.create(name="Tea", volume=D("0.45"))
     Plan.objects.create(kind=Plan.Kind.SALES, year=2026, month=10, product=product, quantity=1000)
-    client = Client.objects.create(name="Shop")
-    Sale.objects.create(date=datetime.date(2026, 10, 5), client=client, product=product, quantity=250, amount=D("1"))
-    Sale.objects.create(date=datetime.date(2026, 10, 25), client=client, product=product, quantity=99, amount=D("2"))
+    shop = Company.objects.create(name="Shop", inn="770000001")
+    for day, quantity in ((5, 250), (25, 99)):  # the 25th is after the period
+        shipment = ProductShipment.objects.create(date=datetime.date(2026, 10, day), customer=shop)
+        ProductShipmentLine.objects.create(shipment=shipment, product=product, quantity=quantity, amount=D("1"))
     result = dashboard.products_month(PERIOD, show_sales=True, show_production=False)
     [row] = result["rows"]
     assert (row["sales"]["plan"], row["sales"]["fact"], row["sales"]["percent"]) == (1000, 250, 25)

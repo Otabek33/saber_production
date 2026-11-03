@@ -21,6 +21,10 @@ LOG = reverse("audit:events")
 Action = AuditEvent.Action
 
 
+# The company form posts its bank requisites too (an inline formset), none here.
+NO_REQUISITES = {"requisites-TOTAL_FORMS": "0", "requisites-INITIAL_FORMS": "0"}
+
+
 def events(**filters):
     return list(AuditEvent.objects.filter(**filters).order_by("id"))
 
@@ -55,7 +59,7 @@ def test_signing_out_is_logged(client, finance):
 
 def test_a_new_record_is_logged_with_who_and_its_values(client, finance):
     client.force_login(finance)
-    client.post(reverse("cashbook:company_add"), {"name": "ООО Новая", "inn": "123456789"})
+    client.post(reverse("cashbook:company_add"), {"name": "ООО Новая", "inn": "123456789", **NO_REQUISITES})
     [event] = events(action=Action.CREATE, model="cashbook.company")
     company = Company.objects.get(inn="123456789")
     assert (event.user, event.object_id, event.object_repr) == (finance, str(company.pk), "ООО Новая")
@@ -68,8 +72,10 @@ def test_a_change_logs_only_the_fields_that_changed(client, finance):
     company = Company.objects.create(name="ООО Старая", inn="123456789")
     client.force_login(finance)
     url = reverse("cashbook:company_edit", args=[company.pk])
-    client.post(url, {"name": "ООО Новая", "inn": "123456789"})
-    client.post(url, {"name": "ООО Новая", "inn": "123456789"})  # saved again unchanged: nothing to log
+    client.post(url, {"name": "ООО Новая", "inn": "123456789", **NO_REQUISITES})
+    client.post(
+        url, {"name": "ООО Новая", "inn": "123456789", **NO_REQUISITES}
+    )  # saved again unchanged: nothing to log
     [event] = events(action=Action.UPDATE, model="cashbook.company")
     assert event.changes == {"name": ["ООО Старая", "ООО Новая"]}
     assert event.user == finance
@@ -78,7 +84,10 @@ def test_a_change_logs_only_the_fields_that_changed(client, finance):
 def test_related_records_choices_and_flags_read_as_people_see_them(client, finance):
     client.force_login(finance)
     company = Company.objects.create(name="ООО Своя", inn="111")
-    client.post(reverse("cashbook:company_edit", args=[company.pk]), {"name": "ООО Своя", "inn": "111", "is_own": "on"})
+    client.post(
+        reverse("cashbook:company_edit", args=[company.pk]),
+        {"name": "ООО Своя", "inn": "111", "is_own": "on", **NO_REQUISITES},
+    )
     [event] = events(action=Action.UPDATE, model="cashbook.company")
     assert event.changes == {"is_own": ["нет", "да"]}
 

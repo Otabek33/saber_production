@@ -1,0 +1,147 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  One production batch, traced backward: the materials it was made of, as recorded that
+  day (norm, defect, written off), and for each the deliveries it came from, first in,
+  first out. Each delivery links to its receipt, which traces forward to every batch.
+{% endcomment %}
+
+{% block title %}{% translate "Batch" %} {{ code }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Production batches" as section %}
+  {% blocktranslate asvar page_title %}Batch {{ code }}{% endblocktranslate %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body px-4 py-3">
+      <div class="row g-3">
+        <div class="col-6 col-md-2">
+          <span class="d-block text-muted fs-2">{% translate "Batch code" %}</span>
+          <span class="fs-5 fw-semibold font-monospace">{{ code }}</span>
+        </div>
+        <div class="col-6 col-md-3">
+          <span class="d-block text-muted fs-2">{% translate "Product" %}</span>
+          <span class="fw-semibold">{{ run.product.name }}</span>
+        </div>
+        <div class="col-6 col-md-2">
+          <span class="d-block text-muted fs-2">{% translate "Production date" %}</span>
+          {{ run.date|date:"d.m.Y" }}
+        </div>
+        <div class="col-6 col-md-2">
+          <span class="d-block text-muted fs-2">{% translate "Units" %}</span>
+          {{ run.quantity|floatformat:"0g" }}{% if run.batch_quantity %} <span class="text-muted fs-2">({% translate "brewed" %} {{ run.batch_quantity|floatformat:"0g" }})</span>{% endif %}
+        </div>
+        <div class="col-12 col-md-3">
+          <span class="d-block text-muted fs-2">{% translate "Recorded by" %}</span>
+          {{ run.created_by|default:"—" }}, {{ run.created_at|date:"d.m.Y H:i" }}
+        </div>
+      </div>
+      {% if run.is_cancelled %}<div class="alert alert-warning py-2 mt-3 mb-0">{% translate "This production was cancelled: it used no materials." %}</div>{% endif %}
+      {% if run.is_draft %}<div class="alert alert-warning py-2 mt-3 mb-0">{% translate "A draft: not posted yet, so it has used no materials. Below is what it would use." %}</div>{% endif %}
+      {% if not run.affects_stock %}<div class="alert alert-info py-2 mt-3 mb-0">{% translate "Imported history: recorded before stock was kept, so its materials can't be traced to deliveries." %}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <h5 class="card-title mb-0">{% translate "Materials and their deliveries" %}</h5>
+      <a href="{% url 'production:calculation' date=run.date.isoformat product_pk=run.product_id %}" class="btn btn-sm bg-primary-subtle text-primary">
+        <iconify-icon icon="solar:calculator-minimalistic-line-duotone"></iconify-icon> {% translate "Calculation" %}
+      </a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Material" %}</th>
+            <th class="num">{% translate "Norm per unit" %}</th>
+            <th class="num">{% translate "Defect" %}</th>
+            <th class="num">{% translate "Used" %}</th>
+            <th>{% translate "Delivery" %}</th>
+            <th>{% translate "Supplier" %}</th>
+            <th>{% translate "Delivery date" %}</th>
+            <th class="num">{% translate "From this delivery" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in materials %}
+            {% with line=item.line rows=item.pieces|length|default:1 %}
+              {% for piece in item.pieces %}
+                <tr>
+                  {% if forloop.first %}
+                    <td rowspan="{{ rows }}">{{ line.material.name }}</td>
+                    <td rowspan="{{ rows }}" class="num text-muted">{{ item.norm }}</td>
+                    <td rowspan="{{ rows }}" class="num text-muted">{{ line.defect|floatformat:"-3g" }}</td>
+                    <td rowspan="{{ rows }}" class="num fw-semibold">{{ line.consumed|floatformat:"-3g" }} <span class="text-muted fs-1">{{ line.material.unit }}</span></td>
+                  {% endif %}
+                  {% if piece.lot %}
+                    <td>
+                      {% if piece.lot.receipt %}<a href="{% url 'production:receipt' piece.lot.receipt.pk %}">{{ piece.lot.label }}</a>{% else %}{{ piece.lot.label }}{% endif %}
+                    </td>
+                    <td>{{ piece.lot.supplier.name|default:"—" }}</td>
+                    <td class="text-nowrap">{{ piece.lot.date|date:"d.m.Y" }}</td>
+                  {% else %}
+                    <td colspan="3"><span class="badge bg-warning-subtle text-warning">{% translate "More than the recorded stock" %}</span></td>
+                  {% endif %}
+                  <td class="num">{{ piece.quantity|floatformat:"-3g" }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td>{{ line.material.name }}</td>
+                  <td class="num text-muted">{{ item.norm }}</td>
+                  <td class="num text-muted">{{ line.defect|floatformat:"-3g" }}</td>
+                  <td class="num fw-semibold">{{ line.consumed|floatformat:"-3g" }} <span class="text-muted fs-1">{{ line.material.unit }}</span></td>
+                  <td colspan="4" class="text-muted">{% if line.consumed %}{% translate "Not traced" %}{% endif %}</td>
+                </tr>
+              {% endfor %}
+            {% endwith %}
+          {% empty %}
+            <tr><td colspan="8" class="text-center text-muted py-6">{% translate "No materials recorded for this batch." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="px-4 py-3 border-top text-muted fs-2">
+      {% translate "Deliveries are matched first in, first out: the oldest stock is used first. «More than the recorded stock» means more was used than was received and counted, e.g. a delivery not yet entered." %}
+    </div>
+  </div>
+
+  {# Forward from the batch: the customers it went to, oldest stock shipped first (a recall list) #}
+  {% if run.is_posted and run.affects_stock %}
+    <div class="card mt-4">
+      <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <h5 class="card-title mb-0">{% translate "Who got this batch" %}</h5>
+        <span class="text-muted">{% translate "Still in stock" %}: <strong class="text-body">{{ shipping.remaining|floatformat:"0g" }}</strong></span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0 ledger-table">
+          <thead>
+            <tr>
+              <th>{% translate "Date" %}</th>
+              <th>{% translate "Customer" %}</th>
+              <th>{% translate "Document" %}</th>
+              <th class="num">{% translate "Units" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in shipping.destinations %}
+              <tr>
+                <td class="text-nowrap">{{ item.move.date|date:"d.m.Y" }}</td>
+                <td>{{ item.customer|default:"—" }}</td>
+                <td>
+                  {% if item.shipment and perms.production.view_productshipment %}<a href="{% url 'production:shipment_detail' item.shipment.pk %}">{{ item.document }}</a>{% else %}{{ item.document }}{% endif %}
+                </td>
+                <td class="num fw-semibold">{{ item.quantity|floatformat:"0g" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted py-4">{% translate "Not shipped yet." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -10,7 +10,9 @@ Two workbooks feed production:
 
 The sheets name the same material differently ("B Fresh банка гранат 0,450 л" in a
 recipe is "B Fresh анор банка 0,450 л" in the stock list), so names are matched on
-a normalized key, then through ALIASES; trays depend on the product.
+a normalized key, then through ALIASES; trays depend on the product. The sheets use the
+materials' old names: each is saved under its official name (material_names.py), and
+materials no longer used are left out.
 
 The workbooks come either as files on disk (the import_production_xlsx command) or
 as files uploaded on the Import page; both are read in memory, so a server needs
@@ -27,6 +29,7 @@ from django.db import transaction
 from django.utils.translation import gettext as _
 from openpyxl import load_workbook
 
+from .material_names import official_name
 from .models import Material, MaterialMove, Product, ProductionRun, RecipeLine
 
 RECIPE_SHEET = "Сбор"
@@ -305,8 +308,8 @@ def import_workbooks(books: Workbooks, stock_date: datetime.date, source: str, u
     report = ImportReport()
     try:
         with transaction.atomic():
-            materials = _import_materials(books.materials, stock_date, source, user, report)
-            _import_products(books, materials, user, report)
+            names, materials = _import_materials(books.materials, stock_date, source, user, report)
+            _import_products(books, names, materials, user, report)
             if dry_run or report.unmatched:
                 raise DryRun
             report.saved = True
@@ -315,8 +318,8 @@ def import_workbooks(books: Workbooks, stock_date: datetime.date, source: str, u
     return report
 
 
-def _import_materials(rows, stock_date, source, user, report) -> dict[str, Material]:
-    """{matching key: Material}; new materials get an opening balance from the sheet's stock."""
+def _import_materials(rows, stock_date, source, user, report) -> tuple[list[str], dict[str, Material | None]]:
+    """The sheet's names and {matching key: Material, None if no longer used}; new materials get opening stock."""
     keys = [key(row.name) for row in rows]
     duplicates = sorted({row.name for row in rows if keys.count(key(row.name)) > 1})
     if duplicates:
@@ -325,8 +328,11 @@ def _import_materials(rows, stock_date, source, user, report) -> dict[str, Mater
         )
     result = {}
     for row in rows:
+        if (name := official_name(row.name)) is None:
+            result[key(row.name)] = None
+            continue
         material, is_new = Material.objects.get_or_create(
-            name=row.name, defaults={"unit": row.unit, "kind": row.kind, "shelf_life": row.shelf_life}
+            name=name, defaults={"unit": row.unit, "kind": row.kind, "shelf_life": row.shelf_life}
         )
         report.new_materials += is_new
         result[key(row.name)] = material
@@ -343,21 +349,26 @@ def _import_materials(rows, stock_date, source, user, report) -> dict[str, Mater
                 },
             )
             report.opening_balances += is_new
+    names = [row.name for row in rows]
     for name, unit in EXTRA_MATERIALS.items():
         if key(name) not in result:
+            names.append(name)
+            if official_name(name) is None:
+                result[key(name)] = None
+                continue
             material, is_new = Material.objects.get_or_create(
-                name=name, defaults={"unit": unit, "kind": Material.Kind.PACKAGING}
+                name=official_name(name), defaults={"unit": unit, "kind": Material.Kind.PACKAGING}
             )
             report.new_materials += is_new
             result[key(name)] = material
-    report.materials = len(result)
-    return result
+    report.materials = len({material.pk for material in result.values() if material})
+    return names, result
 
 
-def _import_products(books, materials, user, report):
+def _import_products(books, names, materials, user, report):
     blocks = {key(block.title): block for block in books.recipes}
     recipe_titles = {key(product): key(title) for product, title in RECIPE_FOR_PRODUCT.items()}
-    matcher = NameMatcher(material.name for material in materials.values())
+    matcher = NameMatcher(names)
     report.products = len(books.products)
 
     for row in books.products:
@@ -377,6 +388,8 @@ def _import_products(books, materials, user, report):
                     report.unmatched.append(f"{row.name}: {line.material}")
                     continue
                 material = materials[key(name)]
+                if material is None:  # no longer used
+                    continue
                 norm = line.per_unit.quantize(NORM_STEP)
                 if material.pk in lines:  # the same material twice: add up
                     lines[material.pk].quantity_per_unit += norm
@@ -394,6 +407,7 @@ def _import_products(books, materials, user, report):
                 defaults={
                     "quantity": quantity,
                     "affects_stock": False,
+                    "status": ProductionRun.Status.POSTED,
                     "note": "Из Excel (Warehouse)",
                     "created_by": user,
                 },

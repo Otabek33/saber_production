@@ -6,6 +6,7 @@ from decimal import Decimal
 import pytest
 from django.urls import reverse
 
+from finance_saber.cashbook.models import Company
 from finance_saber.production import services
 from finance_saber.production.models import (
     Material,
@@ -167,8 +168,16 @@ def test_write_off_has_a_reason_and_no_supplier(client, user, sugar):
 
 def test_shipment_takes_goods_out(client, user, drink):
     services.save_day(DAY, {drink: 600})
+    customer = Company.objects.create(name="ООО Магазин", inn="770000009")
     client.force_login(user)
-    client.post(reverse("production:shipment"), {"date": DAY.isoformat(), "product": drink.pk, "quantity": "240"})
+    client.post(
+        reverse("production:shipment"),
+        {
+            "customer": customer.pk, "number": "", "date": DAY.isoformat(), "note": "",
+            "lines-TOTAL_FORMS": "1", "lines-INITIAL_FORMS": "0", "lines-MIN_NUM_FORMS": "1",
+            "lines-MAX_NUM_FORMS": "1000", "lines-0-product": drink.pk, "lines-0-quantity": "240",
+        },
+    )  # fmt: skip
     assert product_stock()[drink.pk] == D("360")
     assert ProductMove.objects.filter(kind=ProductMove.Kind.SHIPMENT).get().quantity == D("-240")
 

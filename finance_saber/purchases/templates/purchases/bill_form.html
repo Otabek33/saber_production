@@ -1,15 +1,19 @@
 {% extends "layouts/app.html" %}
 {% load i18n static %}
+{% comment %}
+  A supplier's bill for anything that isn't a material received: services, transport, rent,
+  repairs. Materials are entered on Production › Material receipts, with their amounts.
+{% endcomment %}
 
-{% block title %}{% translate "Edit sale" %}{% endblock %}
+{% block title %}{% translate "New bill" %}{% endblock %}
 
 {% block vendor_css %}
   <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
 {% endblock %}
 
 {% block page_header %}
-  {% translate "Edit sale" as page_title %}
-  {% translate "Daily sales" as section %}
+  {% translate "New bill" as page_title %}
+  {% translate "Bills" as section %}
   {% include "partials/_page_header.html" with title=page_title section=section %}
 {% endblock %}
 
@@ -22,8 +26,8 @@
             {% csrf_token %}
             {% include "forms/_fields.html" %}
             <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-primary">{% translate "Save Changes" %}</button>
-              <a href="{{ back_url }}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
+              <button type="submit" class="btn btn-primary">{% translate "Save" %}</button>
+              <a href="{% url 'purchases:bills' %}" class="btn bg-danger-subtle text-danger">{% translate "Cancel" %}</a>
             </div>
           </form>
         </div>
@@ -32,7 +36,7 @@
     <div class="col-lg-6">
       <div class="card bg-info-subtle shadow-none">
         <div class="card-body p-4">
-          <p class="mb-0">{% translate "A changed sale updates finished-goods stock and the client's debt. A wrong sale isn't deleted: cancel it on the day's page." %}</p>
+          <p class="mb-0">{% translate "A bill is what a supplier charges for anything that isn't a material received: services, transport, rent, repairs. Materials are entered on Production › Material receipts with their amounts. Both count as owed to the supplier until it is paid from the bank or a cash desk." %}</p>
         </div>
       </div>
     </div>

@@ -1,0 +1,153 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Settlements: every partner (a head company with its filials) we ship to or have an
+  opening balance with, and what it owes at the end of a day. Worked out from shipments,
+  returns and the cash book (settlements/ledger.py); a row opens the partner's акт сверки.
+{% endcomment %}
+
+{% block title %}{% translate "Settlements" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Settlements" as page_title %}
+  {% translate "Sales" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row g-3 mb-3">
+    <div class="col-md-4"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Partners owe us" %}</span>
+      <h4 class="mb-0 text-success">{{ totals.owed_to_us|floatformat:"2g" }}</h4>
+    </div></div></div>
+    <div class="col-md-4"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "We owe partners (prepaid)" %}</span>
+      <h4 class="mb-0 text-danger">{{ totals.owed_by_us|floatformat:"2g" }}</h4>
+    </div></div></div>
+    <div class="col-md-4"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% blocktranslate with date=on_date|date:"d.m.Y" %}Net, at the end of {{ date }}{% endblocktranslate %}</span>
+      <h4 class="mb-0">{{ totals.balance|floatformat:"2g" }}</h4>
+    </div></div></div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="row g-2 align-items-end form-compact">
+        <div class="col-12 col-md">
+          <label for="q" class="form-label">{% translate "Search" %}</label>
+          <input type="search" name="q" id="q" value="{{ request.GET.q }}" class="form-control" placeholder="{% translate "Name or INN" %}">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="date" class="form-label">{% translate "At the end of" %}</label>
+          <input type="date" name="date" id="date" value="{{ on_date|date:"Y-m-d" }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="show" class="form-label">{% translate "Show" %}</label>
+          <select name="show" id="show" class="form-select">
+            <option value="">{% translate "With a balance" %}</option>
+            <option value="debtors"{% if request.GET.show == "debtors" %} selected{% endif %}>{% translate "Debtors" %}</option>
+            <option value="creditors"{% if request.GET.show == "creditors" %} selected{% endif %}>{% translate "Creditors (prepaid)" %}</option>
+            <option value="all"{% if request.GET.show == "all" %} selected{% endif %}>{% translate "All" %}</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-auto d-flex flex-wrap gap-2 mb-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+          <a href="{% url 'settlements:balances' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
+          <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=xlsx" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+          </a>
+          {% if perms.settlements.change_openingbalance %}
+            <button type="button" class="btn btn-sm bg-secondary-subtle text-secondary" data-bs-toggle="collapse" data-bs-target="#panel-openings" aria-expanded="false" aria-controls="panel-openings">
+              {% translate "Opening balances" %}
+            </button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if perms.settlements.change_openingbalance %}
+    <div class="collapse mb-3" id="panel-openings">
+      <div class="card">
+        <div class="card-body p-4">
+          <p class="mb-3">{% translate "Opening balances are where counting starts: each partner's balance on a date from the books kept before. Download the list, fill in the date and balance (positive: the partner owes us; negative: we owe it), and load it back." %}</p>
+          <div class="d-flex flex-wrap gap-2 align-items-end">
+            <a href="{% url 'settlements:openings_export' %}" class="btn btn-sm bg-success-subtle text-success">
+              <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download opening balances" %}
+            </a>
+            <form method="post" action="{% url 'settlements:openings_import' %}" enctype="multipart/form-data" class="d-flex flex-wrap gap-2 align-items-center form-compact">
+              {% csrf_token %}
+              <input type="file" name="file" accept=".xlsx" class="form-control form-control-sm" required aria-label="{% translate "Opening balances (.xlsx)" %}" style="max-width: 320px">
+              <div class="form-check mb-0">
+                <input type="checkbox" name="dry_run" id="openings-dry-run" class="form-check-input" checked>
+                <label class="form-check-label" for="openings-dry-run">{% translate "Only check, don't save" %}</label>
+              </div>
+              <button type="submit" class="btn btn-sm btn-primary">{% translate "Upload" %}</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Partner" %}</th>
+            <th class="num">{% translate "Opening balance" %}</th>
+            <th class="num">{% translate "Shipped" %}</th>
+            <th class="num">{% translate "Returned" %}</th>
+            <th class="num">{% translate "Purchased" %}</th>
+            <th class="num">{% translate "Received" %}</th>
+            <th class="num">{% translate "Paid" %}</th>
+            <th class="num">{% translate "Balance" %}</th>
+            <th>{% translate "Last movement" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>
+                <a href="{% url 'settlements:statement' row.partner.pk %}?to={{ on_date|date:"Y-m-d" }}" class="fw-semibold text-body">{{ row.partner.name }}</a>
+                <span class="d-block text-muted fs-2">{% if row.partner.inn %}{% translate "INN" %} {{ row.partner.inn }}{% endif %}{% if row.filials %} · {% blocktranslate count counter=row.filials|length %}{{ counter }} filial{% plural %}{{ counter }} filials{% endblocktranslate %}{% endif %}</span>
+              </td>
+              <td class="num">{{ row.opening|floatformat:"2g" }}</td>
+              <td class="num">{{ row.shipped|floatformat:"2g" }}</td>
+              <td class="num">{{ row.returned|floatformat:"2g" }}</td>
+              <td class="num">{{ row.purchased|floatformat:"2g" }}</td>
+              <td class="num">{{ row.received|floatformat:"2g" }}</td>
+              <td class="num">{{ row.paid|floatformat:"2g" }}</td>
+              <td class="num fw-semibold {% if row.balance > 0 %}text-success{% elif row.balance < 0 %}text-danger{% endif %}">{{ row.balance|floatformat:"2g" }}</td>
+              <td class="text-nowrap">{{ row.last_date|date:"d.m.Y"|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="9" class="text-center text-muted py-5">{% translate "No partners with a balance." %}</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if rows %}
+          <tfoot>
+            <tr class="fw-semibold">
+              <td>{% translate "Total" %}</td>
+              <td class="num">{{ totals.opening|floatformat:"2g" }}</td>
+              <td class="num">{{ totals.shipped|floatformat:"2g" }}</td>
+              <td class="num">{{ totals.returned|floatformat:"2g" }}</td>
+              <td class="num">{{ totals.purchased|floatformat:"2g" }}</td>
+              <td class="num">{{ totals.received|floatformat:"2g" }}</td>
+              <td class="num">{{ totals.paid|floatformat:"2g" }}</td>
+              <td class="num">{{ totals.balance|floatformat:"2g" }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+  {% if counting_start %}
+    <div class="alert alert-info mt-3 mb-2 fs-2">
+      {% blocktranslate with date=counting_start|date:"d.m.Y" %}A partner without an opening balance is counted from {{ date }}, the first document in the system: money from before then settled debts the system doesn't know. Enter opening balances to count from your books.{% endblocktranslate %}
+    </div>
+  {% endif %}
+  <p class="text-muted fs-2 mt-2">{% translate "Balance: positive, the partner owes us; negative, we owe it (it paid in advance, or supplied us). Shipments and returns come from Production › Shipments, purchases from material receipts and Purchases › Bills; money from the bank (by the counterparty's company) and the cash desks (by the partner chosen on the line)." %}</p>
+{% endblock %}

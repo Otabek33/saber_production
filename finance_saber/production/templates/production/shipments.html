@@ -1,0 +1,185 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+{% comment %}
+  Shipments journal: every shipment with its products, to see what each customer got and
+  when. The totals add up the filtered shipments per product (e.g. one customer, one month).
+  The Excel file has one row per product, same filters.
+{% endcomment %}
+
+{% block title %}{% translate "Shipments" %}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Shipments" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {% if pending_import and perms.production.add_productshipment %}
+    <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <span>{% blocktranslate with file=pending_import.file %}The SmartUp report «{{ file }}» was read but not loaded: its products haven't left the warehouse yet.{% endblocktranslate %}</span>
+      <a href="{% url 'production:shipments_import_review' %}" class="btn btn-sm btn-warning">{% translate "Finish loading" %}</a>
+    </div>
+  {% endif %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="row g-2 align-items-end form-compact">
+        <div class="col-12 col-md-3">
+          <label for="customer" class="form-label">{% translate "Customer" %}</label>
+          <select name="customer" id="customer" class="form-select" data-searchable>
+            <option value="">{% translate "All customers" %}</option>
+            {% for customer in customers %}
+              <option value="{{ customer.pk }}"{% if request.GET.customer == customer.pk|stringformat:"s" %} selected{% endif %}>{{ customer.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <label for="product" class="form-label">{% translate "Product" %}</label>
+          <select name="product" id="product" class="form-select" data-searchable>
+            <option value="">{% translate "All products" %}</option>
+            {% for product in products %}
+              <option value="{{ product.pk }}"{% if request.GET.product == product.pk|stringformat:"s" %} selected{% endif %}>{{ product.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="from" class="form-label">{% translate "From" %}</label>
+          <input type="date" name="from" id="from" value="{{ request.GET.from }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="to" class="form-label">{% translate "To" %}</label>
+          <input type="date" name="to" id="to" value="{{ request.GET.to }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="q" class="form-label">{% translate "Waybill number" %}</label>
+          <input type="search" name="q" id="q" value="{{ request.GET.q }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="status" class="form-label">{% translate "Status" %}</label>
+          <select name="status" id="status" class="form-select">
+            <option value="">{% translate "Posted" %}</option>
+            <option value="cancelled"{% if request.GET.status == "cancelled" %} selected{% endif %}>{% translate "Cancelled" %}</option>
+            <option value="all"{% if request.GET.status == "all" %} selected{% endif %}>{% translate "All" %}</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-auto d-flex flex-wrap gap-2 mb-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+          <a href="{% url 'production:shipments' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>
+          <a href="{% url 'production:shipments_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:file-download-line-duotone"></iconify-icon> {% translate "Download Excel" %}
+          </a>
+          {% if perms.production.add_productshipment %}
+            <a href="{% url 'production:shipment' %}" class="btn btn-sm bg-success-subtle text-success">
+              <iconify-icon icon="solar:export-line-duotone"></iconify-icon> {% translate "New shipment" %}
+            </a>
+            <a href="{% url 'production:shipments_import' %}" class="btn btn-sm bg-primary-subtle text-primary">
+              <iconify-icon icon="solar:upload-line-duotone"></iconify-icon> {% translate "Load from SmartUp" %}
+            </a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-xl-9">
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Date" %}</th>
+                <th>{% translate "Waybill number" %}</th>
+                <th>{% translate "Customer" %}</th>
+                <th>{% translate "Products" %}</th>
+                <th class="num">{% translate "Amount" %}</th>
+                <th>{% translate "Author" %}</th>
+                <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for shipment in page_obj %}
+                <tr{% if shipment.is_cancelled %} class="text-decoration-line-through opacity-50"{% endif %}>
+                  <td class="text-nowrap">{{ shipment.date|date:"d.m.Y" }}</td>
+                  <td class="text-nowrap fw-semibold">№ {{ shipment.number }}</td>
+                  <td class="ledger-counterparty">
+                    {{ shipment.customer.name }}
+                    {% if shipment.is_return %}<span class="badge bg-info-subtle text-info fs-1 ms-1">{% translate "Return" %}</span>{% endif %}
+                    {% if shipment.channel %}<span class="d-block text-muted fs-2">{{ shipment.channel }}</span>{% endif %}
+                  </td>
+                  <td>
+                    {% for line in shipment.lines.all %}
+                      <span class="d-block">{{ line.product.name }} — <span class="fw-semibold">{{ line.quantity|floatformat:"0g" }}</span></span>
+                    {% endfor %}
+                  </td>
+                  <td class="num text-nowrap">{{ shipment.total|floatformat:"2g" }}</td>
+                  <td class="text-muted">{{ shipment.created_by|default:"" }}</td>
+                  <td class="text-end">
+                    <a href="{% url 'production:shipment_detail' shipment.pk %}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Open" %}" aria-label="{% translate "Open" %}">
+                      <iconify-icon icon="solar:document-text-line-duotone"></iconify-icon>
+                    </a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-6">{% translate "No shipments found." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if page_obj.has_other_pages %}
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-4 py-3 border-top">
+            <span class="text-muted fs-2">
+              {% blocktranslate with start=page_obj.start_index end=page_obj.end_index total=page_obj.paginator.count %}Rows {{ start }}–{{ end }} of {{ total }}{% endblocktranslate %}
+            </span>
+            <nav aria-label="{% translate "Pages" %}">
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item{% if not page_obj.has_previous %} disabled{% endif %}">
+                  <a class="page-link" href="{% if page_obj.has_previous %}{% querystring page=page_obj.previous_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Previous page" %}">‹</a>
+                </li>
+                {% for number in page_obj.paginator.get_elided_page_range %}
+                  {% if number == page_obj.paginator.ELLIPSIS %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                  {% elif number == page_obj.number %}
+                    <li class="page-item active" aria-current="page"><span class="page-link">{{ number }}</span></li>
+                  {% else %}
+                    <li class="page-item"><a class="page-link" href="{% querystring page=number %}">{{ number }}</a></li>
+                  {% endif %}
+                {% endfor %}
+                <li class="page-item{% if not page_obj.has_next %} disabled{% endif %}">
+                  <a class="page-link" href="{% if page_obj.has_next %}{% querystring page=page_obj.next_page_number %}{% else %}#{% endif %}" aria-label="{% translate "Next page" %}">›</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# The filtered shipments added up per product: e.g. what one customer took this month #}
+    <div class="col-xl-3">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom">
+          <h5 class="card-title mb-0">{% translate "Shipped, units" %}</h5>
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for total in totals %}
+            <li class="list-group-item px-4 py-2 d-flex justify-content-between gap-2">
+              <span>{{ total.product__name }}<span class="d-block text-muted fs-2">{{ total.amount|floatformat:"2g" }}</span></span>
+              <span class="fw-semibold text-nowrap">{{ total.units|floatformat:"0g" }}</span>
+            </li>
+          {% empty %}
+            <li class="list-group-item px-4 py-3 text-muted">{% translate "Nothing shipped for these filters." %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

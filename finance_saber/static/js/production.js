@@ -58,7 +58,7 @@
     numberLines(body);
   });
 
-  // Receipt form: the materials are entered once the supplier is chosen, and each line shows its unit.
+  // Receipt form: each line shows its material's unit.
   var units = document.getElementById("material-units");
   var unitOf = units ? JSON.parse(units.textContent) : {};
   function showUnits(root) {
@@ -71,13 +71,15 @@
   }
   showUnits(document);
 
-  var supplier = document.querySelector("[data-supplier-first]");
-  if (supplier) {
-    var lines = document.querySelector("[data-after-supplier]");
+  // Documents whose lines come after their party (a receipt's supplier, a shipment's customer):
+  // the lines appear once [data-choose-first] has a value.
+  var party = document.querySelector("[data-choose-first]");
+  if (party) {
+    var lines = document.querySelector("[data-after-choice]");
     var reveal = function () {
-      lines.hidden = !supplier.value;
+      lines.hidden = !party.value;
     };
-    $(supplier).on("change", reveal); // Select2 reports changes through jQuery
+    $(party).on("change", reveal); // Select2 reports changes through jQuery
     reveal();
   }
 

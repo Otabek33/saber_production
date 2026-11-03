@@ -105,6 +105,12 @@ NAVIGATION = (
             NavItem(_("Daily production"), "production:daily", permission="production.view_productionrun"),
             NavItem(_("Production journal"), "production:journal", permission="production.view_productionrun"),
             NavItem(
+                _("Production batches"),
+                "production:batches",
+                also_active_on=("production:batch",),
+                permission="production.view_productionrun",
+            ),
+            NavItem(
                 _("Raw materials"),
                 "production:materials",
                 also_active_on=(
@@ -124,8 +130,13 @@ NAVIGATION = (
             NavItem(
                 _("Finished goods"),
                 "production:products",
-                also_active_on=("production:shipment",),
                 permission="production.view_product",
+            ),
+            NavItem(
+                _("Shipments"),
+                "production:shipments",
+                also_active_on=("production:shipment", "production:shipment_detail"),
+                permission="production.view_productshipment",
             ),
             NavItem(
                 _("Recipes and norms"),
@@ -159,31 +170,24 @@ NAVIGATION = (
         icon="solar:cart-large-2-line-duotone",
         children=(
             NavItem(
-                _("Daily sales"),
-                "sales:daily",
-                also_active_on=("sales:sale_edit", "sales:import"),
-                permission="sales.view_sale",
+                _("Settlements"),
+                "settlements:balances",
+                also_active_on=("settlements:statement",),
+                permission="settlements.view_openingbalance",
             ),
-            NavItem(
-                _("Debtors and creditors"),
-                "sales:debts",
-                also_active_on=("sales:statement",),
-                permission="sales.view_client",
-            ),
-            NavItem(_("Sales plan"), "sales:plan", permission="sales.view_plan"),
-            NavItem(
-                _("Clients"), "sales:clients", also_active_on=("sales:client_edit",), permission="sales.view_client"
-            ),
-            NavItem(_("Invoices"), "core:invoices", permission="sales.view_sale"),
+            NavItem(_("Sales plan"), "sales:plan", also_active_on=("sales:import",), permission="sales.view_plan"),
+            NavItem(_("Invoices"), "core:invoices", permission=MONEY),
         ),
     ),
     NavItem(
         _("Purchases"),
         icon="solar:bag-4-line-duotone",
         children=(
-            NavItem(_("Vendors"), "core:vendors", permission=MONEY),
-            NavItem(_("Bills"), "core:bills", permission=MONEY),
-            NavItem(_("Payments made"), "core:payments_made", permission=MONEY),
+            NavItem(_("Vendors"), "purchases:vendors", permission="purchases.view_bill"),
+            NavItem(
+                _("Bills"), "purchases:bills", also_active_on=("purchases:bill_new",), permission="purchases.view_bill"
+            ),
+            NavItem(_("Payments made"), "purchases:payments", permission="purchases.view_bill"),
         ),
     ),
     NavItem(

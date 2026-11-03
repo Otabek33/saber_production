@@ -24,15 +24,16 @@ ROLES = reverse("users:roles")
     [
         (
             "finance",
-            ["cashbook.add_operation", "cashbook.change_counterparty", "sales.add_sale", "sales.change_client",
-             "planning.change_cashplan", "cashbook.change_exchangerate", "production.view_productionrun"],
+            ["cashbook.add_operation", "cashbook.change_counterparty", "production.add_productshipment",
+             "settlements.change_openingbalance", "purchases.add_bill", "planning.change_cashplan",
+             "cashbook.change_exchangerate", "production.view_productionrun"],
             ["production.add_productionrun", "production.change_recipeline", "users.change_user"],
         ),
         (
             "planner",  # Production only, like the technologist
             ["production.add_productionrun", "production.change_productionrun", "production.add_materialreceipt",
              "production.change_recipeline", "production.add_productmove", "production.view_materialmove"],
-            ["cashbook.view_operation", "sales.view_sale", "sales.view_plan", "planning.view_cashplan",
+            ["cashbook.view_operation", "settlements.view_openingbalance", "sales.view_plan", "planning.view_cashplan",
              "production.import_excel", "users.change_user"],
         ),
         (
@@ -40,19 +41,21 @@ ROLES = reverse("users:roles")
             ["production.change_recipeline", "production.delete_recipeline", "production.add_productionrun",
              "production.change_productionrun", "production.add_materialmove", "production.add_materialreceipt",
              "production.change_materialreceipt", "production.add_productmove"],
-            ["cashbook.view_operation", "sales.view_sale", "sales.view_plan", "planning.view_cashplan",
+            ["cashbook.view_operation", "settlements.view_openingbalance", "sales.view_plan", "planning.view_cashplan",
              "production.import_excel", "users.change_user"],
         ),
         (
             "operator",
-            ["sales.view_sale", "sales.add_sale", "sales.change_sale", "sales.import_sales", "sales.view_client",
-             "sales.view_channel"],
-            ["sales.change_client", "sales.view_plan", "cashbook.view_operation", "production.view_productionrun",
-             "planning.view_cashplan", "users.change_user"],
+            ["production.view_productshipment", "production.add_productshipment", "production.change_productshipment",
+             "settlements.view_openingbalance"],
+            ["settlements.change_openingbalance", "sales.view_plan", "cashbook.view_operation",
+             "production.view_productionrun", "production.add_productmove", "planning.view_cashplan",
+             "users.change_user"],
         ),
         (
             "user",  # the Director (Manager group): every business section
-            ["cashbook.add_operation", "sales.add_sale", "production.add_productionrun", "planning.change_cashplan"],
+            ["cashbook.add_operation", "production.add_productshipment", "production.add_productionrun",
+             "planning.change_cashplan", "settlements.change_openingbalance", "purchases.add_bill"],
             ["users.change_user", "users.add_user"],
         ),
     ],
@@ -199,8 +202,8 @@ def test_production_roles_see_only_production(request, client, role_fixture):
     assert sections == {"Производство"}
     production = next(entry for entry in menu if str(entry.label) == "Производство")
     assert [str(child.label) for child in production.children] == [
-        "Выпуск за день", "Журнал выпуска", "Сырьё на складе", "Поступления сырья",
-        "Готовая продукция", "Рецептуры и нормы", "Движения склада",
+        "Выпуск за день", "Журнал выпуска", "Партии выпуска", "Сырьё на складе", "Поступления сырья",
+        "Готовая продукция", "Отгрузки", "Рецептуры и нормы", "Движения склада",
     ]  # fmt: skip
 
 
@@ -212,14 +215,15 @@ def test_finance_menu_has_the_money_sections(client, finance):
 
 
 def test_operator_enters_sales_and_sees_nothing_else(client, operator):
+    """The operator loads and enters shipments (sales) and views settlements; nothing else."""
     client.force_login(operator)
     menu = client.get(reverse("core:home")).context["nav_menu"]
     sections = {str(entry.label): [str(child.label) for child in entry.children] for entry in menu}
-    assert set(sections) == {"Главная", "Продажи"}
-    assert "Продажи за день" in sections["Продажи"]
-    assert "План продаж" not in sections["Продажи"]
-    assert client.get(reverse("sales:daily")).status_code == 200
-    assert client.get(reverse("sales:import")).status_code == 200
-    assert client.get(reverse("sales:debts")).status_code == 200
+    assert set(sections) == {"Главная", "Производство", "Продажи"}
+    assert sections["Производство"] == ["Отгрузки"]
+    assert sections["Продажи"] == ["Взаиморасчёты"]
+    assert client.get(reverse("production:shipments")).status_code == 200
+    assert client.get(reverse("production:shipments_import")).status_code == 200
+    assert client.get(reverse("settlements:balances")).status_code == 200
     for url in (reverse("sales:plan"), reverse("cashbook:index"), reverse("production:daily"), USERS):
         assert client.get(url).status_code == 403, url
