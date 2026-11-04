@@ -189,6 +189,13 @@
 .receipt-lines .receipt-col-quantity { width: 170px; }
 .receipt-lines .receipt-col-unit { width: 70px; }
 .receipt-lines .receipt-col-remove { width: 48px; }
+/* Supplier order: the full width, so its seven line columns fit without scrolling. */
+.order-form { max-width: 1400px; }
+.order-lines .order-col-quantity { width: 120px; }
+.order-lines .order-col-unit { width: 56px; }
+.order-lines .order-col-amount { width: 130px; }
+.order-lines .order-col-status { width: 135px; }
+.order-lines .order-col-date { width: 150px; }
 .receipt-lines input[data-number] {
   text-align: end;
   font-variant-numeric: tabular-nums;
@@ -444,4 +451,60 @@
 
 .app-header .main-menu {
   min-width: 0;
+}
+
+/* A menu section split into groups (core/navigation.py): headed blocks in the drawer,
+   side-by-side columns in the desktop dropdown. */
+.nav-groups .nav-group-title {
+  padding: 10px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+.nav-groups .nav-group + .nav-group {
+  margin-top: 4px;
+  border-top: 1px solid var(--bs-border-color);
+}
+@media (min-width: 1300px) {
+  html[data-layout="horizontal"] .sidebar-nav #sidebarnav > .sidebar-item > ul.first-level.nav-groups {
+    width: auto;
+    padding: 8px;
+  }
+  html[data-layout="horizontal"] .sidebar-nav #sidebarnav > .sidebar-item:hover > ul.first-level.collapse.nav-groups {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(185px, auto));
+  }
+  .nav-groups .nav-group + .nav-group {
+    margin-top: 0;
+    border-top: 0;
+    border-left: 1px solid var(--bs-border-color);
+  }
+  .nav-groups .nav-group-title {
+    padding-top: 6px;
+  }
+  html[data-layout="horizontal"] .sidebar-nav .nav-groups .sidebar-link {
+    white-space: nowrap;
+  }
+}
+
+/* Production overview: compact headline tiles, six in a row (production/_tile.html). */
+.prod-tile { --tile-color: var(--bs-primary); --tile-tint: rgba(93, 135, 255, 0.12); transition: box-shadow .15s, transform .15s; }
+.prod-tile:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); }
+.prod-tile-info { --tile-color: var(--bs-info); --tile-tint: rgba(83, 155, 255, 0.12); }
+.prod-tile-success { --tile-color: var(--bs-success); --tile-tint: rgba(19, 222, 185, 0.12); }
+.prod-tile-warning { --tile-color: var(--bs-warning); --tile-tint: rgba(255, 174, 31, 0.14); }
+.prod-tile-danger { --tile-color: var(--bs-danger); --tile-tint: rgba(250, 137, 107, 0.14); }
+.prod-tile-icon { width: 2rem; height: 2rem; font-size: 1.05rem; color: var(--tile-color); background: var(--tile-tint); }
+.prod-tile-value { font-size: 1.05rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.prod-tile-unit { font-size: 0.72rem; font-weight: 400; color: var(--bs-secondary-color); }
+.prod-tile-label { font-size: 0.76rem; font-weight: 600; color: var(--bs-secondary-color); }
+.prod-tile-note { font-size: 0.68rem; color: var(--bs-secondary-color); }
+.prod-tile-danger .prod-tile-value, .prod-tile-warning .prod-tile-value { color: var(--tile-color); }
+.prod-tile-progress { height: 0.25rem; background: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.06)); }
+.min-w-0 { min-width: 0; }
+/* Six tiles in a row from 1200px (the theme's own xl breakpoint is wider). */
+@media (min-width: 1200px) {
+  .prod-tile-col { flex: 0 0 auto; width: 16.6667%; }
 }

@@ -62,6 +62,18 @@ class TelegramUsernameMixin:
 class LoginForm(BootstrapFormMixin, AuthenticationForm):
     remember_me = forms.BooleanField(label=_("Remember this device"), required=False, initial=True)
 
+    def clean(self):
+        # Checked before the password: while locked, even the right one is refused (users/throttle.py).
+        from . import throttle
+
+        if throttle.login_blocked(self.cleaned_data.get("username", ""), self.request):
+            raise ValidationError(
+                _("Too many failed sign-ins. Wait %(minutes)s minutes and try again, or reset the password."),
+                code="locked",
+                params={"minutes": int(throttle.WINDOW.total_seconds() // 60)},
+            )
+        return super().clean()
+
 
 TELEGRAM_HELP = _("Password reset codes come to this Telegram account, e.g. @Otabek33.")
 

@@ -72,6 +72,7 @@ def form_data(materials, quantity="166680", batch="166666", sugar="105,6"):
             f"lines-{index}-material": material.pk,
             f"lines-{index}-norm": norm,
             f"lines-{index}-defect": defect,
+            f"lines-{index}-defect_reason": "packaging" if defect else "",  # a defect needs its reason
             f"lines-{index}-allowed_loss": allowed,
         }
     return data

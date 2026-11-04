@@ -1,0 +1,9 @@
+{% load i18n %}
+{# A supplier order's status as a badge; late when it is still on the way after its expected date. #}
+{% if order.status == "received" %}<span class="badge bg-success-subtle text-success">{{ order.get_status_display }}</span>
+{% elif order.status == "cancelled" %}<span class="badge bg-danger-subtle text-danger">{{ order.get_status_display }}</span>
+{% elif order.status == "customs" %}<span class="badge bg-warning-subtle text-warning">{{ order.get_status_display }}</span>
+{% elif order.status == "partial" %}<span class="badge bg-primary-subtle text-primary">{{ order.get_status_display }}</span>
+{% elif order.status == "in_transit" %}<span class="badge bg-info-subtle text-info">{{ order.get_status_display }}</span>
+{% else %}<span class="badge bg-secondary-subtle text-secondary">{{ order.get_status_display }}</span>{% endif %}
+{% if order.is_late %}<span class="badge bg-danger-subtle text-danger">{% translate "late" %}</span>{% endif %}

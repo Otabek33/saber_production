@@ -1,0 +1,136 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Production cost by product for a month (production/costing.py): the materials of each
+  batch at the price of the deliveries they came from, per unit, against the month before.
+  The selected product shows what its cost is made of, material by material.
+{% endcomment %}
+
+{% block title %}{% translate "Production cost" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Production cost" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <a href="?month={{ previous_month|date:'Y-m' }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Previous month" %}">‹</a>
+        <form method="get" class="form-compact">
+          <input type="month" name="month" value="{{ month|date:'Y-m' }}" class="form-control form-control-sm" aria-label="{% translate "Month" %}" data-autosubmit>
+        </form>
+        <a href="?month={{ next_month|date:'Y-m' }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Next month" %}">›</a>
+        <span class="ms-2 fs-5 fw-semibold text-capitalize">{{ month|date:"F Y" }}</span>
+        <span class="ms-auto text-muted">
+          {% translate "Made" %}: <strong class="text-body">{{ total_units|floatformat:"0g" }}</strong> ·
+          {% translate "Materials cost" %}: <strong class="text-body">{{ total_amount|floatformat:"0g" }}</strong>
+          {% if estimated %}<span class="d-block d-md-inline fs-2">({% translate "estimated" %}: {{ estimated|floatformat:"0g" }})</span>{% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  {% if missing %}
+    {# A short line; the materials (each a link to give it a price) open on click #}
+    <details class="alert alert-warning">
+      <summary class="fw-semibold">
+        {% blocktranslate count counter=missing|length %}{{ counter }} material has no price, so costs are incomplete.{% plural %}{{ counter }} materials have no price, so costs are incomplete.{% endblocktranslate %}
+        <span class="fw-normal">{% translate "Show" %}</span>
+      </summary>
+      <ul class="mb-1 mt-2 ps-3 fs-2">
+        {% for material in missing %}
+          <li>{% if perms.production.change_material %}<a href="{% url 'production:material_edit' material.pk %}" class="alert-link fw-normal">{{ material.name }}</a>{% else %}{{ material.name }}{% endif %}</li>
+        {% endfor %}
+      </ul>
+      <span class="d-block fs-2">{% translate "Enter the amount on their receipts, or give the material a standard price until receipts have one." %}</span>
+    </details>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-xl-7">
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Product" %}</th>
+                <th class="num">{% translate "Made" %}</th>
+                <th class="num">{% translate "Materials cost" %}</th>
+                <th class="num">{% translate "Per unit" %}</th>
+                <th class="num" title="{% translate "Cost per unit against the month before" %}">{% translate "Change" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                <tr{% if row == selected %} class="table-active"{% endif %}>
+                  <td>
+                    <a href="?month={{ month|date:'Y-m' }}&product={{ row.product.pk }}" class="text-body fw-semibold">{{ row.product.name }}</a>
+                    {% if not row.complete %}<span class="badge bg-warning-subtle text-warning fs-1 ms-1">{% translate "incomplete" %}</span>
+                    {% elif row.estimated_amount %}<span class="badge bg-secondary-subtle text-secondary fs-1 ms-1" title="{% translate "Some materials are valued at another receipt's price or the standard price" %}">{% translate "estimate" %}</span>{% endif %}
+                  </td>
+                  <td class="num">{{ row.units|floatformat:"0g" }}</td>
+                  <td class="num">{% if row.amount %}{{ row.amount|floatformat:"0g" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  <td class="num fw-semibold">{% if row.per_unit is not None %}{{ row.per_unit|floatformat:"2g" }}{% else %}—{% endif %}</td>
+                  <td class="num text-nowrap">
+                    {% if row.change is not None %}
+                      <span class="{% if row.change > 0 %}text-danger{% elif row.change < 0 %}text-success{% else %}text-muted{% endif %}" title="{% translate "Month before" %}: {{ row.previous|floatformat:"2g" }}">{% if row.change > 0 %}+{% endif %}{{ row.change|floatformat:"1g" }}%</span>
+                    {% else %}<span class="text-muted">—</span>{% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-6">{% translate "Nothing was produced this month." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="px-4 py-2 border-top text-muted fs-2">{% translate "Materials at the price of the deliveries actually used (first in, first out), with VAT. Labour, energy and overheads are not included." %}</div>
+      </div>
+    </div>
+
+    {% if selected %}
+      <div class="col-xl-5">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom">
+            <h5 class="card-title mb-1">{{ selected.product.name }}</h5>
+            <span class="text-muted fs-2">{% translate "What one unit's cost is made of" %}{% if selected.per_unit is not None %}: <strong class="text-body">{{ selected.per_unit|floatformat:"2g" }}</strong>{% endif %}</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead>
+                <tr>
+                  <th>{% translate "Material" %}</th>
+                  <th class="num">{% translate "Per 1000 units" %}</th>
+                  <th class="num">{% translate "Price" %}</th>
+                  <th class="num">{% translate "Cost" %}</th>
+                  <th class="num">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in selected_materials %}
+                  <tr>
+                    <td class="text-truncate" style="max-width: 1px; width: 100%" title="{{ item.material.name }}">{{ item.material.name }}</td>
+                    <td class="num text-nowrap">{{ item.per_thousand|floatformat:"-3g" }} <span class="text-muted fs-1">{{ item.material.unit }}</span></td>
+                    <td class="num">{% if item.price is not None %}{{ item.price|floatformat:"2g" }}{% else %}<span class="text-warning">{% translate "no price" %}</span>{% endif %}</td>
+                    <td class="num fw-semibold">{% if item.amount %}{{ item.per_unit|floatformat:"2g" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td class="num text-muted">{{ item.share|floatformat:"1g" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <ul class="list-group list-group-flush border-top">
+            {% for cost in selected.batches %}
+              <li class="list-group-item px-4 py-2 d-flex justify-content-between gap-2">
+                <a href="{% url 'production:batch' cost.run.pk %}" class="text-body">{{ cost.run.date|date:"d.m.Y" }} · {{ cost.run.quantity|floatformat:"0g" }} {% translate "units" %}</a>
+                <span class="text-nowrap">{% if cost.per_unit is not None %}{{ cost.per_unit|floatformat:"2g" }} {% translate "per unit" %}{% else %}<span class="text-muted">—</span>{% endif %}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

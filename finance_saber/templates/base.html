@@ -23,7 +23,7 @@
     <script src="{% static 'matdash/libs/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'matdash/libs/simplebar/dist/simplebar.min.js' %}"></script>
     <script src="{% static 'matdash/js/theme/app.horizontal.init.js' %}"></script>
-    <script>
+    <script nonce="{{ csp_nonce }}">
       // Full-width layout (the theme boxes pages at 1200px by default), and the
       // light/dark choice saved by js/app.js, before the theme applies its defaults.
       userSettings.BoxedLayout = false;

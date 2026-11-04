@@ -1,0 +1,40 @@
+{% load i18n %}
+{# What a batch cost: each material at the price of the deliveries it came from (production/costing.py) #}
+<div class="card mt-4">
+  <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <h5 class="card-title mb-0">{% translate "Batch cost" %}</h5>
+    <span class="text-muted">
+      {% translate "Materials" %}: <strong class="text-body">{% if cost.amount %}{{ cost.amount|floatformat:"0g" }}{% else %}—{% endif %}</strong> ·
+      {% translate "per unit" %}: <strong class="text-body">{% if cost.per_unit is not None %}{{ cost.per_unit|floatformat:"2g" }}{% else %}—{% endif %}</strong>
+    </span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0 ledger-table">
+      <thead>
+        <tr>
+          <th>{% translate "Material" %}</th>
+          <th class="num">{% translate "Used" %}</th>
+          <th class="num">{% translate "Price" %}</th>
+          <th>{% translate "Price from" %}</th>
+          <th class="num">{% translate "Cost" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in cost.materials %}
+          {% for part in item.parts %}
+            <tr>
+              {% if forloop.first %}<td rowspan="{{ item.parts|length }}">{{ item.line.material.name }}</td>{% endif %}
+              <td class="num text-nowrap">{{ part.quantity|floatformat:"-3g" }} <span class="text-muted fs-1">{{ item.line.material.unit }}</span></td>
+              <td class="num">{% if part.price.known %}{{ part.price.value|floatformat:"2g" }}{% else %}—{% endif %}</td>
+              <td class="fs-2">{% include "production/_price_source.html" with source=part.price.source %}</td>
+              <td class="num fw-semibold">{% if part.amount is not None %}{{ part.amount|floatformat:"0g" }}{% else %}—{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td>{{ item.line.material.name }}</td><td colspan="4" class="text-muted">{% translate "Nothing written off." %}</td></tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="px-4 py-2 border-top text-muted fs-2">{% translate "Each delivery used is valued at its own price (receipt amount / quantity, with VAT). Labour, energy and overheads are not included." %}</div>
+</div>

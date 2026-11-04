@@ -11,6 +11,7 @@ from pathlib import Path
 
 import environ
 from django.contrib.messages import constants as messages
+from django.utils.csp import CSP
 from django.utils.translation import gettext_lazy as _
 
 # finance_saber/ project root (the directory that contains manage.py)
@@ -119,7 +120,7 @@ LOGOUT_REDIRECT_URL = "users:login"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 10}},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
@@ -128,6 +129,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # ------------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Content-Security-Policy (SECURE_CSP below): only the site's own scripts run.
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "finance_saber.core.middleware.LocaleMiddleware",
@@ -138,6 +141,8 @@ MIDDLEWARE = [
     # After authentication: the action log knows who is acting (finance_saber/audit).
     "finance_saber.audit.context.AuditMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    # A change in a closed period: a message on the page, not an error (production/periods.py).
+    "finance_saber.production.periods.PeriodClosedMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -168,6 +173,7 @@ TEMPLATES = [
                 "django.template.context_processors.i18n",
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
+                "django.template.context_processors.csp",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "finance_saber.core.context_processors.site",
@@ -186,6 +192,25 @@ MESSAGE_TAGS = {messages.ERROR: "danger"}
 # ------------------------------------------------------------------------------
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
+# A signed-in session lasts 12 hours (a working day), not Django's two weeks.
+SESSION_COOKIE_AGE = env.int("DJANGO_SESSION_COOKIE_AGE", default=12 * 60 * 60)
+# Public sign-up: off, accounts are made by an administrator. DJANGO_ALLOW_SIGNUP=true opens it.
+ALLOW_SIGNUP = env.bool("DJANGO_ALLOW_SIGNUP", default=False)
+SECURE_REFERRER_POLICY = "same-origin"
+# Only the site's own files load; scripts also need the page's nonce ({{ csp_nonce }}) when inline,
+# so an injected <script> or onclick="..." doesn't run. Styles stay open: the theme uses inline ones.
+SECURE_CSP = {
+    "default-src": [CSP.SELF],
+    "script-src": [CSP.SELF, CSP.NONCE],
+    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE],
+    "img-src": [CSP.SELF, "data:", "blob:"],
+    "font-src": [CSP.SELF, "data:"],
+    "connect-src": [CSP.SELF],
+    "object-src": [CSP.NONE],
+    "base-uri": [CSP.SELF],
+    "form-action": [CSP.SELF],
+    "frame-ancestors": [CSP.NONE],
+}
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 

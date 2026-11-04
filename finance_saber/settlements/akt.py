@@ -106,6 +106,10 @@ def akt_bytes(statement: Statement, ours) -> bytes:
     sheet.page_setup.fitToWidth = 1
     sheet.sheet_properties.pageSetUpPr.fitToPage = True
     sheet.print_title_rows = "6:7"
+    for cells in sheet.iter_rows():
+        for cell in cells:
+            if isinstance(cell.value, str) and cell.value.startswith("="):
+                cell.data_type = "s"  # text, never a formula Excel would run
     buffer = BytesIO()
     book.save(buffer)
     return buffer.getvalue()

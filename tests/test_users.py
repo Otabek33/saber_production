@@ -6,6 +6,12 @@ from django.urls import reverse
 from finance_saber.users.models import User
 
 
+@pytest.fixture(autouse=True)
+def signup_open(settings):
+    """These tests use the sign-up page, which is off by default (tests/test_security.py checks that)."""
+    settings.ALLOW_SIGNUP = True
+
+
 @pytest.mark.parametrize("url_name", ["users:login", "users:register", "users:password_reset"])
 def test_auth_pages_are_public(client, db, url_name):
     response = client.get(reverse(url_name))

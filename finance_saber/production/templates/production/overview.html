@@ -1,0 +1,309 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+{% comment %}
+  Production's dashboard (production/overview.py): for a period, what was produced and
+  shipped, the month plan, the materials that run out soon, goods in transit and finished
+  goods. Each block shows only to those who may open its page; each links to it.
+{% endcomment %}
+
+{% block title %}{% translate "Production overview" %}{% endblock %}
+
+{% block content %}
+  {# Period and quick actions #}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <h4 class="card-title mb-0 me-2">{% translate "Production overview" %}</h4>
+        <ul class="nav nav-pills gap-1">
+          {% for key, label in presets.items %}
+            <li class="nav-item"><a class="nav-link py-1 px-3{% if period.preset == key %} active{% endif %}" href="?period={{ key }}">{{ label }}</a></li>
+          {% endfor %}
+        </ul>
+        <form method="get" class="d-flex flex-wrap align-items-center gap-2 ms-auto form-compact">
+          <input type="date" name="from" value="{{ period.date_from.isoformat }}" class="form-control form-control-sm w-auto" aria-label="{% translate "From" %}">
+          <span class="text-muted">—</span>
+          <input type="date" name="to" value="{{ period.date_to.isoformat }}" class="form-control form-control-sm w-auto" aria-label="{% translate "To" %}">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
+        </form>
+      </div>
+      <div class="text-muted fs-2 mt-2">{{ period.date_from|date:"j E Y" }} — {{ period.date_to|date:"j E Y" }}</div>
+      <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
+        {% if perms.production.add_productionrun %}
+          <a href="{% url 'production:daily' %}" class="btn btn-sm bg-primary-subtle text-primary"><iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon> {% translate "Daily production" %}</a>
+        {% endif %}
+        {% if perms.production.add_materialreceipt %}
+          <a href="{% url 'production:material_receipt' %}" class="btn btn-sm bg-success-subtle text-success"><iconify-icon icon="solar:import-line-duotone"></iconify-icon> {% translate "New material receipt" %}</a>
+        {% endif %}
+        {% if perms.production.add_materialorder %}
+          <a href="{% url 'production:order_new' %}" class="btn btn-sm bg-info-subtle text-info"><iconify-icon icon="solar:delivery-line-duotone"></iconify-icon> {% translate "New order" %}</a>
+        {% endif %}
+        {% if perms.production.add_productshipment %}
+          <a href="{% url 'production:shipment' %}" class="btn btn-sm bg-warning-subtle text-warning"><iconify-icon icon="solar:export-line-duotone"></iconify-icon> {% translate "New shipment" %}</a>
+        {% endif %}
+        {% if perms.production.view_recipeline %}
+          <a href="{% url 'production:material_analysis' %}" class="btn btn-sm bg-secondary-subtle text-secondary"><iconify-icon icon="solar:chart-2-line-duotone"></iconify-icon> {% translate "Material analysis" %}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if output.draft_count %}
+    <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <span>{% blocktranslate count counter=output.draft_count %}{{ counter }} production day is a draft: it doesn't count in stock or reports until it is posted.{% plural %}{{ counter }} production days are drafts: they don't count in stock or reports until they are posted.{% endblocktranslate %}</span>
+      <a href="#drafts" class="btn btn-sm btn-warning">{% translate "Show" %}</a>
+    </div>
+  {% endif %}
+
+  {# Headline figures: compact tiles, each a link to its page #}
+  <div class="row g-2 mb-3">
+    {% if output %}
+      {% translate "Produced" as label %}
+      {% blocktranslate with litres=output.litres|floatformat:"0g" per_day=output.per_day|floatformat:"0g" asvar note %}{{ litres }} l · ~{{ per_day }} a day{% endblocktranslate %}
+      {% url 'production:journal' as href %}
+      {% include "production/_tile.html" with label=label note=note icon="solar:bottle-line-duotone" tone="primary" value=output.units|floatformat:"0g" unit=_("units") href=href %}
+    {% endif %}
+    {% if plan_percent is not None and plan %}
+      {% translate "Month plan" as label %}
+      {% blocktranslate with fact=plan.totals.production.fact|floatformat:"0g" planned=plan.totals.production.plan|floatformat:"0g" asvar note %}{{ fact }} of {{ planned }}{% endblocktranslate %}
+      {% url 'sales:plan' as href %}
+      {% if plan_percent >= plan.month_progress %}{% include "production/_tile.html" with label=label note=note icon="solar:target-line-duotone" tone="success" value=plan_percent unit="%" progress=plan_percent href=href %}{% else %}{% include "production/_tile.html" with label=label note=note icon="solar:target-line-duotone" tone="info" value=plan_percent unit="%" progress=plan_percent href=href %}{% endif %}
+    {% endif %}
+    {% if shipped %}
+      {% translate "Shipped" as label %}
+      {% blocktranslate count counter=shipped.customers asvar note %}to {{ counter }} customer{% plural %}to {{ counter }} customers{% endblocktranslate %}
+      {% url 'production:shipments' as href %}
+      {% include "production/_tile.html" with label=label note=note icon="solar:delivery-line-duotone" tone="success" value=shipped.units|floatformat:"0g" unit=_("units") href=href %}
+    {% endif %}
+    {% if materials %}
+      {% translate "Materials at risk" as label %}
+      {% url 'production:materials' as href %}
+      {% if materials.count %}
+        {% blocktranslate with negative=materials.negative asvar note %}below zero: {{ negative }}{% endblocktranslate %}
+        {% if materials.negative %}{% include "production/_tile.html" with label=label note=note icon="solar:danger-triangle-line-duotone" tone="danger" value=materials.count href=href %}{% else %}{% include "production/_tile.html" with label=label note=note icon="solar:danger-triangle-line-duotone" tone="warning" value=materials.count href=href %}{% endif %}
+      {% else %}
+        {% translate "enough for two weeks" as note %}
+        {% include "production/_tile.html" with label=label note=note icon="solar:shield-check-line-duotone" tone="success" value=0 href=href %}
+      {% endif %}
+    {% endif %}
+    {% if transit %}
+      {% translate "Goods in transit" as label %}
+      {% blocktranslate count counter=transit.late asvar note %}{{ counter }} late{% plural %}{{ counter }} late{% endblocktranslate %}
+      {% url 'production:orders' as href %}
+      {% if transit.late %}{% include "production/_tile.html" with label=label note=note icon="solar:map-arrow-right-line-duotone" tone="warning" value=transit.count href=href %}{% else %}{% include "production/_tile.html" with label=label note=note icon="solar:map-arrow-right-line-duotone" tone="info" value=transit.count href=href %}{% endif %}
+    {% endif %}
+    {% if goods %}
+      {% translate "Finished goods" as label %}
+      {% url 'production:products' as href %}
+      {% if expiring.expired or expiring.soon %}
+        {# Batches going off come first: the tile opens the shelf-life page #}
+        {% blocktranslate with expired=expiring.expired soon=expiring.soon asvar note %}batches: {{ expired }} expired, {{ soon }} expire within 30 days{% endblocktranslate %}
+        {% url 'production:expiry' as href %}
+        {% if expiring.expired %}{% include "production/_tile.html" with label=label note=note icon="solar:box-line-duotone" tone="danger" value=goods.units|floatformat:"0g" unit=_("units") href=href %}{% else %}{% include "production/_tile.html" with label=label note=note icon="solar:box-line-duotone" tone="warning" value=goods.units|floatformat:"0g" unit=_("units") href=href %}{% endif %}
+      {% elif goods.negative %}
+        {% blocktranslate with negative=goods.negative asvar note %}below zero: {{ negative }}{% endblocktranslate %}
+        {% include "production/_tile.html" with label=label note=note icon="solar:box-line-duotone" tone="danger" value=goods.units|floatformat:"0g" unit=_("units") href=href %}
+      {% else %}
+        {% translate "all at or above zero" as note %}
+        {% include "production/_tile.html" with label=label note=note icon="solar:box-line-duotone" tone="primary" value=goods.units|floatformat:"0g" unit=_("units") href=href %}
+      {% endif %}
+    {% endif %}
+  </div>
+
+  {% if chart %}
+    <div class="row">
+      <div class="col-xl-8">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% if chart.monthly %}{% translate "Produced and shipped by month" %}{% else %}{% translate "Produced and shipped by day" %}{% endif %}</h5></div>
+          <div class="card-body px-3 py-2"><div id="production-chart" style="min-height: 300px"></div></div>
+        </div>
+      </div>
+      <div class="col-xl-4">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Most produced" %}</h5></div>
+          <ul class="list-group list-group-flush">
+            {% for row in output.by_product %}
+              <li class="list-group-item px-4 py-2">
+                <div class="d-flex justify-content-between gap-2"><span class="text-truncate">{{ row.product__name }}</span><span class="fw-semibold text-nowrap">{{ row.units|floatformat:"0g" }}</span></div>
+                <div class="progress mt-1" style="height: 4px" aria-hidden="true"><div class="progress-bar" style="width: {% widthratio row.units output.by_product.0.units 100 %}%"></div></div>
+              </li>
+            {% empty %}
+              <li class="list-group-item px-4 py-4 text-muted">{% translate "Nothing produced in this period." %}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="row">
+    {% if materials %}
+      <div class="col-xl-7">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">{% translate "Materials that run out soon" %}</h5>
+            <a href="{% url 'production:materials' %}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "All" %}</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead><tr><th>{% translate "Material" %}</th><th class="num">{% translate "Stock" %}</th><th class="num">{% translate "Used a day" %}</th><th>{% translate "Lasts" %}</th><th>{% translate "In transit" %}</th></tr></thead>
+              <tbody>
+                {% for row in materials.rows %}
+                  <tr>
+                    <td class="text-truncate" style="max-width: 260px" title="{{ row.material.name }}">
+                      {% if perms.production.view_recipeline %}<a href="{% url 'production:material_analysis' %}?material={{ row.material.pk }}" class="text-body">{{ row.material.name }}</a>{% else %}{{ row.material.name }}{% endif %}
+                      {% if row.below_min %}<span class="d-block fs-1 text-warning">{% blocktranslate with minimum=row.material.min_stock|floatformat:"-3g" %}under the minimum {{ minimum }}{% endblocktranslate %}</span>{% endif %}
+                    </td>
+                    <td class="num {% if row.stock < 0 %}text-danger fw-semibold{% endif %}">{{ row.stock|floatformat:"-3g" }} <span class="text-muted fs-1">{{ row.material.unit }}</span></td>
+                    <td class="num text-muted">{{ row.per_day|floatformat:"-2g"|default:"—" }}</td>
+                    <td>
+                      {% if row.level == "negative" %}<span class="badge bg-danger-subtle text-danger">{% translate "below zero" %}</span>
+                      {% elif row.days is not None %}<span class="badge {% if row.days < 7 %}bg-danger-subtle text-danger{% else %}bg-warning-subtle text-warning{% endif %}">{% blocktranslate count counter=row.days %}{{ counter }} day{% plural %}{{ counter }} days{% endblocktranslate %}</span>
+                      {% else %}<span class="text-muted">—</span>{% endif %}
+                    </td>
+                    <td class="fs-2 text-nowrap">{% if row.transit %}<a href="{% url 'production:orders' %}?material={{ row.material.pk }}" class="{% if row.transit.late %}text-danger{% else %}text-body{% endif %}">{{ row.transit.quantity|floatformat:"-3g" }} · {% translate "by" %} {{ row.transit.expected|date:"d.m" }}</a>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="5" class="text-center text-muted py-4">{% translate "Nothing runs out in the next two weeks at the recent use." %}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="px-4 py-2 border-top text-muted fs-2">{% translate "«Lasts»: the stock at the average daily use of the last 30 days." %}</div>
+        </div>
+      </div>
+    {% endif %}
+    {% if transit %}
+      <div class="col-xl-5">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">{% translate "Next arrivals" %}</h5>
+            <a href="{% url 'production:orders' %}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "All" %}</a>
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for order in transit.next %}
+              <li class="list-group-item px-4 py-2">
+                <div class="d-flex justify-content-between gap-2">
+                  <a href="{% url 'production:order' order.pk %}" class="text-body fw-semibold text-truncate">{{ order.supplier.name }}</a>
+                  <span class="text-nowrap {% if order.is_late %}text-danger fw-semibold{% endif %}">{{ order.expected_date|date:"d.m.Y" }}</span>
+                </div>
+                <div class="d-flex justify-content-between gap-2 fs-2 text-muted">
+                  <span class="text-truncate">{% for line in order.lines.all %}{{ line.material.name|truncatechars:28 }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                  <span class="text-nowrap">{% include "production/_order_status.html" %}</span>
+                </div>
+              </li>
+            {% empty %}
+              <li class="list-group-item px-4 py-4 text-muted">{% translate "Nothing on the way." %}{% if perms.production.add_materialorder %} <a href="{% url 'production:order_new' %}">{% translate "New order" %}</a>{% endif %}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="row">
+    {% if plan %}
+      <div class="col-xl-7">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">{% blocktranslate with month=plan.month|date:"F Y" %}Production plan, {{ month }}{% endblocktranslate %}</h5>
+            <a href="{% url 'sales:plan' %}?kind=production" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "Plan" %}</a>
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for row in plan.rows|slice:":8" %}
+              <li class="list-group-item px-4 py-2">
+                <div class="d-flex justify-content-between gap-2">
+                  <span class="text-truncate">{{ row.product.name }}</span>
+                  <span class="text-nowrap fs-2"><span class="fw-semibold">{{ row.production.fact|floatformat:"0g" }}</span> / {{ row.production.plan|floatformat:"0g" }}{% if row.production.percent is not None %} · <span class="{% if row.production.percent >= plan.month_progress %}text-success{% else %}text-warning{% endif %}">{{ row.production.percent }}%</span>{% endif %}</span>
+                </div>
+                <div class="progress mt-1 position-relative" style="height: 6px" aria-hidden="true">
+                  <div class="progress-bar {% if row.production.percent is not None and row.production.percent >= plan.month_progress %}bg-success{% else %}bg-warning{% endif %}" style="width: {% if row.production.percent > 100 %}100{% else %}{{ row.production.percent|default:0 }}{% endif %}%"></div>
+                </div>
+              </li>
+            {% empty %}
+              <li class="list-group-item px-4 py-4 text-muted">{% translate "No production plan for this month." %}</li>
+            {% endfor %}
+          </ul>
+          <div class="px-4 py-2 border-top text-muted fs-2">
+            {% blocktranslate with progress=plan.month_progress %}{{ progress }}% of the month has passed: green is on pace, amber behind.{% endblocktranslate %}
+            {% if plan.rows|length > 8 %}<a href="{% url 'sales:plan' %}?kind=production">{% blocktranslate count counter=plan.rows|length|add:"-8" %}and {{ counter }} more product{% plural %}and {{ counter }} more products{% endblocktranslate %}</a>{% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    {% if goods %}
+      <div class="col-xl-5">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">{% translate "Finished goods" %}</h5>
+            <a href="{% url 'production:products' %}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "All" %}</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 ledger-table">
+              <thead><tr><th>{% translate "Product" %}</th><th class="num">{% translate "In stock" %}</th><th>{% translate "Lasts" %}</th></tr></thead>
+              <tbody>
+                {% for row in goods.rows|slice:":8" %}
+                  <tr>
+                    <td class="text-truncate" style="max-width: 220px">{{ row.product.name }}</td>
+                    <td class="num {% if row.stock < 0 %}text-danger fw-semibold{% endif %}">{{ row.stock|floatformat:"0g" }}</td>
+                    <td>{% if row.stock < 0 %}<span class="badge bg-danger-subtle text-danger">{% translate "below zero" %}</span>{% elif row.days is not None %}<span class="badge {% if row.days < 7 %}bg-warning-subtle text-warning{% else %}bg-success-subtle text-success{% endif %}">{% blocktranslate count counter=row.days %}{{ counter }} day{% plural %}{{ counter }} days{% endblocktranslate %}</span>{% else %}<span class="text-muted fs-2">{% translate "not shipped lately" %}</span>{% endif %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="px-4 py-2 border-top text-muted fs-2">
+            {% translate "«Lasts»: the stock at the average daily shipping of the last 30 days." %}
+            {% if goods.rows|length > 8 %}<a href="{% url 'production:products' %}">{% blocktranslate count counter=goods.rows|length|add:"-8" %}and {{ counter }} more product{% plural %}and {{ counter }} more products{% endblocktranslate %}</a>{% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="row">
+    {% if output.drafts %}
+      <div class="col-xl-6" id="drafts">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Drafts to post" %}</h5></div>
+          <ul class="list-group list-group-flush">
+            {% for run in output.drafts %}
+              <li class="list-group-item px-4 py-2 d-flex justify-content-between gap-2">
+                <a href="{% url 'production:daily' %}?date={{ run.date.isoformat }}" class="text-body text-truncate">{{ run.date|date:"d.m.Y" }} · {{ run.product.name }}</a>
+                <span class="fw-semibold text-nowrap">{{ run.quantity|floatformat:"0g" }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+    {% if receipts is not None %}
+      <div class="col-xl-6">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">{% translate "Latest material receipts" %}</h5>
+            <a href="{% url 'production:receipts' %}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "All" %}</a>
+          </div>
+          <ul class="list-group list-group-flush">
+            {% for receipt in receipts %}
+              <li class="list-group-item px-4 py-2 d-flex justify-content-between gap-2">
+                <a href="{% url 'production:receipt' receipt.pk %}" class="text-body text-truncate">{{ receipt.date|date:"d.m.Y" }} · {{ receipt.supplier.name }}</a>
+                <span class="text-muted text-nowrap fs-2">№ {{ receipt.number }} · {% blocktranslate count counter=receipt.lines.all|length %}{{ counter }} material{% plural %}{{ counter }} materials{% endblocktranslate %}</span>
+              </li>
+            {% empty %}
+              <li class="list-group-item px-4 py-4 text-muted">{% translate "No receipts yet." %}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if chart %}{{ chart|json_script:"production-chart-data" }}{% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {% if chart %}
+    <script src="{% static 'matdash/libs/apexcharts/dist/apexcharts.min.js' %}"></script>
+    <script src="{% static 'js/production_dashboard.js' %}"></script>
+  {% endif %}
+{% endblock %}

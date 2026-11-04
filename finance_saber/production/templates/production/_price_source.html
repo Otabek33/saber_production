@@ -1,0 +1,6 @@
+{% load i18n %}
+{# Where a cost price came from (production/costing.py Source) #}
+{% if source == "receipt" %}<span class="text-success">{% translate "the delivery used" %}</span>
+{% elif source == "estimate" %}<span class="text-secondary" title="{% translate "Stock from before receipts had prices, or history: another receipt of the material near that day" %}">{% translate "another receipt (estimate)" %}</span>
+{% elif source == "standard" %}<span class="text-secondary">{% translate "standard price (estimate)" %}</span>
+{% else %}<span class="text-warning">{% translate "no price" %}</span>{% endif %}

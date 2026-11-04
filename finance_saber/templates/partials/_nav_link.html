@@ -1,0 +1,5 @@
+{# One page link of a menu section's dropdown (partials/_navigation.html). #}
+<a href="{{ entry.url }}" class="sidebar-link{% if entry.active %} active{% endif %}"{% if entry.active %} aria-current="page"{% endif %}>
+  <i class="ti ti-circle"></i>
+  <span class="hide-menu">{{ entry.label }}</span>
+</a>

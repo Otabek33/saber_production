@@ -1,0 +1,120 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  One supplier's record (production/suppliers.py): its deliveries in the period against the
+  orders' expected dates, its order lines late now, and its prices per material over time.
+{% endcomment %}
+
+{% block title %}{{ supplier.name }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Suppliers" as section %}
+  {% include "partials/_page_header.html" with title=supplier.name section=section %}
+{% endblock %}
+
+{% block content %}
+  {% include "production/_period_filter.html" %}
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "On time" %}</span>
+      <h4 class="mb-0">{% if record.on_time_percent is not None %}{{ record.on_time_percent }}%{% else %}—{% endif %}</h4>
+    </div></div></div>
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Late by, days" %}</span>
+      <h4 class="mb-0">{% if record.average_delay %}{{ record.average_delay|floatformat:"-1g" }}{% else %}—{% endif %}</h4>
+    </div></div></div>
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Late now" %}</span>
+      <h4 class="mb-0 {% if record.late_now %}text-danger{% endif %}">{{ record.late_now|length }}</h4>
+    </div></div></div>
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Bought for" %}</span>
+      <h4 class="mb-0">{{ record.amount|floatformat:"0g" }}</h4>
+    </div></div></div>
+  </div>
+
+  {% if record.late_now %}
+    <div class="card border-danger-subtle">
+      <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0 text-danger">{% translate "Late now" %}</h5></div>
+      <ul class="list-group list-group-flush">
+        {% for line in record.late_now %}
+          <li class="list-group-item px-4 py-2 d-flex flex-wrap justify-content-between gap-2">
+            <span><a href="{% url 'production:order' line.order.pk %}">№ {{ line.order.number }}</a> · {{ line.material.name }}: {{ line.remaining|floatformat:"-3g" }} {{ line.material.unit }}</span>
+            <span class="text-danger text-nowrap">{% translate "expected" %} {{ line.expected|date:"d.m.Y" }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-xxl-6">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Deliveries" %}</h5></div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Date" %}</th>
+                <th>{% translate "Material" %}</th>
+                <th class="num">{% translate "Quantity" %}</th>
+                <th>{% translate "Expected" %}</th>
+                <th class="num">{% translate "Delay, days" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for delivery in record.deliveries %}
+                <tr>
+                  <td class="text-nowrap"><a href="{% url 'production:receipt' delivery.line.receipt.pk %}">{{ delivery.date|date:"d.m.Y" }}</a></td>
+                  <td class="text-truncate" style="max-width: 1px; width: 100%" title="{{ delivery.line.material.name }}">{{ delivery.line.material.name }}</td>
+                  <td class="num text-nowrap">{{ delivery.line.quantity|floatformat:"-3g" }} <span class="text-muted fs-1">{{ delivery.line.material.unit }}</span></td>
+                  <td class="text-nowrap">{% if delivery.expected %}{{ delivery.expected|date:"d.m.Y" }}{% else %}<span class="text-muted" title="{% translate "Not from an order" %}">—</span>{% endif %}</td>
+                  <td class="num">
+                    {% if delivery.delay is None %}<span class="text-muted">—</span>
+                    {% elif delivery.delay > 0 %}<span class="text-danger fw-semibold">+{{ delivery.delay }}</span>
+                    {% else %}<span class="text-success">{% translate "on time" %}</span>{% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">{% translate "No deliveries in this period." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-xxl-6">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Prices over time" %}</h5></div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Material" %}</th>
+                <th class="num">{% translate "Last price" %}</th>
+                <th class="num" title="{% translate "Since the first priced delivery" %}">{% translate "Change" %}</th>
+                <th>{% translate "Price history" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in prices %}
+                <tr>
+                  <td class="text-truncate" style="max-width: 1px; width: 40%" title="{{ item.material.name }}">{{ item.material.name }}</td>
+                  <td class="num text-nowrap">{{ item.last|floatformat:"2g" }} <span class="text-muted fs-1">/ {{ item.material.unit }}</span></td>
+                  <td class="num">{% if item.change is not None %}<span class="{% if item.change > 0 %}text-danger{% elif item.change < 0 %}text-success{% else %}text-muted{% endif %}">{% if item.change > 0 %}+{% endif %}{{ item.change|floatformat:"1g" }}%</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  <td class="fs-2 text-muted">
+                    {% for point in item.points|slice:"-6:" %}<span class="text-nowrap">{{ point.line.receipt.date|date:"d.m.y" }}: <span class="text-body">{{ point.price|floatformat:"2g" }}</span></span>{% if not forloop.last %} → {% endif %}{% endfor %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">{% translate "No priced deliveries yet: prices come from the amounts on receipts." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="px-4 py-2 border-top text-muted fs-2">{% translate "Price per unit: the receipt amount / quantity, UZS with VAT. The last six deliveries are shown." %}</div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

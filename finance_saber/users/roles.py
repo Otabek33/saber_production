@@ -194,8 +194,8 @@ AREAS = [
     ),
     Area(
         "materials",
-        _("Raw materials: receipts, write-offs, counts"),
-        _perms("production", "view_material", "view_materialmove", "view_materialreceipt"),
+        _("Raw materials: receipts, goods in transit, write-offs, counts"),
+        _perms("production", "view_material", "view_materialmove", "view_materialreceipt", "view_materialorder"),
         _perms(
             "production",
             "add_material",
@@ -204,6 +204,8 @@ AREAS = [
             "change_materialmove",
             "add_materialreceipt",
             "change_materialreceipt",
+            "add_materialorder",
+            "change_materialorder",
         ),
     ),
     Area(
@@ -219,6 +221,13 @@ AREAS = [
         _perms("production", "add_productshipment", "change_productshipment"),
     ),
     Area("production_import", _("Production import from Excel"), edit=_perms("production", "import_excel")),
+    Area("costs", _("Production cost and margin"), _perms("production", "view_costs")),
+    Area(
+        "period_close",
+        _("Closing a period (production records)"),
+        _perms("production", "view_closedperiod"),
+        _perms("production", "add_closedperiod"),
+    ),
     Area(
         "purchases",
         _("Purchases: vendors, bills and payments made"),
@@ -246,17 +255,25 @@ STANDARD_ACCESS: dict[str, dict[str, str]] = {
     Role.FINANCE: {
         "cash": EDIT, "handbook": EDIT, "counterparties": EDIT, "rates": EDIT, "cash_plan": EDIT,
         "collections": EDIT, "plan": EDIT, "shipments": EDIT, "settlements": EDIT, "purchases": EDIT,
-        "recipes": VIEW, "production": VIEW, "materials": VIEW, "goods": VIEW,
+        "recipes": VIEW, "production": VIEW, "materials": VIEW, "goods": VIEW, "costs": VIEW,
+        "period_close": EDIT,
     },
     # Production only: Выпуск за день, Журнал выпуска, Сырьё на складе, Поступления сырья,
     # Готовая продукция, Рецептуры и нормы, Движения склада.
-    Role.PLANNER: {"recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT, "shipments": EDIT},
-    Role.TECHNOLOGIST: {"recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT, "shipments": EDIT},
+    Role.PLANNER: {
+        "recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT, "shipments": EDIT,
+        "period_close": VIEW,
+    },
+    Role.TECHNOLOGIST: {
+        "recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT, "shipments": EDIT,
+        "period_close": VIEW,
+    },
     Role.OPERATOR: {"shipments": EDIT, "settlements": VIEW},
     Role.MANAGER: {
         "cash": EDIT, "handbook": EDIT, "counterparties": EDIT, "rates": EDIT, "cash_plan": EDIT,
         "collections": EDIT, "plan": EDIT, "shipments": EDIT, "settlements": EDIT, "purchases": EDIT,
         "recipes": EDIT, "production": EDIT, "materials": EDIT, "goods": EDIT, "production_import": EDIT,
+        "costs": VIEW, "period_close": EDIT,
     },
 }  # fmt: skip
 

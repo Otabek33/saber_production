@@ -15,7 +15,7 @@
       <div class="d-flex flex-wrap align-items-center gap-2">
         <a href="?month={{ previous_month|date:'Y-m' }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Previous month" %}">‹</a>
         <form method="get" class="form-compact">
-          <input type="month" name="month" value="{{ month|date:'Y-m' }}" class="form-control form-control-sm" aria-label="{% translate "Month" %}" onchange="this.form.submit()">
+          <input type="month" name="month" value="{{ month|date:'Y-m' }}" class="form-control form-control-sm" aria-label="{% translate "Month" %}" data-autosubmit>
         </form>
         <a href="?month={{ next_month|date:'Y-m' }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Next month" %}">›</a>
         <span class="ms-2 fs-5 fw-semibold text-capitalize">{{ month|date:"F Y" }}</span>

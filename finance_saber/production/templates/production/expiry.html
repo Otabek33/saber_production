@@ -1,0 +1,85 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Shelf life (production/expiry.py): the finished-goods batches and the material deliveries
+  still in stock, each with the date it is good until, the first to go off first.
+  By default only what needs attention: expired, or expiring within 30 days.
+{% endcomment %}
+
+{% block title %}{% translate "Shelf life" context "stock page" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Shelf life" context "stock page" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4 d-flex flex-wrap align-items-center gap-2">
+      <div class="btn-group btn-group-sm" role="group" aria-label="{% translate "Show" %}">
+        <a href="?show=attention" class="btn {% if show == 'attention' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% blocktranslate %}Expired or within {{ soon_days }} days{% endblocktranslate %}</a>
+        <a href="?show=expired" class="btn {% if show == 'expired' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% translate "Expired" %}</a>
+        <a href="?show=all" class="btn {% if show == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% translate "All in stock" %}</a>
+      </div>
+      <span class="ms-auto text-muted fs-2">{% translate "Today" %}: {{ today|date:"d.m.Y" }}</span>
+    </div>
+  </div>
+
+  {% for group in groups %}
+    <div class="card" id="{{ group.key }}">
+      <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <h5 class="card-title mb-0">{{ group.title }}</h5>
+        <span class="d-flex flex-wrap gap-2 fs-2">
+          {% if group.summary.expired %}<span class="badge bg-danger-subtle text-danger">{% translate "expired" %}: {{ group.summary.expired }}</span>{% endif %}
+          {% if group.summary.soon %}<span class="badge bg-warning-subtle text-warning">{% blocktranslate %}within {{ soon_days }} days{% endblocktranslate %}: {{ group.summary.soon }}</span>{% endif %}
+          {% if group.summary.unknown_items %}<span class="badge bg-secondary-subtle text-secondary" title="{% translate "Give them a shelf life to see until when they are good" %}">{% translate "no shelf life" %}: {{ group.summary.unknown_items }}</span>{% endif %}
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+          <thead>
+            <tr>
+              <th>{% if group.key == "goods" %}{% translate "Product" %}{% else %}{% translate "Material" %}{% endif %}</th>
+              <th>{% if group.key == "goods" %}{% translate "Batch" %}{% else %}{% translate "Delivery" %}{% endif %}</th>
+              <th>{% if group.key == "goods" %}{% translate "Made" %}{% else %}{% translate "Received" %}{% endif %}</th>
+              <th>{% translate "Good until" %}</th>
+              <th class="num">{% translate "Days left" %}</th>
+              <th class="num">{% translate "In stock" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for stock in group.lots %}
+              <tr>
+                <td class="text-truncate" style="max-width: 1px; width: 100%" title="{{ stock.item.name }}">{{ stock.item.name }}</td>
+                <td class="text-nowrap">
+                  {% if stock.run %}<a href="{% url 'production:batch' stock.run.pk %}" class="font-monospace">{{ stock.code }}</a>
+                  {% elif stock.receipt %}<a href="{% url 'production:receipt' stock.receipt.pk %}">№ {{ stock.receipt.number }}</a>{% if stock.receipt.supplier %} <span class="text-muted fs-2">{{ stock.receipt.supplier.name|truncatechars:24 }}</span>{% endif %}
+                  {% else %}<span class="text-muted">{{ stock.lot.label }}</span>{% endif %}
+                </td>
+                <td class="text-nowrap">{{ stock.date|date:"d.m.Y" }}</td>
+                <td class="text-nowrap">
+                  {% if stock.best_before %}
+                    <span class="{% if stock.status == 'expired' %}text-danger fw-semibold{% elif stock.status == 'soon' %}text-warning fw-semibold{% endif %}">{{ stock.best_before|date:"d.m.Y" }}</span>
+                  {% else %}<span class="text-muted" title="{% translate "No shelf life given" %}">—</span>{% endif %}
+                </td>
+                <td class="num">
+                  {% if stock.status == "expired" %}<span class="badge bg-danger-subtle text-danger">{% translate "expired" %}</span>
+                  {% elif stock.days_left is not None %}<span class="{% if stock.status == 'soon' %}text-warning fw-semibold{% endif %}">{{ stock.days_left }}</span>
+                  {% else %}—{% endif %}
+                </td>
+                <td class="num text-nowrap fw-semibold">{{ stock.remaining|floatformat:"-3g" }}{% if group.key == "materials" %} <span class="text-muted fs-1 fw-normal">{{ stock.item.unit }}</span>{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="text-center text-muted py-5">{% if show == "all" %}{% translate "Nothing in stock." %}{% else %}{% translate "Nothing expired or expiring soon." %}{% endif %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="px-4 py-2 border-top text-muted fs-2">
+        {% if group.key == "goods" %}{% translate "A batch is good until its production date + the product's shelf life (Рецептуры и нормы › product). Shipments take the oldest batches first." %}
+        {% else %}{% translate "A delivery is good until its receipt date + the material's shelf life: the latest it can be good; the supplier's label may say earlier." %}{% endif %}
+      </div>
+    </div>
+  {% endfor %}
+{% endblock %}

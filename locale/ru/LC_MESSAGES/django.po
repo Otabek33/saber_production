@@ -5221,3 +5221,1388 @@ msgstr "Отчёт SmartUp «%(file)s» прочитан, но не загруж
 #: finance_saber/production/shipment_import
 msgid "Finish loading"
 msgstr "Завершить загрузку"
+
+#: finance_saber/production/orders
+msgid "Ordered"
+msgstr "Заказано"
+
+#: finance_saber/production/orders
+msgid "In transit"
+msgstr "В пути"
+
+#: finance_saber/production/orders
+msgid "At customs"
+msgstr "На таможне"
+
+#: finance_saber/production/orders
+msgid "order number"
+msgstr "номер заказа"
+
+#: finance_saber/production/orders
+msgid "The contract or invoice number; empty: numbered."
+msgstr "Номер договора или инвойса; пусто — присвоится автоматически."
+
+#: finance_saber/production/orders
+msgid "order date"
+msgstr "дата заказа"
+
+#: finance_saber/production/orders
+msgid "expected arrival"
+msgstr "ожидаемое поступление"
+
+#: finance_saber/production/orders
+msgid "currency"
+msgstr "валюта"
+
+#: finance_saber/production/orders
+msgid "The receipt that put the goods into stock."
+msgstr "Поступление, которым товар оприходован на склад."
+
+#: finance_saber/production/orders
+msgid "material order"
+msgstr "заказ поставщику"
+
+#: finance_saber/production/orders
+msgid "material orders"
+msgstr "заказы поставщикам"
+
+#: finance_saber/production/orders
+msgid "In the order's currency."
+msgstr "В валюте заказа."
+
+#: finance_saber/production/orders
+msgid "material order line"
+msgstr "строка заказа"
+
+#: finance_saber/production/orders
+msgid "material order lines"
+msgstr "строки заказа"
+
+#: finance_saber/production/orders
+msgid "Delivery time, days"
+msgstr "Срок доставки, дней"
+
+#: finance_saber/production/orders
+msgid "Instead of the date: the expected arrival is the order date plus these days."
+msgstr "Вместо даты: ожидаемое поступление — дата заказа плюс столько дней."
+
+#: finance_saber/production/orders
+msgid "Give the expected arrival, or the delivery time in days."
+msgstr "Укажите дату поступления или срок доставки в днях."
+
+#: finance_saber/production/orders
+msgid "The goods can't arrive before they are ordered."
+msgstr "Товар не может прийти раньше, чем заказан."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "%(item)s is already in this order: add its quantity to one line."
+msgstr "%(item)s уже есть в этом заказе: укажите количество одной строкой."
+
+#: finance_saber/production/orders
+msgid "Date received"
+msgstr "Дата поступления"
+
+#: finance_saber/production/orders
+msgid "Rate to UZS"
+msgstr "Курс к суму"
+
+#: finance_saber/production/orders
+msgid "UZS per 1 unit of the order's currency, for the receipt's amounts."
+msgstr "Сумов за 1 единицу валюты заказа — для сумм поступления."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "Give the rate: the order's amounts are in %(currency)s."
+msgstr "Укажите курс: суммы заказа в %(currency)s."
+
+#: finance_saber/production/orders
+msgid "Order number"
+msgstr "Номер заказа"
+
+#: finance_saber/production/orders
+msgid "Order date"
+msgstr "Дата заказа"
+
+#: finance_saber/production/orders
+msgid "Expected arrival"
+msgstr "Ожидаемое поступление"
+
+#: finance_saber/production/orders
+msgid "Currency"
+msgstr "Валюта"
+
+#: finance_saber/production/orders
+msgid "Goods in transit"
+msgstr "Товары в пути"
+
+#: finance_saber/production/orders
+msgid "A received or cancelled order can't be changed."
+msgstr "Полученный или отменённый заказ изменить нельзя."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "Order № %(number)s saved: expected on %(date)s."
+msgstr "Заказ № %(number)s сохранён: ожидается %(date)s."
+
+#: finance_saber/production/orders
+msgid "The order is received: cancel its material receipt instead."
+msgstr "Заказ уже получен: вместо этого отмените его поступление сырья."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "Status: %(status)s."
+msgstr "Статус: %(status)s."
+
+#: finance_saber/production/orders
+msgid "Only an open order can be received."
+msgstr "Оприходовать можно только заказ в пути."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "By order № %(number)s"
+msgstr "По заказу № %(number)s"
+
+#: finance_saber/production/orders
+#, python-format
+msgid "Order № %(number)s received: the materials are in stock (receipt № %(receipt)s)."
+msgstr "Заказ № %(number)s получен: сырьё оприходовано на склад (поступление № %(receipt)s)."
+
+#: finance_saber/production/orders
+msgid "today"
+msgstr "сегодня"
+
+#: finance_saber/production/orders
+msgid "Cancel this order? It stops showing as in transit."
+msgstr "Отменить этот заказ? Он перестанет показываться в пути."
+
+#: finance_saber/production/orders
+msgid "Cancel the order"
+msgstr "Отменить заказ"
+
+#: finance_saber/production/orders
+msgid "The goods arrived"
+msgstr "Товар прибыл"
+
+#: finance_saber/production/orders
+msgid "Receiving makes the material receipt: the materials go into stock, and their amounts (in UZS at the rate) are owed to the supplier."
+msgstr "Оприходование создаёт поступление сырья: сырьё поступает на склад, а его сумма (в сумах по курсу) — наш долг поставщику."
+
+#: finance_saber/production/orders
+msgid "Receive into stock"
+msgstr "Оприходовать на склад"
+
+#: finance_saber/production/orders
+msgid "An order on the way shows on Raw materials as in transit, with its expected arrival. It doesn't change stock until it is received."
+msgstr "Заказ в пути показывается на странице «Сырьё на складе» в колонке «В пути» с датой поступления. Остаток он не меняет, пока не оприходован."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "Order № %(number)s"
+msgstr "Заказ № %(number)s"
+
+#: finance_saber/production/orders
+msgid "Edit order"
+msgstr "Изменить заказ"
+
+#: finance_saber/production/orders
+msgid "New order"
+msgstr "Новый заказ"
+
+#: finance_saber/production/orders
+msgid "Amount, in the order's currency"
+msgstr "Сумма, в валюте заказа"
+
+#: finance_saber/production/orders
+msgid "Save the order"
+msgstr "Сохранить заказ"
+
+#: finance_saber/production/orders
+msgid "Orders on the way"
+msgstr "Заказов в пути"
+
+#: finance_saber/production/orders
+msgid "Late"
+msgstr "Опаздывают"
+
+#: finance_saber/production/orders
+msgid "On the way"
+msgstr "В пути (все открытые)"
+
+#: finance_saber/production/orders
+msgid "No orders found."
+msgstr "Заказов не найдено."
+
+#: finance_saber/production/orders
+msgid "late"
+msgstr "опаздывает"
+
+#: finance_saber/production/orders
+msgid "by"
+msgstr "к"
+
+#: finance_saber/production/orders
+msgid "Raw materials: receipts, goods in transit, write-offs, counts"
+msgstr "Сырьё: поступления, товары в пути, списания, инвентаризация"
+
+#: finance_saber/production/orders
+#, python-format
+msgid "late %(counter)s day"
+msgid_plural "late %(counter)s days"
+msgstr[0] "опаздывает на %(counter)s день"
+msgstr[1] "опаздывает на %(counter)s дня"
+msgstr[2] "опаздывает на %(counter)s дней"
+msgstr[3] "опаздывает на %(counter)s дня"
+
+#: finance_saber/production/orders
+#, python-format
+msgid "in %(counter)s day"
+msgid_plural "in %(counter)s days"
+msgstr[0] "через %(counter)s день"
+msgstr[1] "через %(counter)s дня"
+msgstr[2] "через %(counter)s дней"
+msgstr[3] "через %(counter)s дня"
+
+#: finance_saber/production/orders
+msgctxt "order"
+msgid "Received"
+msgstr "Получен"
+
+#: finance_saber/production/orders
+msgctxt "order"
+msgid "Cancelled"
+msgstr "Отменён"
+
+#: finance_saber/production/orders
+msgctxt "supplier order"
+msgid "Order"
+msgstr "Заказ"
+
+#: finance_saber/production/capacity
+msgid "Empty: the stock now. Type any amount to try it."
+msgstr "Пусто — текущий остаток. Введите любое количество, чтобы прикинуть."
+
+#: finance_saber/production/capacity
+msgid "Add goods in transit"
+msgstr "Добавить товары в пути"
+
+#: finance_saber/production/capacity
+msgid "Norms with the allowed loss"
+msgstr "Нормы с допустимыми потерями"
+
+#: finance_saber/production/capacity
+msgid "A margin: each norm plus its allowed loss, %."
+msgstr "С запасом: каждая норма плюс её допустимые потери, %."
+
+#: finance_saber/production/capacity
+msgid "Material analysis"
+msgstr "Анализ сырья"
+
+#: finance_saber/production/capacity
+msgid "Amount you typed"
+msgstr "Введённое количество"
+
+#: finance_saber/production/capacity
+msgid "Counted with"
+msgstr "Считаем по"
+
+#: finance_saber/production/capacity
+msgid "+ in transit"
+msgstr "+ в пути"
+
+#: finance_saber/production/capacity
+msgid "By each product's recipe (norm per can). «Enough for» counts this material alone; «Can be made» also counts every other material of the recipe at its stock now."
+msgstr "По рецептуре каждого продукта (норма на банку). «Хватит на» — только по этому сырью; «Можно выпустить» — с учётом остатков всего остального сырья рецептуры."
+
+#: finance_saber/production/capacity
+msgid "Norm per can"
+msgstr "Норма на банку"
+
+#: finance_saber/production/capacity
+msgid "Enough for, cans"
+msgstr "Хватит на, банок"
+
+#: finance_saber/production/capacity
+msgid "Litres"
+msgstr "Литров"
+
+#: finance_saber/production/capacity
+msgid "Can be made, cans"
+msgstr "Можно выпустить, банок"
+
+#: finance_saber/production/capacity
+msgid "Runs out first"
+msgstr "Закончится первым"
+
+#: finance_saber/production/capacity
+msgid "in stock"
+msgstr "на складе"
+
+#: finance_saber/production/capacity
+msgid "No active product's recipe uses this material."
+msgstr "Это сырьё не входит в рецептуру ни одного действующего продукта."
+
+#: finance_saber/production/capacity
+msgid "Each line is for one product made alone: the material is shared, so making several products divides it between them."
+msgstr "Каждая строка — если выпускать только этот продукт: сырьё общее, при выпуске нескольких продуктов оно делится между ними."
+
+#: finance_saber/production/capacity
+msgid "Choose a material to see which products its stock is enough for and how many cans. Type an amount to try another figure, e.g. what a new delivery would give."
+msgstr "Выберите сырьё, чтобы увидеть, на какие продукты и на сколько банок хватит его остатка. Введите количество, чтобы прикинуть другую цифру, например, что даст новая поставка."
+
+#: finance_saber/production/capacity
+#, python-format
+msgid "What %(name)s is enough for"
+msgstr "На что хватит: %(name)s"
+
+#: finance_saber/production/capacity
+msgid "What it is enough for"
+msgstr "На что хватит"
+
+#: finance_saber/production/overview
+msgid "Production overview"
+msgstr "Обзор производства"
+
+#: finance_saber/production/overview
+msgid "Overview"
+msgstr "Обзор"
+
+#: finance_saber/production/overview
+msgid "Month production plan"
+msgstr "План выпуска на месяц"
+
+#: finance_saber/production/overview
+msgid "Materials at risk"
+msgstr "Сырьё под угрозой"
+
+#: finance_saber/production/overview
+msgid "Enough of everything for two weeks"
+msgstr "Всего хватит на две недели"
+
+#: finance_saber/production/overview
+msgid "All products at or above zero"
+msgstr "Остатки всей продукции не ниже нуля"
+
+#: finance_saber/production/overview
+msgid "Produced and shipped by month"
+msgstr "Выпуск и отгрузки по месяцам"
+
+#: finance_saber/production/overview
+msgid "Produced and shipped by day"
+msgstr "Выпуск и отгрузки по дням"
+
+#: finance_saber/production/overview
+msgid "Most produced"
+msgstr "Больше всего выпущено"
+
+#: finance_saber/production/overview
+msgid "Nothing produced in this period."
+msgstr "За период ничего не выпущено."
+
+#: finance_saber/production/overview
+msgid "Materials that run out soon"
+msgstr "Сырьё, которое скоро закончится"
+
+#: finance_saber/production/overview
+msgid "Used a day"
+msgstr "Расход в день"
+
+#: finance_saber/production/overview
+msgid "Lasts"
+msgstr "Хватит на"
+
+#: finance_saber/production/overview
+msgid "below zero"
+msgstr "ниже нуля"
+
+#: finance_saber/production/overview
+msgid "Nothing runs out in the next two weeks at the recent use."
+msgstr "При нынешнем расходе в ближайшие две недели ничего не закончится."
+
+#: finance_saber/production/overview
+msgid "«Lasts»: the stock at the average daily use of the last 30 days."
+msgstr "«Хватит на»: остаток при среднем дневном расходе за последние 30 дней."
+
+#: finance_saber/production/overview
+msgid "Next arrivals"
+msgstr "Ближайшие поступления"
+
+#: finance_saber/production/overview
+msgid "Nothing on the way."
+msgstr "В пути ничего нет."
+
+#: finance_saber/production/overview
+msgid "No production plan for this month."
+msgstr "Плана выпуска на этот месяц нет."
+
+#: finance_saber/production/overview
+msgid "not shipped lately"
+msgstr "давно не отгружалась"
+
+#: finance_saber/production/overview
+msgid "«Lasts»: the stock at the average daily shipping of the last 30 days."
+msgstr "«Хватит на»: остаток при средней дневной отгрузке за последние 30 дней."
+
+#: finance_saber/production/overview
+msgid "Drafts to post"
+msgstr "Черновики к проведению"
+
+#: finance_saber/production/overview
+msgid "Latest material receipts"
+msgstr "Последние поступления сырья"
+
+#: finance_saber/production/overview
+msgid "No receipts yet."
+msgstr "Поступлений пока нет."
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(litres)s l · %(days)s working days · ~%(per_day)s a day"
+msgstr "%(litres)s л · рабочих дней: %(days)s · ~%(per_day)s в день"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(fact)s of %(planned)s"
+msgstr "%(fact)s из %(planned)s"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(progress)s%% of the month has passed"
+msgstr "Прошло %(progress)s%% месяца"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(negative)s below zero; the rest last under two weeks or are under their minimum"
+msgstr "Ниже нуля: %(negative)s; остальное — меньше чем на две недели или ниже минимума"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "under the minimum %(minimum)s"
+msgstr "ниже минимума %(minimum)s"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(progress)s%% of the month has passed: green is on pace, amber behind."
+msgstr "Прошло %(progress)s%% месяца: зелёный — по графику, жёлтый — отставание."
+
+#: finance_saber/production/overview
+msgid "orders"
+msgstr "заказов"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(counter)s production day is a draft: it doesn't count in stock or reports until it is posted."
+msgid_plural "%(counter)s production days are drafts: they don't count in stock or reports until they are posted."
+msgstr[0] "%(counter)s день выпуска — черновик: он не учитывается в остатках и отчётах, пока не проведён."
+msgstr[1] "%(counter)s дня выпуска — черновики: они не учитываются в остатках и отчётах, пока не проведены."
+msgstr[2] "%(counter)s дней выпуска — черновики: они не учитываются в остатках и отчётах, пока не проведены."
+msgstr[3] "%(counter)s дня выпуска — черновики: они не учитываются в остатках и отчётах, пока не проведены."
+
+#: finance_saber/production/overview
+#, python-format
+msgid "to %(counter)s customer, less returns"
+msgid_plural "to %(counter)s customers, less returns"
+msgstr[0] "%(counter)s покупателю, за вычетом возвратов"
+msgstr[1] "%(counter)s покупателям, за вычетом возвратов"
+msgstr[2] "%(counter)s покупателям, за вычетом возвратов"
+msgstr[3] "%(counter)s покупателям, за вычетом возвратов"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(counter)s late"
+msgid_plural "%(counter)s late"
+msgstr[0] "опаздывает: %(counter)s"
+msgstr[1] "опаздывают: %(counter)s"
+msgstr[2] "опаздывают: %(counter)s"
+msgstr[3] "опаздывают: %(counter)s"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(counter)s product below zero"
+msgid_plural "%(counter)s products below zero"
+msgstr[0] "%(counter)s продукт ниже нуля"
+msgstr[1] "%(counter)s продукта ниже нуля"
+msgstr[2] "%(counter)s продуктов ниже нуля"
+msgstr[3] "%(counter)s продукта ниже нуля"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(counter)s day"
+msgid_plural "%(counter)s days"
+msgstr[0] "%(counter)s день"
+msgstr[1] "%(counter)s дня"
+msgstr[2] "%(counter)s дней"
+msgstr[3] "%(counter)s дня"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(counter)s material"
+msgid_plural "%(counter)s materials"
+msgstr[0] "%(counter)s позиция"
+msgstr[1] "%(counter)s позиции"
+msgstr[2] "%(counter)s позиций"
+msgstr[3] "%(counter)s позиции"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "and %(counter)s more product"
+msgid_plural "and %(counter)s more products"
+msgstr[0] "и ещё %(counter)s продукт"
+msgstr[1] "и ещё %(counter)s продукта"
+msgstr[2] "и ещё %(counter)s продуктов"
+msgstr[3] "и ещё %(counter)s продукта"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "%(litres)s l · ~%(per_day)s a day"
+msgstr "%(litres)s л · ~%(per_day)s в день"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "below zero: %(negative)s"
+msgstr "ниже нуля: %(negative)s"
+
+#: finance_saber/production/overview
+msgid "enough for two weeks"
+msgstr "хватит на две недели"
+
+#: finance_saber/production/overview
+msgid "all at or above zero"
+msgstr "всё не ниже нуля"
+
+#: finance_saber/production/overview
+#, python-format
+msgid "to %(counter)s customer"
+msgid_plural "to %(counter)s customers"
+msgstr[0] "%(counter)s покупателю"
+msgstr[1] "%(counter)s покупателям"
+msgstr[2] "%(counter)s покупателям"
+msgstr[3] "%(counter)s покупателям"
+
+#: finance_saber/production/overview
+msgid "Month plan"
+msgstr "План месяца"
+
+#: finance_saber/production/orders
+msgid "The supplier order (goods in transit) this receipt received, in full or in part."
+msgstr "Заказ поставщику (товары в пути), по которому оприходовано это поступление — полностью или частично."
+
+#: finance_saber/production/orders
+msgid "Partly received"
+msgstr "Частично получен"
+
+#: finance_saber/production/orders
+msgid "Empty: the order's expected arrival."
+msgstr "Пусто — дата поступления по заказу."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "%(item)s has arrived in part: it can't be removed."
+msgstr "%(item)s уже частично поступило: строку нельзя удалить."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "%(received)s has arrived already."
+msgstr "Уже поступило %(received)s."
+
+#: finance_saber/production/orders
+msgid "Give the quantity of at least one material that arrived."
+msgstr "Укажите количество хотя бы одного поступившего сырья."
+
+#: finance_saber/production/orders
+msgid "Part of the order has arrived: cancel its material receipts first."
+msgstr "Часть заказа уже поступила: сначала отмените его поступления сырья."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "Lines updated: %(count)s."
+msgstr "Строк обновлено: %(count)s."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "Order № %(number)s received in full: the materials are in stock (receipt № %(receipt)s)."
+msgstr "Заказ № %(number)s получен полностью: сырьё оприходовано (поступление № %(receipt)s)."
+
+#: finance_saber/production/orders
+#, python-format
+msgid "Part of order № %(number)s received (receipt № %(receipt)s); the rest is still on the way."
+msgstr "Часть заказа № %(number)s оприходована (поступление № %(receipt)s); остальное ещё в пути."
+
+#: finance_saber/production/orders
+msgid "ordered"
+msgstr "заказан"
+
+#: finance_saber/production/orders
+msgid "expected"
+msgstr "ожидается"
+
+#: finance_saber/production/orders
+msgid "Arrived"
+msgstr "Поступило"
+
+#: finance_saber/production/orders
+msgid "Still to come"
+msgstr "Ещё в пути"
+
+#: finance_saber/production/orders
+msgid "all arrived"
+msgstr "всё поступило"
+
+#: finance_saber/production/orders
+msgid "Save the lines' status and dates"
+msgstr "Сохранить статусы и даты строк"
+
+#: finance_saber/production/orders
+msgid "All still to come is now:"
+msgstr "Всё, что ещё в пути, сейчас:"
+
+#: finance_saber/production/orders
+msgid "Goods arrived"
+msgstr "Товар прибыл"
+
+#: finance_saber/production/orders
+msgid "Give what came this time: all of it, part of a line, or only some lines (0 or empty: didn't come). It makes a material receipt; the rest stays on the way."
+msgstr "Укажите, что пришло сейчас: всё, часть строки или только некоторые строки (0 или пусто — не пришло). Будет создано поступление сырья; остальное останется в пути."
+
+#: finance_saber/production/orders
+msgid "Arrived now"
+msgstr "Пришло сейчас"
+
+#: finance_saber/production/orders
+msgid "Arrivals"
+msgstr "Поступления по заказу"
+
+#: finance_saber/production/orders
+msgid "Nothing has arrived yet."
+msgstr "Пока ничего не поступило."
+
+#: finance_saber/production/orders
+msgid "Only what is still to come shows on Raw materials as in transit. Cancelling an arrival's receipt puts it back on the way."
+msgstr "На странице «Сырьё на складе» в пути показывается только то, что ещё не поступило. Отмена поступления возвращает товар в путь."
+
+#: finance_saber/production/orders
+msgid "Own arrival"
+msgstr "Своя дата поступления"
+
+#: finance_saber/production/orders
+#, python-format
+msgid "%(left)s to come"
+msgstr "ещё %(left)s в пути"
+
+#: finance_saber/production/orders
+#, python-format
+msgid "at customs: %(quantity)s"
+msgstr "на таможне: %(quantity)s"
+
+#: finance_saber/production/orders
+#, python-format
+msgid "At most %(left)s: %(ordered)s ordered, %(received)s arrived already."
+msgstr "Не больше %(left)s: заказано %(ordered)s, уже поступило %(received)s."
+
+#: finance_saber/production/orders
+msgid "empty: numbered"
+msgstr "пусто — присвоится"
+
+#: finance_saber/production/orders
+msgid "e.g. 45"
+msgstr "напр. 45"
+
+#: finance_saber/production/orders
+msgid "e.g. container from China"
+msgstr "напр. контейнер из Китая"
+
+#: finance_saber/production/orders
+msgid "Own date"
+msgstr "Своя дата"
+
+#: finance_saber/production/orders
+msgid "the supplier's invoice or waybill"
+msgstr "№ накладной или инвойса поставщика"
+
+#: finance_saber/production/orders
+msgid "All arrived"
+msgstr "Всё пришло"
+
+#: finance_saber/production/orders
+msgid "all"
+msgstr "всё"
+
+#: finance_saber/production/orders
+msgid "All that is still to come"
+msgstr "Всё, что ещё в пути"
+
+#: finance_saber/production/orders
+msgid "Type what came this time, as counted at the warehouse: «all» fills in what is still to come. Empty: didn't come. It makes a material receipt; the rest stays on the way."
+msgstr "Введите, что пришло сейчас, по факту на складе: «всё» подставит остаток в пути. Пусто — не пришло. Будет создано поступление сырья; остальное останется в пути."
+
+#: finance_saber/users
+#, python-format
+msgid "Too many failed sign-ins. Wait %(minutes)s minutes and try again, or reset the password."
+msgstr "Слишком много неудачных попыток входа. Подождите %(minutes)s минут и попробуйте снова или сбросьте пароль."
+
+#: finance_saber/core/navigation.py
+msgctxt "menu group"
+msgid "Output"
+msgstr "Выпуск"
+
+#: finance_saber/core/navigation.py
+msgctxt "menu group"
+msgid "Raw materials"
+msgstr "Сырьё"
+
+#: finance_saber/core/navigation.py
+msgctxt "menu group"
+msgid "Finished goods"
+msgstr "Продукция"
+
+#: finance_saber/core/navigation.py
+msgctxt "menu group"
+msgid "Norms and records"
+msgstr "Нормы и учёт"
+
+#: finance_saber/production/costing
+msgid "standard price"
+msgstr "учётная цена"
+
+#: finance_saber/production/costing
+msgid "Standard price"
+msgstr "Учётная цена"
+
+#: finance_saber/production/costing
+msgid "UZS per unit, with VAT. Used for production cost only while no receipt has a price."
+msgstr "Сум за единицу, с НДС. Для себестоимости, пока ни в одном поступлении нет цены."
+
+#: finance_saber/production/costing
+msgid "Can view production cost and margin"
+msgstr "Может видеть себестоимость и маржу"
+
+#: finance_saber/production/costing
+msgid "Production cost and margin"
+msgstr "Себестоимость и маржа"
+
+#: finance_saber/production/costing
+msgid "Production cost"
+msgstr "Себестоимость"
+
+#: finance_saber/production/costing
+msgid "Margin"
+msgstr "Маржа"
+
+#: finance_saber/production/costing
+msgid "By customer"
+msgstr "По покупателям"
+
+#: finance_saber/production/costing
+msgid "By month"
+msgstr "По месяцам"
+
+#: finance_saber/production/costing
+msgid "Shipped for"
+msgstr "Отгружено на сумму"
+
+#: finance_saber/production/costing
+msgid "Cost"
+msgstr "Себестоимость"
+
+#: finance_saber/production/costing
+msgid "Margin, %"
+msgstr "Маржа, %"
+
+#: finance_saber/production/costing
+msgid "Of the cost estimated"
+msgstr "Из себестоимости — оценка"
+
+#: finance_saber/production/costing
+msgid "Made"
+msgstr "Выпущено"
+
+#: finance_saber/production/costing
+msgid "Materials cost"
+msgstr "Стоимость сырья"
+
+#: finance_saber/production/costing
+msgid "estimated"
+msgstr "оценка"
+
+#: finance_saber/production/costing
+msgid "No price known for these materials, so costs are incomplete:"
+msgstr "Нет цены для этих материалов, поэтому себестоимость неполная:"
+
+#: finance_saber/production/costing
+msgid "Enter the amount on their receipts, or give the material a standard price until receipts have one."
+msgstr "Укажите сумму в их поступлениях или задайте материалу учётную цену, пока в поступлениях нет цен."
+
+#: finance_saber/production/costing
+msgid "Per unit"
+msgstr "За единицу"
+
+#: finance_saber/production/costing
+msgid "Cost per unit against the month before"
+msgstr "Себестоимость единицы к прошлому месяцу"
+
+#: finance_saber/production/costing
+msgid "Change"
+msgstr "Изменение"
+
+#: finance_saber/production/costing
+msgid "incomplete"
+msgstr "неполная"
+
+#: finance_saber/production/costing
+msgid "Some materials are valued at another receipt's price or the standard price"
+msgstr "Часть материалов оценена по цене другого поступления или по учётной цене"
+
+#: finance_saber/production/costing
+msgid "estimate"
+msgstr "оценка"
+
+#: finance_saber/production/costing
+msgid "Month before"
+msgstr "Прошлый месяц"
+
+#: finance_saber/production/costing
+msgid "Nothing was produced this month."
+msgstr "В этом месяце ничего не выпущено."
+
+#: finance_saber/production/costing
+msgid "Materials at the price of the deliveries actually used (first in, first out), with VAT. Labour, energy and overheads are not included."
+msgstr "Сырьё по цене тех поставок, что ушли в партии (ФИФО), с НДС. Труд, энергия и накладные расходы не входят."
+
+#: finance_saber/production/costing
+msgid "What one unit's cost is made of"
+msgstr "Из чего складывается себестоимость единицы"
+
+#: finance_saber/production/costing
+msgid "no price"
+msgstr "нет цены"
+
+#: finance_saber/production/costing
+msgid "See which materials need a price"
+msgstr "Какие материалы без цены"
+
+#: finance_saber/production/costing
+msgid "Nothing was shipped in this period."
+msgstr "За этот период отгрузок нет."
+
+#: finance_saber/production/costing
+msgid "Cost: what the shipped units cost to make (their batches' materials, oldest stock shipped first). Amounts with VAT, as entered; returns count negative."
+msgstr "Себестоимость — во что обошлись отгруженные единицы (сырьё их партий, сначала отгружаются старые). Суммы с НДС, как введены; возвраты — с минусом."
+
+#: finance_saber/production/costing
+msgid "Batch cost"
+msgstr "Себестоимость партии"
+
+#: finance_saber/production/costing
+msgid "Price from"
+msgstr "Откуда цена"
+
+#: finance_saber/production/costing
+msgid "Nothing written off."
+msgstr "Ничего не списано."
+
+#: finance_saber/production/costing
+msgid "Each delivery used is valued at its own price (receipt amount / quantity, with VAT). Labour, energy and overheads are not included."
+msgstr "Каждая поставка — по своей цене (сумма поступления / количество, с НДС). Труд, энергия и накладные расходы не входят."
+
+#: finance_saber/production/costing
+msgid "the delivery used"
+msgstr "использованная поставка"
+
+#: finance_saber/production/costing
+msgid "Stock from before receipts had prices, or history: another receipt of the material near that day"
+msgstr "Остаток до цен в поступлениях или история: другое поступление этого материала около этой даты"
+
+#: finance_saber/production/costing
+msgid "another receipt (estimate)"
+msgstr "другое поступление (оценка)"
+
+#: finance_saber/production/costing
+msgid "standard price (estimate)"
+msgstr "учётная цена (оценка)"
+
+#: finance_saber/production/costing
+#, python-format
+msgid "The cost of %(units)s units is unknown (no material prices yet), so the margin is too high."
+msgstr "Себестоимость %(units)s шт. неизвестна (у сырья ещё нет цен), поэтому маржа завышена."
+
+#: finance_saber/production/costing
+#, python-format
+msgid "%(amount)s of the cost is estimated: stock from before receipts had prices, or shipments loaded as history."
+msgstr "%(amount)s себестоимости — оценка: остатки до цен в поступлениях или отгрузки, загруженные как история."
+
+#: finance_saber/production/templates/production/costs.html
+#, python-format
+msgid "%(counter)s material has no price, so costs are incomplete."
+msgid_plural "%(counter)s materials have no price, so costs are incomplete."
+msgstr[0] "%(counter)s материал без цены — себестоимость неполная."
+msgstr[1] "%(counter)s материала без цены — себестоимость неполная."
+msgstr[2] "%(counter)s материалов без цены — себестоимость неполная."
+msgstr[3] "%(counter)s материала без цены — себестоимость неполная."
+
+#: finance_saber/production/costing
+msgid "Per 1000 units"
+msgstr "На 1000 шт."
+
+#: finance_saber/production/losses
+msgid "Faulty packaging (cans, lids)"
+msgstr "Брак тары (банки, крышки)"
+
+#: finance_saber/production/losses
+msgid "Label or marking"
+msgstr "Этикетка, маркировка"
+
+#: finance_saber/production/losses
+msgid "Spillage, leak"
+msgstr "Разлив, протечка"
+
+#: finance_saber/production/losses
+msgid "Equipment fault"
+msgstr "Неисправность оборудования"
+
+#: finance_saber/production/losses
+msgid "Poor raw material"
+msgstr "Некачественное сырьё"
+
+#: finance_saber/production/losses
+msgid "Line setup, start-up"
+msgstr "Наладка, запуск линии"
+
+#: finance_saber/production/losses
+msgid "Other"
+msgstr "Другое"
+
+#: finance_saber/production/losses
+msgid "defect reason"
+msgstr "причина брака"
+
+#: finance_saber/production/losses
+msgid "Defect reason"
+msgstr "Причина брака"
+
+#: finance_saber/production/losses
+msgid "Why?"
+msgstr "Причина?"
+
+#: finance_saber/production/losses
+msgid "Choose why it was scrapped."
+msgstr "Выберите причину брака."
+
+#: finance_saber/production/losses
+msgid "Losses against norms"
+msgstr "Нормы и потери"
+
+#: finance_saber/production/losses
+msgid "Stock-count shortage"
+msgstr "Недостача по инвентаризации"
+
+#: finance_saber/production/losses
+msgid "Losses"
+msgstr "Потери"
+
+#: finance_saber/production/losses
+msgid "Losses to the norm, %"
+msgstr "Потери к норме, %"
+
+#: finance_saber/production/losses
+msgid "Over the allowed"
+msgstr "Сверх допуска"
+
+#: finance_saber/production/losses
+msgid "Losses, UZS"
+msgstr "Потери, сум"
+
+#: finance_saber/production/losses
+msgid "Over the allowed, UZS"
+msgstr "Сверх допуска, сум"
+
+#: finance_saber/production/losses
+msgid "Entries"
+msgstr "Случаев"
+
+#: finance_saber/production/losses
+msgid "No reason given"
+msgstr "Причина не указана"
+
+#: finance_saber/production/losses
+msgid "Defect reasons"
+msgstr "Причины брака"
+
+#: finance_saber/production/losses
+msgid "Production runs"
+msgstr "Выпусков"
+
+#: finance_saber/production/losses
+msgid "Materials over the allowed loss"
+msgstr "Материалов сверх допуска"
+
+#: finance_saber/production/losses
+msgid "Production defects, with their reasons"
+msgstr "Брак производства, с причинами"
+
+#: finance_saber/production/losses
+msgid "Stock-count shortage (a surplus is negative)"
+msgstr "Недостача по инвентаризации (излишек — с минусом)"
+
+#: finance_saber/production/losses
+msgid "Count"
+msgstr "Инвент."
+
+#: finance_saber/production/losses
+msgid "Losses to the use by norm, %, and the allowed loss, %"
+msgstr "Потери к расходу по норме, % и допуск, %"
+
+#: finance_saber/production/losses
+msgid "allowed"
+msgstr "допуск"
+
+#: finance_saber/production/losses
+msgid "Nothing was produced, written off or counted this month."
+msgstr "В этом месяце не было выпуска, списаний и инвентаризаций."
+
+#: finance_saber/production/losses
+msgid "Losses = production defects + write-offs + stock-count shortage. Red: more than the norms allow (each recipe line's allowed loss)."
+msgstr "Потери = брак производства + списания + недостача по инвентаризации. Красным — больше, чем допускают нормы (допустимые потери строк рецептуры)."
+
+#: finance_saber/production/losses
+msgid "Why defects happened"
+msgstr "Причины брака"
+
+#: finance_saber/production/losses
+msgid "No production defects this month."
+msgstr "В этом месяце брака не было."
+
+#: finance_saber/production/losses
+msgid "The reason is chosen with the defect on the day's calculation. Write-offs give theirs in the note."
+msgstr "Причина выбирается вместе с браком в калькуляции дня. У списаний причина — в примечании."
+
+#: finance_saber/production/losses
+#, python-format
+msgid "%(counter)s material with losses has no price, so the sums leave it out."
+msgid_plural "%(counter)s materials with losses have no price, so the sums leave them out."
+msgstr[0] "%(counter)s материал с потерями без цены — в суммы не вошёл."
+msgstr[1] "%(counter)s материала с потерями без цены — в суммы не вошли."
+msgstr[2] "%(counter)s материалов с потерями без цены — в суммы не вошли."
+msgstr[3] "%(counter)s материала с потерями без цены — в суммы не вошли."
+
+#: finance_saber/production/losses
+#, python-format
+msgid "%(counter)s time"
+msgid_plural "%(counter)s times"
+msgstr[0] "%(counter)s раз"
+msgstr[1] "%(counter)s раза"
+msgstr[2] "%(counter)s раз"
+msgstr[3] "%(counter)s раза"
+
+#: finance_saber/production/expiry
+msgid "e.g. 12 месяцев, 2 года, 180 дней. Stock shows until when it is good."
+msgstr "Например: 12 месяцев, 2 года, 180 дней. По нему видно, до какого числа годны остатки."
+
+#: finance_saber/production/expiry
+msgid "Write the number and the unit, e.g. 18 месяцев, 2 года or 180 дней."
+msgstr "Укажите число и единицу, например: 18 месяцев, 2 года или 180 дней."
+
+#: finance_saber/production/expiry
+msgid "Expired"
+msgstr "Просрочено"
+
+#: finance_saber/production/expiry
+msgid "All in stock"
+msgstr "Все остатки"
+
+#: finance_saber/production/expiry
+msgid "expired"
+msgstr "просрочено"
+
+#: finance_saber/production/expiry
+msgid "Give them a shelf life to see until when they are good"
+msgstr "Укажите срок годности, чтобы видеть, до какого числа они годны"
+
+#: finance_saber/production/expiry
+msgid "no shelf life"
+msgstr "без срока"
+
+#: finance_saber/production/expiry
+msgid "Good until"
+msgstr "Годен до"
+
+#: finance_saber/production/expiry
+msgid "Days left"
+msgstr "Осталось дней"
+
+#: finance_saber/production/expiry
+msgid "No shelf life given"
+msgstr "Срок годности не указан"
+
+#: finance_saber/production/expiry
+msgid "Nothing in stock."
+msgstr "На складе ничего нет."
+
+#: finance_saber/production/expiry
+msgid "Nothing expired or expiring soon."
+msgstr "Нет просроченного и истекающего в ближайшее время."
+
+#: finance_saber/production/expiry
+msgid "A batch is good until its production date + the product's shelf life (Рецептуры и нормы › product). Shipments take the oldest batches first."
+msgstr "Партия годна до даты выпуска + срок годности продукта (Рецептуры и нормы › продукт). Отгрузки берут сначала самые старые партии."
+
+#: finance_saber/production/expiry
+msgid "A delivery is good until its receipt date + the material's shelf life: the latest it can be good; the supplier's label may say earlier."
+msgstr "Поставка годна до даты поступления + срок годности материала: это самый поздний срок, на этикетке поставщика может быть раньше."
+
+#: finance_saber/production/expiry
+#, python-format
+msgid "Expired or within %(soon_days)s days"
+msgstr "Просрочено или до %(soon_days)s дней"
+
+#: finance_saber/production/expiry
+#, python-format
+msgid "within %(soon_days)s days"
+msgstr "до %(soon_days)s дней"
+
+#: finance_saber/production/expiry
+#, python-format
+msgid "batches: %(expired)s expired, %(soon)s expire within 30 days"
+msgstr "партии: просрочено %(expired)s, истекает за 30 дней %(soon)s"
+
+#: finance_saber/production/expiry
+msgctxt "stock page"
+msgid "Shelf life"
+msgstr "Сроки годности"
+
+#: finance_saber/production/control
+msgid "closed until"
+msgstr "закрыто по"
+
+#: finance_saber/production/control
+msgid "when"
+msgstr "когда"
+
+#: finance_saber/production/control
+msgid "closed period"
+msgstr "закрытый период"
+
+#: finance_saber/production/control
+msgid "closed periods"
+msgstr "закрытые периоды"
+
+#: finance_saber/production/control
+msgid "Closing a period (production records)"
+msgstr "Закрытие периода (учёт производства)"
+
+#: finance_saber/production/control
+msgid "Closing a period"
+msgstr "Закрытие периода"
+
+#: finance_saber/production/control
+msgid "Suppliers"
+msgstr "Поставщики"
+
+#: finance_saber/production/control
+msgid "Choose a month."
+msgstr "Выберите месяц."
+
+#: finance_saber/production/control
+msgid "A month can be closed once it is over."
+msgstr "Месяц можно закрыть только после его окончания."
+
+#: finance_saber/production/control
+msgid "That month is already closed."
+msgstr "Этот месяц уже закрыт."
+
+#: finance_saber/production/control
+msgid "That month is not closed."
+msgstr "Этот месяц не закрыт."
+
+#: finance_saber/production/control
+msgid "Say why the month is reopened."
+msgstr "Укажите, зачем открываете месяц."
+
+#: finance_saber/production/control
+msgid "Production runs, material receipts, shipments, write-offs and stock counts dated then can't be added, changed or cancelled."
+msgstr "Выпуск, поступления сырья, отгрузки, списания и инвентаризации этих дат нельзя добавить, изменить или отменить."
+
+#: finance_saber/production/control
+msgid "No period is closed yet"
+msgstr "Пока ни один период не закрыт"
+
+#: finance_saber/production/control
+msgid "Close a month once its records are checked and the accounts are done: nobody can change them afterwards."
+msgstr "Закрывайте месяц, когда данные проверены и учёт сведён: после этого их никто не изменит."
+
+#: finance_saber/production/control
+msgid "closed"
+msgstr "закрыт"
+
+#: finance_saber/production/control
+msgid "current month"
+msgstr "текущий месяц"
+
+#: finance_saber/production/control
+msgid "open"
+msgstr "открыт"
+
+#: finance_saber/production/control
+msgid "Why reopen?"
+msgstr "Зачем открыть?"
+
+#: finance_saber/production/control
+msgid "Reopen"
+msgstr "Открыть"
+
+#: finance_saber/production/control
+msgid "Closing a month closes every month before it too. Reopening a month (the superuser only) reopens every month after it."
+msgstr "Закрытие месяца закрывает и все месяцы до него. Открытие месяца (только суперпользователь) открывает и все месяцы после него."
+
+#: finance_saber/production/control
+msgid "History"
+msgstr "История"
+
+#: finance_saber/production/control
+msgid "Nothing has been closed yet."
+msgstr "Пока ничего не закрывалось."
+
+#: finance_saber/production/control
+msgid "Receipts"
+msgstr "Поступлений"
+
+#: finance_saber/production/control
+msgid "Deliveries for orders that came on or before the expected date"
+msgstr "Поставки по заказам, пришедшие в ожидаемый срок или раньше"
+
+#: finance_saber/production/control
+msgid "On time"
+msgstr "Вовремя"
+
+#: finance_saber/production/control
+msgid "Average delay of the late deliveries"
+msgstr "Среднее опоздание опоздавших поставок"
+
+#: finance_saber/production/control
+msgid "Late by, days"
+msgstr "Опоздание, дней"
+
+#: finance_saber/production/control
+msgid "Late now"
+msgstr "Опаздывают сейчас"
+
+#: finance_saber/production/control
+msgid "Bought for"
+msgstr "Куплено на сумму"
+
+#: finance_saber/production/control
+msgid "Last delivery"
+msgstr "Последняя поставка"
+
+#: finance_saber/production/control
+msgid "No deliveries for orders"
+msgstr "Нет поставок по заказам"
+
+#: finance_saber/production/control
+msgid "No deliveries in this period."
+msgstr "За этот период поставок нет."
+
+#: finance_saber/production/control
+msgid "On time: a delivery for an order line on or before its expected arrival (the line's own date, else the order's). Receipts not made from an order aren't counted."
+msgstr "Вовремя — поставка по строке заказа не позже ожидаемой даты (своей даты строки, иначе даты заказа). Поступления не по заказу не учитываются."
+
+#: finance_saber/production/control
+msgid "Deliveries"
+msgstr "Поставки"
+
+#: finance_saber/production/control
+msgid "Expected"
+msgstr "Ожидалось"
+
+#: finance_saber/production/control
+msgid "Delay, days"
+msgstr "Опоздание, дней"
+
+#: finance_saber/production/control
+msgid "Not from an order"
+msgstr "Не по заказу"
+
+#: finance_saber/production/control
+msgid "on time"
+msgstr "вовремя"
+
+#: finance_saber/production/control
+msgid "Prices over time"
+msgstr "Цены по времени"
+
+#: finance_saber/production/control
+msgid "Last price"
+msgstr "Последняя цена"
+
+#: finance_saber/production/control
+msgid "Since the first priced delivery"
+msgstr "С первой поставки с ценой"
+
+#: finance_saber/production/control
+msgid "Price history"
+msgstr "История цен"
+
+#: finance_saber/production/control
+msgid "No priced deliveries yet: prices come from the amounts on receipts."
+msgstr "Поставок с ценой пока нет: цены берутся из сумм в поступлениях."
+
+#: finance_saber/production/control
+msgid "Price per unit: the receipt amount / quantity, UZS with VAT. The last six deliveries are shown."
+msgstr "Цена за единицу — сумма поступления / количество, сум с НДС. Показаны последние шесть поставок."
+
+#: finance_saber/production/control
+msgid "Production alerts"
+msgstr "Производство: внимание"
+
+#: finance_saber/production/control
+#, python-format
+msgid "The period up to %(date)s is closed: records dated then can't be added or changed."
+msgstr "Период по %(date)s закрыт: записи с такими датами нельзя добавить или изменить."
+
+#: finance_saber/production/control
+#, python-format
+msgid "Closed up to %(date)s."
+msgstr "Закрыто по %(date)s."
+
+#: finance_saber/production/control
+#, python-format
+msgid "Reopened from %(date)s. Close it again once it is corrected."
+msgstr "Открыто с %(date)s. Закройте снова, когда исправите."
+
+#: finance_saber/production/control
+#, python-format
+msgid "Closed up to %(date)s"
+msgstr "Закрыто по %(date)s"
+
+#: finance_saber/production/control
+#, python-format
+msgid "Close everything up to %(date)s? Records dated then can no longer change."
+msgstr "Закрыть всё по %(date)s? Записи этих дат больше нельзя будет изменить."
+
+#: finance_saber/production/control
+#, python-format
+msgid "Close up to %(date)s"
+msgstr "Закрыть по %(date)s"
+
+#: finance_saber/production/control
+#, python-format
+msgid "Orders late: %(count)s"
+msgstr "Заказы опаздывают: %(count)s"
+
+#: finance_saber/production/control
+#, python-format
+msgid "Arrived today: %(count)s receipts"
+msgstr "Поступило сегодня: %(count)s"
+
+#: finance_saber/production/control
+#, python-format
+msgid "%(count)s materials"
+msgstr "материалов: %(count)s"
+
+#: finance_saber/production/control
+#, python-format
+msgid "Batches: %(expired)s expired, %(soon)s expire within %(days)s days"
+msgstr "Партии: просрочено %(expired)s, истекает за %(days)s дней %(soon)s"
+
+#: finance_saber/production/control
+msgid "closed by"
+msgstr "кем закрыто"

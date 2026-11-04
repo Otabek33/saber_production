@@ -72,24 +72,39 @@
             <th class="num">{% translate "Received this month" %}</th>
             <th class="num">{% translate "Used this month" %}</th>
             <th class="num">{% translate "Stock" %}</th>
+            <th class="num">{% translate "In transit" %}</th>
             <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
           </tr>
         </thead>
         <tbody>
           {% for row in rows %}
             {% ifchanged row.material.kind %}
-              <tr class="ledger-opening"><td colspan="6" class="fw-semibold">{{ row.material.get_kind_display }}</td></tr>
+              <tr class="ledger-opening"><td colspan="7" class="fw-semibold">{{ row.material.get_kind_display }}</td></tr>
             {% endifchanged %}
             <tr>
               <td>
                 {{ row.material.name }}
-                {% if row.material.shelf_life %}<span class="d-block fs-1 text-muted">{% translate "Shelf life" %}: {{ row.material.shelf_life }}</span>{% endif %}
+                {% if row.material.shelf_life %}<a href="{% url 'production:expiry' %}?show=all#materials" class="d-block fs-1 text-muted">{% translate "Shelf life" %}: {{ row.material.shelf_life }}</a>{% endif %}
               </td>
               <td class="text-muted">{{ row.material.unit }}</td>
               <td class="num">{% if row.received %}{{ row.received|floatformat:"-3g" }}{% endif %}</td>
               <td class="num">{% if row.used %}{{ row.used|floatformat:"-3g" }}{% endif %}</td>
               <td class="num fw-semibold{% if row.low %} text-danger{% endif %}">{{ row.stock|floatformat:"-3g" }}</td>
+              <td class="num text-nowrap">
+                {% if row.transit %}
+                  <a href="{% url 'production:orders' %}?material={{ row.material.pk }}" class="text-body fw-semibold">{{ row.transit.quantity|floatformat:"-3g" }}</a>
+                  <span class="d-block fs-1 {% if row.transit.late %}text-danger{% else %}text-muted{% endif %}">
+                    {% if row.transit.late %}{% translate "late" %}: {% else %}{% translate "by" %} {% endif %}{{ row.transit.expected|date:"d.m.Y" }}
+                  </span>
+                  {% if row.transit.customs %}<span class="d-block fs-1 text-warning">{% blocktranslate with quantity=row.transit.customs|floatformat:"-3g" %}at customs: {{ quantity }}{% endblocktranslate %}</span>{% endif %}
+                {% endif %}
+              </td>
               <td class="text-end text-nowrap">
+                {% if perms.production.view_recipeline %}
+                  <a href="{% url 'production:material_analysis' %}?material={{ row.material.pk }}" class="btn btn-sm bg-success-subtle text-success ledger-action" title="{% translate "What it is enough for" %}" aria-label="{% translate "What it is enough for" %}">
+                    <iconify-icon icon="solar:chart-2-line-duotone"></iconify-icon>
+                  </a>
+                {% endif %}
                 <a href="{% url 'production:moves' %}?target=materials&item={{ row.material.pk }}" class="btn btn-sm bg-secondary-subtle text-secondary ledger-action" title="{% translate "Movements" %}" aria-label="{% translate "Movements" %}">
                   <iconify-icon icon="solar:history-line-duotone"></iconify-icon>
                 </a>
@@ -106,7 +121,7 @@
               </td>
             </tr>
           {% empty %}
-            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No materials found." %}</td></tr>
+            <tr><td colspan="7" class="text-center text-muted py-6">{% translate "No materials found." %}</td></tr>
           {% endfor %}
         </tbody>
       </table>

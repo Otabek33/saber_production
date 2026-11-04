@@ -109,6 +109,8 @@
     </div>
   </div>
 
+  {% if cost %}{% include "production/_batch_cost.html" %}{% endif %}
+
   {# Forward from the batch: the customers it went to, oldest stock shipped first (a recall list) #}
   {% if run.is_posted and run.affects_stock %}
     <div class="card mt-4">

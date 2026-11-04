@@ -1,0 +1,55 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Supplier record (production/suppliers.py): per supplier, deliveries in the period against
+  the orders' expected dates, what is late now, and what was bought. Least punctual first.
+{% endcomment %}
+
+{% block title %}{% translate "Suppliers" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Suppliers" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {% include "production/_period_filter.html" %}
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% translate "Supplier" %}</th>
+            <th class="num">{% translate "Receipts" %}</th>
+            <th class="num" title="{% translate "Deliveries for orders that came on or before the expected date" %}">{% translate "On time" %}</th>
+            <th class="num" title="{% translate "Average delay of the late deliveries" %}">{% translate "Late by, days" %}</th>
+            <th class="num">{% translate "Late now" %}</th>
+            <th class="num">{% translate "Bought for" %}</th>
+            <th>{% translate "Last delivery" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+            <tr>
+              <td><a href="{% url 'production:supplier' record.supplier.pk %}?from={{ start|date:'Y-m-d' }}&to={{ end|date:'Y-m-d' }}" class="text-body fw-semibold">{{ record.supplier.name }}</a></td>
+              <td class="num">{{ record.receipts }}</td>
+              <td class="num">
+                {% if record.on_time_percent is not None %}<span class="{% if record.on_time_percent < 80 %}text-danger fw-semibold{% elif record.on_time_percent < 100 %}text-warning{% else %}text-success{% endif %}">{{ record.on_time_percent }}%</span>
+                <span class="text-muted fs-1">({{ record.for_orders|length }})</span>{% else %}<span class="text-muted" title="{% translate "No deliveries for orders" %}">—</span>{% endif %}
+              </td>
+              <td class="num">{% if record.average_delay %}{{ record.average_delay|floatformat:"-1g" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+              <td class="num">{% if record.late_now %}<span class="badge bg-danger-subtle text-danger">{{ record.late_now|length }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+              <td class="num">{% if record.amount %}{{ record.amount|floatformat:"0g" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+              <td class="text-nowrap">{{ record.last_delivery|date:"d.m.Y"|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-6">{% translate "No deliveries in this period." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="px-4 py-2 border-top text-muted fs-2">{% translate "On time: a delivery for an order line on or before its expected arrival (the line's own date, else the order's). Receipts not made from an order aren't counted." %}</div>
+  </div>
+{% endblock %}

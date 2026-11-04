@@ -1,11 +1,10 @@
 from django.urls import path
-from django.views.generic import RedirectView
 
-from . import views
+from . import control_views, cost_views, order_views, views
 
 app_name = "production"
 urlpatterns = [
-    path("", RedirectView.as_view(pattern_name="production:daily"), name="index"),
+    path("", views.overview, name="index"),
     path("daily/", views.daily, name="daily"),
     path("daily/<str:date>/<int:product_pk>/", views.calculation, name="calculation"),
     path("journal/", views.journal, name="journal"),
@@ -18,8 +17,25 @@ urlpatterns = [
     path("runs/<int:pk>/delete/", views.run_delete, name="run_delete"),
     path("batches/export/", views.batches_export, name="batches_export"),
     path("batches/<int:pk>/", views.batch, name="batch"),
+    path("costs/", cost_views.costs, name="costs"),
+    path("margin/", cost_views.margin, name="margin"),
+    path("losses/", cost_views.losses, name="losses"),
+    path("expiry/", cost_views.expiry_page, name="expiry"),
+    path("close/", control_views.close_page, name="close"),
+    path("close/month/", control_views.close_month, name="close_month"),
+    path("close/reopen/", control_views.reopen_month, name="reopen_month"),
+    path("materials/suppliers/", control_views.suppliers_page, name="suppliers"),
+    path("materials/suppliers/<int:pk>/", control_views.supplier_page, name="supplier"),
     path("materials/receipts/export/", views.receipts_export, name="receipts_export"),
     path("materials/receipts/<int:pk>/", views.receipt, name="receipt"),
+    path("materials/analysis/", views.material_analysis, name="material_analysis"),
+    path("materials/orders/", order_views.orders, name="orders"),
+    path("materials/orders/new/", order_views.order_form, name="order_new"),
+    path("materials/orders/<int:pk>/", order_views.order_detail, name="order"),
+    path("materials/orders/<int:pk>/edit/", order_views.order_form, name="order_edit"),
+    path("materials/orders/<int:pk>/status/", order_views.order_status, name="order_status"),
+    path("materials/orders/<int:pk>/receive/", order_views.order_receive, name="order_receive"),
+    path("materials/orders/<int:pk>/lines/", order_views.order_lines, name="order_lines"),
     path("materials/receipts/<int:pk>/cancel/", views.receipt_cancel, name="receipt_cancel"),
     path("materials/write-off/", views.material_write_off, name="material_write_off"),
     path("materials/export/", views.material_export, name="material_export"),

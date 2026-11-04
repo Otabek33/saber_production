@@ -1,0 +1,27 @@
+{% load i18n %}
+{% comment %}
+  A compact headline tile for the Production overview: an icon, the figure with its unit,
+  the label and a one-line note (full text on hover), the whole tile a link. Six fit in a
+  row on a wide screen, two on a phone. Usage:
+  {% include "production/_tile.html" with label=… value=… unit=… note=… icon=… tone=… href=… progress=… %}
+  tone: primary, info, success, warning, danger.
+{% endcomment %}
+<div class="col-6 col-lg-4 prod-tile-col">
+  <a href="{{ href }}" class="card prod-tile prod-tile-{{ tone|default:'primary' }} h-100 mb-0 text-reset text-decoration-none">
+    <div class="card-body d-flex align-items-start gap-2 p-2 px-3">
+      <span class="prod-tile-icon d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0">
+        <iconify-icon icon="{{ icon }}"></iconify-icon>
+      </span>
+      <div class="min-w-0 flex-grow-1">
+        <div class="prod-tile-value text-nowrap">{{ value }}{% if unit %} <span class="prod-tile-unit">{{ unit }}</span>{% endif %}</div>
+        <div class="prod-tile-label text-truncate" title="{{ label }}">{{ label }}</div>
+        {% if progress is not None %}
+          <div class="progress prod-tile-progress mt-1" role="progressbar" aria-label="{{ label }}" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" style="width: {% if progress > 100 %}100{% else %}{{ progress }}{% endif %}%"></div>
+          </div>
+        {% endif %}
+        {% if note %}<div class="prod-tile-note text-truncate" title="{{ note }}">{{ note }}</div>{% endif %}
+      </div>
+    </div>
+  </a>
+</div>

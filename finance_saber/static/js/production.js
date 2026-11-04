@@ -14,6 +14,18 @@
 
   makeSearchable(document);
 
+  // A production defect needs its reason: the reason list shows once a defect is typed.
+  function showReason(defect) {
+    var reason = defect.closest("td") && defect.closest("td").querySelector("[data-defect-reason]");
+    if (!reason) return;
+    var amount = parseFloat((defect.value || "").replace(/\s/g, "").replace(",", "."));
+    reason.hidden = !(amount > 0) && !reason.value;
+  }
+  document.addEventListener("input", function (event) {
+    if (event.target.matches && event.target.matches('[data-calc="defect"]')) showReason(event.target);
+  });
+  document.querySelectorAll('[data-calc="defect"]').forEach(showReason);
+
   // "Add a line" (recipes, receipts): copies the formset's empty form. The button names the
   // formset prefix; its rows are in [data-lines="<prefix>"], the empty form in #<prefix>-empty-line.
   document.querySelectorAll("[data-add-line]").forEach(function (button) {

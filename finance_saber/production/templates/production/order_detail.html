@@ -1,0 +1,177 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  One supplier order (goods in transit). Its lines travel separately: each has its own
+  status (ordered, in transit, at customs) and expected arrival, and shows what has arrived
+  and what is still to come. Receiving takes what came this time, a line or part of one:
+  each arrival makes its own material receipt; the order is received when nothing is left.
+{% endcomment %}
+
+{% block title %}{% translate "Order" context "supplier order" %} № {{ order.number }}{% endblock %}
+
+{% block page_header %}
+  {% translate "Goods in transit" as section %}
+  {% blocktranslate with number=order.number asvar page_title %}Order № {{ number }}{% endblocktranslate %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  {% for error in receive.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+
+  <div class="card">
+    <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <h5 class="card-title mb-1">{{ order.supplier.name }}</h5>
+        <span class="text-muted fs-2">
+          № {{ order.number }} · {% translate "ordered" %} {{ order.order_date|date:"d.m.Y" }} ·
+          {% translate "expected" %} <span class="{% if order.is_late %}text-danger fw-semibold{% endif %}">{{ order.expected_date|date:"d.m.Y" }}</span> ·
+          {{ order.currency }}{% if order.supplier.inn %} · {% translate "INN" %} {{ order.supplier.inn }}{% endif %}
+        </span>
+        {% if order.note %}<div class="fs-2 mt-1">{{ order.note }}</div>{% endif %}
+      </div>
+      <div>{% include "production/_order_status.html" %}</div>
+    </div>
+
+    {# The lines: what arrived, what is still to come, each with its own status and arrival #}
+    <form method="post" action="{% url 'production:order_lines' order.pk %}">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0 ledger-table">
+          <thead>
+            <tr>
+              <th>{% translate "Material" %}</th>
+              <th class="num">{% translate "Ordered" %}</th>
+              <th class="num">{% translate "Arrived" %}</th>
+              <th class="num">{% translate "Still to come" %}</th>
+              <th style="min-width: 150px">{% translate "Status" %}</th>
+              <th style="min-width: 150px">{% translate "Expected arrival" %}</th>
+              <th class="num">{% translate "Amount" %}, {{ order.currency }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in order.lines.all %}
+              <tr>
+                <td>{{ line.material.name }}</td>
+                <td class="num">{{ line.quantity|floatformat:"-3g" }} <span class="text-muted fs-1">{{ line.material.unit }}</span></td>
+                <td class="num {% if line.received %}text-success fw-semibold{% else %}text-muted{% endif %}">{{ line.received|floatformat:"-3g" }}</td>
+                <td class="num fw-semibold">{% if line.remaining %}{{ line.remaining|floatformat:"-3g" }}{% else %}<span class="badge bg-success-subtle text-success">{% translate "all arrived" %}</span>{% endif %}</td>
+                <td>
+                  {% if line.remaining and order.is_open and perms.production.change_materialorder %}
+                    <select name="line-{{ line.pk }}-status" class="form-select form-select-sm" aria-label="{% translate "Status" %}">
+                      {% for value, label in statuses %}<option value="{{ value }}"{% if line.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                    </select>
+                  {% elif line.remaining %}{{ line.get_status_display }}{% else %}—{% endif %}
+                </td>
+                <td>
+                  {% if line.remaining and order.is_open and perms.production.change_materialorder %}
+                    <input type="date" name="line-{{ line.pk }}-expected" value="{{ line.expected|date:"Y-m-d" }}" class="form-control form-control-sm{% if line.is_late %} is-invalid{% endif %}" aria-label="{% translate "Expected arrival" %}">
+                  {% elif line.remaining %}<span class="{% if line.is_late %}text-danger{% endif %}">{{ line.expected|date:"d.m.Y" }}</span>{% else %}—{% endif %}
+                </td>
+                <td class="num">{{ line.amount|floatformat:"2g" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot><tr class="fw-semibold"><td colspan="6">{% translate "Total" %}</td><td class="num">{{ order.total|floatformat:"2g" }}</td></tr></tfoot>
+        </table>
+      </div>
+      <div class="d-flex flex-wrap gap-2 px-4 py-3 border-top">
+        <a href="{% url 'production:orders' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Back" %}</a>
+        {% if order.is_open and perms.production.change_materialorder %}
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Save the lines' status and dates" %}</button>
+          <a href="{% url 'production:order_edit' order.pk %}" class="btn btn-sm bg-primary-subtle text-primary"><iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon> {% translate "Edit" %}</a>
+        {% endif %}
+      </div>
+    </form>
+
+    {% if order.is_open and perms.production.change_materialorder %}
+      <div class="d-flex flex-wrap align-items-center gap-2 px-4 py-3 border-top bg-body-tertiary">
+        <span class="text-muted fs-2 me-1">{% translate "All still to come is now:" %}</span>
+        {% for value, label in statuses %}
+          <form method="post" action="{% url 'production:order_status' order.pk %}" class="d-inline">
+            {% csrf_token %}<input type="hidden" name="status" value="{{ value }}">
+            <button type="submit" class="btn btn-sm bg-secondary-subtle text-secondary">{{ label }}</button>
+          </form>
+        {% endfor %}
+        {% if not order.receipts.all %}
+          <form method="post" action="{% url 'production:order_status' order.pk %}" class="d-inline ms-auto">
+            {% csrf_token %}<input type="hidden" name="status" value="cancelled">
+            <button type="submit" class="btn btn-sm bg-danger-subtle text-danger" data-confirm="{% translate "Cancel this order? It stops showing as in transit." %}">{% translate "Cancel the order" %}</button>
+          </form>
+        {% endif %}
+      </div>
+    {% elif order.status == "cancelled" and perms.production.change_materialorder %}
+      <form method="post" action="{% url 'production:order_status' order.pk %}" class="px-4 py-3 border-top">
+        {% csrf_token %}<input type="hidden" name="status" value="ordered">
+        <button type="submit" class="btn btn-sm bg-success-subtle text-success">{% translate "Restore" %}</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="row">
+    {% if order.is_open and receive.lines and perms.production.change_materialorder and perms.production.add_materialreceipt %}
+      <div class="col-xl-7">
+        <div class="card">
+          <div class="px-4 py-3 border-bottom">
+            <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+              <h5 class="card-title mb-0">{% translate "Goods arrived" %}</h5>
+              <button type="button" class="btn btn-sm bg-success-subtle text-success text-nowrap" data-fill-all="receive-form">{% translate "All arrived" %}</button>
+            </div>
+            <p class="text-muted fs-2 mb-0">{% translate "Type what came this time, as counted at the warehouse: «all» fills in what is still to come. Empty: didn't come. It makes a material receipt; the rest stays on the way." %}</p>
+          </div>
+          <form method="post" action="{% url 'production:order_receive' order.pk %}" novalidate class="form-compact" id="receive-form">
+            {% csrf_token %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>{% translate "Material" %}</th>
+                    <th class="num text-nowrap">{% translate "Still to come" %}</th>
+                    <th class="text-nowrap" style="width: 190px">{% translate "Arrived now" %}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for line, field in receive.line_fields %}
+                    <tr>
+                      {# One line: a long name is cut (full name on hover); the customs mark comes first #}
+                      <td class="text-truncate" style="max-width: 1px; width: 100%" title="{{ line.material.name }}">{% if line.status == "customs" %}<span class="badge bg-warning-subtle text-warning fs-1 me-1">{{ line.get_status_display }}</span>{% endif %}{{ line.material.name }}</td>
+                      <td class="num text-nowrap">{{ line.remaining|floatformat:"-3g" }} <span class="text-muted fs-1">{{ line.material.unit }}</span></td>
+                      <td>
+                        <div class="input-group input-group-sm flex-nowrap">
+                          {{ field }}
+                          <button type="button" class="btn bg-success-subtle text-success" data-fill="{{ field.id_for_label }}" data-value="{{ line.remaining|floatformat:"-4" }}" title="{% translate "All that is still to come" %}">{% translate "all" %}</button>
+                        </div>
+                        {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="row g-2 px-4 pt-3">
+              <div class="col-md-4">{% include "forms/_field.html" with field=receive.date %}</div>
+              <div class="col-md-4">{% include "forms/_field.html" with field=receive.number %}</div>
+              {% if receive.rate %}<div class="col-md-4">{% include "forms/_field.html" with field=receive.rate %}</div>{% endif %}
+            </div>
+            <div class="px-4 pb-3"><button type="submit" class="btn btn-success">{% translate "Receive into stock" %}</button></div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+    <div class="col-xl-5">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Arrivals" %}</h5></div>
+        <ul class="list-group list-group-flush">
+          {% for receipt in order.receipts.all %}
+            <li class="list-group-item px-4 py-2 d-flex justify-content-between gap-2{% if receipt.is_cancelled %} text-decoration-line-through opacity-50{% endif %}">
+              <a href="{% url 'production:receipt' receipt.pk %}" class="text-body">{{ receipt.date|date:"d.m.Y" }} · № {{ receipt.number }}</a>
+              <span class="text-muted fs-2 text-nowrap">{% blocktranslate count counter=receipt.lines.all|length %}{{ counter }} material{% plural %}{{ counter }} materials{% endblocktranslate %}</span>
+            </li>
+          {% empty %}
+            <li class="list-group-item px-4 py-3 text-muted">{% translate "Nothing has arrived yet." %}</li>
+          {% endfor %}
+        </ul>
+        <div class="px-4 py-2 border-top text-muted fs-2">{% translate "Only what is still to come shows on Raw materials as in transit. Cancelling an arrival's receipt puts it back on the way." %}</div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

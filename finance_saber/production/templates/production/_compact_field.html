@@ -1,0 +1,12 @@
+{% comment %}
+  A form field without the help line under it, for dense forms: the help shows on hovering the
+  label (and as the input's placeholder when the view gives one). Errors still show below.
+  Usage: {% include "production/_compact_field.html" with field=form.number %}
+{% endcomment %}
+<div class="mb-2">
+  <label for="{{ field.id_for_label }}" class="form-label mb-1"{% if field.help_text %} title="{{ field.help_text }}"{% endif %}>
+    {{ field.label }}{% if field.help_text %} <iconify-icon icon="solar:info-circle-line-duotone" class="text-muted align-middle"></iconify-icon>{% endif %}
+  </label>
+  {{ field }}
+  {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+</div>

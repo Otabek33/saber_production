@@ -16,7 +16,7 @@
       <div class="d-flex flex-wrap align-items-center gap-2">
         <a href="?date={{ previous_day.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Previous day" %}">‹</a>
         <form method="get" class="form-compact">
-          <input type="date" name="date" value="{{ date.isoformat }}" class="form-control form-control-sm" aria-label="{% translate "Date" %}" onchange="this.form.submit()">
+          <input type="date" name="date" value="{{ date.isoformat }}" class="form-control form-control-sm" aria-label="{% translate "Date" %}" data-autosubmit>
         </form>
         <a href="?date={{ next_day.isoformat }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Next day" %}">›</a>
         <span class="ms-2 fs-5 fw-semibold">{{ date|date:"l, j E Y" }}</span>

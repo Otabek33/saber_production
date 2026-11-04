@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 
 from finance_saber.cashbook import exports
 from finance_saber.cashbook.models import Company, Kind
+from finance_saber.cashbook.views import safe_next
 from finance_saber.core.permissions import permission
 from finance_saber.production.models import MaterialReceipt
 from finance_saber.settlements import ledger
@@ -156,7 +157,7 @@ def bill_cancel(request, pk):
         bill.is_cancelled = not bill.is_cancelled
         bill.save(update_fields=["is_cancelled"])
         messages.success(request, _("Bill cancelled.") if bill.is_cancelled else _("Bill restored."))
-    return redirect(request.POST.get("next") or reverse("purchases:bills"))
+    return redirect(safe_next(request, request.POST.get("next"), reverse("purchases:bills")))
 
 
 @permission(view=VIEW)

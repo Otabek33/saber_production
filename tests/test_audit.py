@@ -181,11 +181,11 @@ def test_only_the_superuser_opens_the_log(client, superuser, finance, planner, u
         assert client.get(LOG).status_code == 403
         assert client.get(reverse("audit:export")).status_code == 403
         menu = client.get(reverse("core:home")).context["nav_menu"]
-        assert LOG not in [child.url for entry in menu for child in entry.children]
+        assert LOG not in [child.url for entry in menu for child in entry.links]
     client.force_login(superuser)
     assert client.get(LOG).status_code == 200
     menu = client.get(reverse("core:home")).context["nav_menu"]
-    assert LOG in [child.url for entry in menu for child in entry.children]
+    assert LOG in [child.url for entry in menu for child in entry.links]
 
 
 def test_log_filters(client, superuser, finance, log):

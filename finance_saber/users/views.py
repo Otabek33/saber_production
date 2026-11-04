@@ -21,7 +21,7 @@ from django.views.generic import CreateView, FormView, ListView, UpdateView
 
 from finance_saber.core.permissions import PermissionMixin, permission
 
-from . import reset, telegram
+from . import reset, telegram, throttle
 from .forms import (
     DailyReportForm,
     LoginForm,
@@ -76,6 +76,9 @@ class SignUpView(CreateView):
     form_class = SignUpForm
 
     def dispatch(self, request, *args, **kwargs):
+        # Off unless DJANGO_ALLOW_SIGNUP is set: accounts are made by an administrator (Users page).
+        if not settings.ALLOW_SIGNUP:
+            raise Http404
         if request.user.is_authenticated:
             return redirect(settings.LOGIN_REDIRECT_URL)
         return super().dispatch(request, *args, **kwargs)
@@ -126,7 +129,8 @@ class ResetRequestView(FormView):
     def form_valid(self, form):
         user = reset.find_account(form.cleaned_data["identifier"])
         # The same steps and the same message whether or not the account exists or is linked.
-        if user is not None and reset.send_code(user):
+        # A few codes an hour at most (each allows 5 tries); the answer stays the same either way.
+        if user is not None and not throttle.codes_exhausted(user) and reset.send_code(user):
             self.request.session["reset_pk"] = user.pk
         else:
             self.request.session.pop("reset_pk", None)

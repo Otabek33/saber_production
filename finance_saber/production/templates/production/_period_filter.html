@@ -1,0 +1,17 @@
+{% load i18n %}
+{# From–to dates for a report page; the page reads ?from= and ?to= #}
+<div class="card mb-3">
+  <div class="card-body py-3 px-4">
+    <form method="get" class="row g-2 align-items-end form-compact">
+      <div class="col-6 col-md-auto">
+        <label for="from" class="form-label">{% translate "From" %}</label>
+        <input type="date" name="from" id="from" value="{{ start|date:'Y-m-d' }}" class="form-control">
+      </div>
+      <div class="col-6 col-md-auto">
+        <label for="to" class="form-label">{% translate "To" %}</label>
+        <input type="date" name="to" id="to" value="{{ end|date:'Y-m-d' }}" class="form-control">
+      </div>
+      <div class="col-12 col-md-auto"><button type="submit" class="btn btn-sm btn-primary">{% translate "Show" %}</button></div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,107 @@
+{% extends "layouts/app.html" %}
+{% load i18n static %}
+{% comment %}
+  Material analysis: choose a material (and, to try, any amount of it). Each product whose
+  recipe uses it shows how many units that amount is enough for, and how many can really
+  be made with every other material at its current stock (production/capacity.py).
+{% endcomment %}
+
+{% block title %}{% translate "Material analysis" %}{% endblock %}
+
+{% block vendor_css %}
+  <link rel="stylesheet" href="{% static 'matdash/libs/select2/dist/css/select2.min.css' %}">
+{% endblock %}
+
+{% block page_header %}
+  {% translate "Material analysis" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="row g-2 align-items-end form-compact">
+        <div class="col-12 col-md-5">{% include "forms/_field.html" with field=form.material %}</div>
+        <div class="col-6 col-md-2">{% include "forms/_field.html" with field=form.amount %}</div>
+        <div class="col-6 col-md-auto">
+          {% include "forms/_field.html" with field=form.transit %}
+          {% include "forms/_field.html" with field=form.with_loss %}
+        </div>
+        <div class="col-12 col-md-auto mb-3">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Show" %}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if material %}
+    <div class="row g-3 mb-3">
+      <div class="col-md-4"><div class="card mb-0"><div class="card-body p-3">
+        <span class="text-muted fs-2">{% translate "In stock" %}</span>
+        <h4 class="mb-0 {% if stock < 0 %}text-danger{% endif %}">{{ stock|floatformat:"-3g" }} <span class="fs-3 text-muted">{{ material.unit }}</span></h4>
+      </div></div></div>
+      <div class="col-md-4"><div class="card mb-0"><div class="card-body p-3">
+        <span class="text-muted fs-2">{% translate "In transit" %}</span>
+        <h4 class="mb-0">{% if transit %}<a href="{% url 'production:orders' %}?material={{ material.pk }}" class="text-body">{{ transit.quantity|floatformat:"-3g" }}</a> <span class="fs-2 {% if transit.late %}text-danger{% else %}text-muted{% endif %}">{% translate "by" %} {{ transit.expected|date:"d.m.Y" }}</span>{% else %}—{% endif %}</h4>
+      </div></div></div>
+      <div class="col-md-4"><div class="card mb-0 border border-primary"><div class="card-body p-3">
+        <span class="text-muted fs-2">{% if typed %}{% translate "Amount you typed" %}{% else %}{% translate "Counted with" %}{% endif %}{% if form.cleaned_data.transit and transit %} {% translate "+ in transit" %}{% endif %}</span>
+        <h4 class="mb-0 text-primary">{{ amount|floatformat:"-3g" }} <span class="fs-3 text-muted">{{ material.unit }}</span></h4>
+      </div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="px-4 py-3 border-bottom">
+        <h5 class="card-title mb-1">{% blocktranslate with name=material.name %}What {{ name }} is enough for{% endblocktranslate %}</h5>
+        <p class="text-muted fs-2 mb-0">{% translate "By each product's recipe (norm per can). «Enough for» counts this material alone; «Can be made» also counts every other material of the recipe at its stock now." %}</p>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+          <thead>
+            <tr>
+              <th>{% translate "Product" %}</th>
+              <th class="num">{% translate "Norm per can" %}</th>
+              <th class="num">{% translate "Enough for, cans" %}</th>
+              <th class="num">{% translate "Litres" %}</th>
+              <th class="num">{% translate "Can be made, cans" %}</th>
+              <th>{% translate "Runs out first" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td><a href="{% url 'production:recipe_edit' row.product.pk %}" class="text-body fw-semibold">{{ row.product.name }}</a></td>
+                <td class="num">{{ row.norm|floatformat:"-6" }} <span class="text-muted fs-1">{{ material.unit }}</span></td>
+                <td class="num fw-semibold text-primary">{{ row.from_material|floatformat:"0g" }}</td>
+                <td class="num text-muted">{{ row.litres|floatformat:"-1g" }}</td>
+                <td class="num fw-semibold {% if row.limited_by_other %}text-warning{% endif %}">{{ row.possible|floatformat:"0g" }}</td>
+                <td class="fs-2">
+                  {% if row.limited_by_other %}
+                    <span class="text-warning">{{ row.bottleneck.name }}</span>
+                    <span class="d-block text-muted">{% translate "in stock" %} {{ row.bottleneck_stock|floatformat:"-3g" }} {{ row.bottleneck.unit }}</span>
+                  {% else %}
+                    <span class="text-muted">{{ material.name|truncatechars:40 }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="text-center text-muted py-5">{% translate "No active product's recipe uses this material." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="text-muted fs-2 mt-2">{% translate "Each line is for one product made alone: the material is shared, so making several products divides it between them." %}</p>
+  {% else %}
+    <div class="card bg-info-subtle shadow-none">
+      <div class="card-body p-4">
+        <p class="mb-0">{% translate "Choose a material to see which products its stock is enough for and how many cans. Type an amount to try another figure, e.g. what a new delivery would give." %}</p>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {% include "production/_select2_scripts.html" %}
+{% endblock %}

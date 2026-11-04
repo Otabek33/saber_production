@@ -55,7 +55,7 @@
               <th class="num" style="min-width: 130px">{% translate "Norm" %}</th>
               <th class="num">{% blocktranslate with volume=product.volume|floatformat:"-3" %}Norm per {{ volume }} l{% endblocktranslate %}</th>
               <th class="num">{% translate "Use by norm" %}</th>
-              <th class="num" style="min-width: 110px; width: 120px">{% translate "Production defect" %}</th>
+              <th class="num" style="min-width: 130px; width: 140px">{% translate "Production defect" %}</th>
               <th class="num">{% translate "Write off" %}</th>
               <th class="num">{% translate "Loss, %" %}</th>
               <th class="num" style="min-width: 80px; width: 90px">{% translate "Allowed, %" %}</th>
@@ -80,7 +80,9 @@
                 <td class="num" data-calc-out="use"></td>
                 <td>
                   {{ line.defect }}
+                  {{ line.defect_reason }}
                   {% for error in line.defect.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                  {% for error in line.defect_reason.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                 </td>
                 <td class="num fw-semibold" data-calc-out="total"></td>
                 <td class="num" data-calc-out="loss"></td>
@@ -101,7 +103,7 @@
           <td>{{ formset.empty_form.norm }}<div class="fs-1 text-muted text-end" data-calc-out="basis"></div></td>
           <td class="num text-muted" data-calc-out="per-unit"></td>
           <td class="num" data-calc-out="use"></td>
-          <td>{{ formset.empty_form.defect }}</td>
+          <td>{{ formset.empty_form.defect }}{{ formset.empty_form.defect_reason }}</td>
           <td class="num fw-semibold" data-calc-out="total"></td>
           <td class="num" data-calc-out="loss"></td>
           <td>{{ formset.empty_form.allowed_loss }}</td>

@@ -168,11 +168,46 @@ def render(user, day: datetime.date | None = None) -> str:
             lines.append("   " + _("No materials are short."))
         lines.append("   " + _("Finished goods: %(units)s units") % {"units": quantity(stock["goods_units"])})
 
+    lines += production_alerts(user, day)
+
     if len(lines) == shown:
         lines += ["", _("Your role has no dashboard data to show.")]
     if settings.SITE_URL:
         lines += ["", f'<a href="{html.escape(settings.SITE_URL)}/">{_("Open the dashboard")}</a>']
     return "\n".join(lines).strip()
+
+
+def production_alerts(user, day: datetime.date) -> list[str]:
+    """What needs doing in production: late supplier orders, today's arrivals, batches going off."""
+    from finance_saber.production import expiry, suppliers
+    from finance_saber.production.models import MaterialReceipt
+
+    found = []
+    if user.has_perm("production.view_materialorder") and (late := suppliers.late_lines()):
+        found.append("   ⏰ " + _("Orders late: %(count)s") % {"count": len(late)})
+        for line in late[:LIST_LIMIT]:
+            found.append(
+                f"   • {esc(line.material.name)}: {quantity(line.remaining)} {esc(line.material.unit)} — "
+                f"{esc(line.order.supplier.name)}, {_('expected')} {line.expected:%d.%m}"
+            )
+    if user.has_perm("production.view_materialreceipt"):
+        arrived = list(
+            MaterialReceipt.objects.posted().filter(date=day).select_related("supplier").prefetch_related("lines")
+        )
+        if arrived:
+            found.append("   📥 " + _("Arrived today: %(count)s receipts") % {"count": len(arrived)})
+            for receipt in arrived[:LIST_LIMIT]:
+                count = _("%(count)s materials") % {"count": len(receipt.lines.all())}
+                found.append(f"   • № {esc(receipt.number)}, {esc(receipt.supplier.name)}: {count}")
+    if user.has_perm("production.view_product"):
+        summary = expiry.summary(expiry.product_lots(day))
+        if summary["expired"] or summary["soon"]:
+            found.append(
+                "   ⌛ "
+                + _("Batches: %(expired)s expired, %(soon)s expire within %(days)s days")
+                % {"expired": summary["expired"], "soon": summary["soon"], "days": expiry.SOON_DAYS}
+            )
+    return ["", f"🏭 <b>{_('Production alerts')}</b>", *found] if found else []
 
 
 # Each cash desk's day (like its page, e.g. /cash/bon/) ------------------------------------

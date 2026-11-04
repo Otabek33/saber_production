@@ -1,0 +1,129 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Norms against actual use for a month (production/losses.py): per material, the use by
+  the norm and the losses on top (production defects, write-offs, stock-count shortages),
+  against the loss the norms allow; and why defects happened. Over-the-allowed first.
+  Money only for those who may see costs.
+{% endcomment %}
+
+{% block title %}{% translate "Losses against norms" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Losses against norms" as page_title %}
+  {% translate "Production" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <a href="?month={{ previous_month|date:'Y-m' }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Previous month" %}">‹</a>
+        <form method="get" class="form-compact">
+          <input type="month" name="month" value="{{ month|date:'Y-m' }}" class="form-control form-control-sm" aria-label="{% translate "Month" %}" data-autosubmit>
+        </form>
+        <a href="?month={{ next_month|date:'Y-m' }}" class="btn btn-sm bg-primary-subtle text-primary" aria-label="{% translate "Next month" %}">›</a>
+        <span class="ms-2 fs-5 fw-semibold text-capitalize">{{ month|date:"F Y" }}</span>
+        <a href="?month={{ month|date:'Y-m' }}&export=xlsx" class="btn btn-sm bg-success-subtle text-success ms-auto">
+          <iconify-icon icon="solar:download-minimalistic-line-duotone"></iconify-icon> Excel
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Production runs" %}</span>
+      <h4 class="mb-0">{{ report.runs }}</h4>
+    </div></div></div>
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Materials over the allowed loss" %}</span>
+      <h4 class="mb-0 {% if report.too_much %}text-danger{% else %}text-success{% endif %}">{{ report.too_much|length }}</h4>
+    </div></div></div>
+    {% if show_money %}
+      <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+        <span class="text-muted fs-2">{% translate "Losses, UZS" %}</span>
+        <h4 class="mb-0">{{ report.losses_value|floatformat:"0g" }}</h4>
+      </div></div></div>
+      <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+        <span class="text-muted fs-2">{% translate "Over the allowed, UZS" %}</span>
+        <h4 class="mb-0 {% if report.over_allowed_value %}text-danger{% endif %}">{{ report.over_allowed_value|floatformat:"0g" }}</h4>
+      </div></div></div>
+    {% endif %}
+  </div>
+  {% if show_money and report.unpriced %}
+    <div class="alert alert-warning py-2 fs-2">
+      {% blocktranslate count counter=report.unpriced %}{{ counter }} material with losses has no price, so the sums leave it out.{% plural %}{{ counter }} materials with losses have no price, so the sums leave them out.{% endblocktranslate %}
+    </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-xxl-8">
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+            <thead>
+              <tr>
+                <th>{% translate "Material" %}</th>
+                <th class="num">{% translate "Use by norm" %}</th>
+                <th class="num" title="{% translate "Production defects, with their reasons" %}">{% translate "Defect" %}</th>
+                <th class="num">{% translate "Write-off" %}</th>
+                <th class="num" title="{% translate "Stock-count shortage (a surplus is negative)" %}">{% translate "Count" %}</th>
+                <th class="num">{% translate "Losses" %}</th>
+                <th class="num" title="{% translate "Losses to the use by norm, %, and the allowed loss, %" %}">% / {% translate "allowed" %}</th>
+                {% if show_money %}<th class="num">{% translate "Over the allowed, UZS" %}</th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in report.materials %}
+                <tr>
+                  <td class="text-truncate" style="max-width: 1px; width: 100%" title="{{ row.material.name }}">{{ row.material.name }}</td>
+                  <td class="num text-nowrap">{{ row.norm|floatformat:"-3g" }} <span class="text-muted fs-1">{{ row.material.unit }}</span></td>
+                  <td class="num">{% if row.defect %}{{ row.defect|floatformat:"-3g" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  <td class="num">{% if row.write_off %}{{ row.write_off|floatformat:"-3g" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  <td class="num">{% if row.shortage %}<span class="{% if row.shortage < 0 %}text-success{% endif %}">{{ row.shortage|floatformat:"-3g" }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  <td class="num fw-semibold">{% if row.losses %}{{ row.losses|floatformat:"-3g" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  <td class="num text-nowrap">
+                    {% if row.percent is not None %}<span class="{% if row.too_much %}text-danger fw-semibold{% endif %}">{{ row.percent|floatformat:"1g" }}</span>{% else %}—{% endif %}
+                    <span class="text-muted">/ {% if row.allowed_percent is not None %}{{ row.allowed_percent|floatformat:"1g" }}{% else %}—{% endif %}</span>
+                  </td>
+                  {% if show_money %}
+                    <td class="num">{% if row.over_allowed_value %}<span class="text-danger">{{ row.over_allowed_value|floatformat:"0g" }}</span>{% elif not row.price.known and row.losses %}<span class="text-warning fs-2">{% translate "no price" %}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                  {% endif %}
+                </tr>
+              {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-6">{% translate "Nothing was produced, written off or counted this month." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="px-4 py-2 border-top text-muted fs-2">{% translate "Losses = production defects + write-offs + stock-count shortage. Red: more than the norms allow (each recipe line's allowed loss)." %}</div>
+      </div>
+    </div>
+
+    <div class="col-xxl-4">
+      <div class="card">
+        <div class="px-4 py-3 border-bottom"><h5 class="card-title mb-0">{% translate "Why defects happened" %}</h5></div>
+        <ul class="list-group list-group-flush">
+          {% for group in report.reasons %}
+            <li class="list-group-item px-4 py-2">
+              <div class="d-flex justify-content-between gap-2">
+                <span class="fw-semibold{% if not group.reason %} text-warning{% endif %}">{{ group.label|default:_("No reason given") }}</span>
+                <span class="text-nowrap">
+                  {% blocktranslate count counter=group.entries %}{{ counter }} time{% plural %}{{ counter }} times{% endblocktranslate %}{% if show_money and group.value %} · {{ group.value|floatformat:"0g" }}{% endif %}
+                </span>
+              </div>
+              <div class="text-muted fs-2 text-truncate">
+                {% for material, quantity in group.top %}{{ material.name }}: {{ quantity|floatformat:"-3g" }} {{ material.unit }}{% if not forloop.last %}; {% endif %}{% endfor %}
+              </div>
+            </li>
+          {% empty %}
+            <li class="list-group-item px-4 py-3 text-muted">{% translate "No production defects this month." %}</li>
+          {% endfor %}
+        </ul>
+        <div class="px-4 py-2 border-top text-muted fs-2">{% translate "The reason is chosen with the defect on the day's calculation. Write-offs give theirs in the note." %}</div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

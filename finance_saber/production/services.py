@@ -137,6 +137,7 @@ class CalculationLine:
     quantity_per_unit: Decimal
     defect: Decimal = Decimal(0)
     allowed_loss: Decimal = Decimal(2)
+    defect_reason: str = ""
 
 
 @transaction.atomic
@@ -171,6 +172,7 @@ def save_calculation(
             material=line.material,
             quantity_per_unit=line.quantity_per_unit,
             defect=line.defect,
+            defect_reason=line.defect_reason if line.defect else "",
             allowed_loss=line.allowed_loss,
             position=position,
         )

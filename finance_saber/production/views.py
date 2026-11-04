@@ -20,15 +20,19 @@ from django.views.generic import CreateView, ListView, TemplateView, UpdateView
 from finance_saber.cashbook import exports
 from finance_saber.cashbook.handbooks import HandbookError
 from finance_saber.cashbook.models import Company
+from finance_saber.core import dashboard
 from finance_saber.core.permissions import PermissionMixin, permission
 
-from . import importer, recipe_excel, services, shipment_import, traceability
+from . import capacity, costing, importer, recipe_excel, services, shipment_import, traceability
+from . import overview as production_overview
 from .forms import (
+    MAX_WORKBOOK_SIZE,
     CalculationForm,
     CalculationLineFormSet,
     DailyProductionForm,
     DayForm,
     ImportForm,
+    MaterialAnalysisForm,
     MaterialForm,
     MaterialReceiptForm,
     MaterialUploadForm,
@@ -52,6 +56,7 @@ from .models import (
     ProductShipment,
     ProductShipmentLine,
     material_stock,
+    materials_in_transit,
     product_stock,
 )
 
@@ -309,6 +314,7 @@ class MaterialStockView(StockListView):
         context = super().get_context_data(**kwargs)
         stock = material_stock()
         month = self.month_totals(MaterialMove.objects, "material_id")
+        transit = materials_in_transit()  # ordered, not received yet (Goods in transit)
         rows = []
         for material in context["items"]:
             totals = month.get(material.pk, {})
@@ -318,11 +324,44 @@ class MaterialStockView(StockListView):
                 "stock": amount,
                 "received": totals.get(MaterialMove.Kind.RECEIPT, 0),
                 "used": -(totals.get(MaterialMove.Kind.CONSUMPTION) or 0),
+                "transit": transit.get(material.pk),
                 "low": amount < 0 or (material.min_stock and amount < material.min_stock),
             })  # fmt: skip
         context["rows"] = rows
         context["short_count"] = sum(1 for pk, amount in stock.items() if amount < 0)
         return context
+
+
+@permission(view="production.view_material")
+def overview(request):
+    """Production's dashboard: output and plan, materials at risk, goods in transit and finished goods."""
+    period = dashboard.period_from(request.GET)
+    context = {"period": period, "presets": dashboard.PRESETS, **production_overview.build(request.user, period)}
+    return render(request, "production/overview.html", context)
+
+
+@permission(view=("production.view_material", "production.view_recipeline"))
+def material_analysis(request):
+    """Which products a material is enough for, and how many: by the recipes, from its stock or any amount."""
+    form = MaterialAnalysisForm(request.GET or None)
+    context = {"form": form}
+    if form.is_valid():
+        material = form.cleaned_data["material"]
+        stock = material_stock().get(material.pk, Decimal(0))
+        transit = materials_in_transit().get(material.pk)
+        typed = form.cleaned_data["amount"]
+        amount = typed if typed is not None else stock
+        if form.cleaned_data["transit"] and transit:
+            amount += transit["quantity"]
+        context |= {
+            "material": material,
+            "stock": stock,
+            "transit": transit,
+            "amount": amount,
+            "typed": typed is not None,
+            "rows": capacity.capacity(material, amount, with_loss=form.cleaned_data["with_loss"]),
+        }
+    return render(request, "production/material_analysis.html", context)
 
 
 class ProductStockView(StockListView):
@@ -542,6 +581,8 @@ def batches(request):
 def batch(request, pk):
     """One batch: what it was made of, as recorded that day, and the deliveries each material came from."""
     run = get_object_or_404(ProductionRun.objects.select_related("product", "created_by"), pk=pk)
+    # What the batch cost, for those who may see costs (production/costing.py).
+    cost = costing.batch_costs([run]).get(run.pk) if request.user.has_perm("production.view_costs") else None
     return render(
         request,
         "production/batch_detail.html",
@@ -550,6 +591,7 @@ def batch(request, pk):
             "code": traceability.batch_code(run),
             "materials": traceability.batch_materials(run),
             "shipping": traceability.batch_destinations(run),
+            "cost": cost,
         },
     )
 
@@ -597,6 +639,8 @@ def receipt_cancel(request, pk):
         document.is_cancelled = not restoring
         document.save(update_fields=["is_cancelled"])
         document.rebuild_moves()
+        if document.order:  # what has arrived of its supplier order changed
+            document.order.refresh_status()
     messages.success(request, _("Receipt restored.") if restoring else _("Receipt cancelled."))
     return redirect("production:receipt", pk=document.pk)
 
@@ -771,6 +815,8 @@ def shipments_import(request):
         upload = request.FILES.get("file")
         if upload is None or not upload.name.lower().endswith(".xlsx"):
             messages.error(request, _("Choose the report as an .xlsx file."))
+        elif upload.size > MAX_WORKBOOK_SIZE:
+            messages.error(request, _("The file is too large (over 20 MB)."))
         else:
             try:
                 report = shipment_import.read_report(upload)

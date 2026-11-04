@@ -57,6 +57,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // Links that only open a menu or switch something (href="#") don't go anywhere.
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest && event.target.closest('a[href="#"]');
+    if (link) event.preventDefault();
+  });
+
+  // Inputs with data-autosubmit send their form when changed (a date or month switcher).
+  document.addEventListener("change", function (event) {
+    if (event.target.matches && event.target.matches("[data-autosubmit]") && event.target.form) {
+      event.target.form.submit();
+    }
+  });
+
   // Buttons and links with data-confirm="<question>" ask before they act.
   document.addEventListener("click", function (event) {
     var target = event.target.closest && event.target.closest("[data-confirm]");
@@ -98,4 +111,22 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event.target.matches && event.target.matches("input[data-number]")) reformat(event.target);
   });
   document.querySelectorAll("input[data-number]").forEach(reformat);
+
+  // Receiving an order: "all" fills a line with what is still to come, "All arrived" every line.
+  function fill(button) {
+    var input = document.getElementById(button.dataset.fill);
+    if (!input) return;
+    input.value = button.dataset.value.replace(".", ",");
+    input.dispatchEvent(new Event("input", { bubbles: true })); // app.js groups the digits
+  }
+  document.querySelectorAll("[data-fill]").forEach(function (button) {
+    button.addEventListener("click", function () { fill(button); });
+  });
+  document.querySelectorAll("[data-fill-all]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      // The button may sit outside its form (in the card's title): data-fill-all names the form's id.
+      var form = document.getElementById(button.dataset.fillAll) || button.closest("form");
+      if (form) form.querySelectorAll("[data-fill]").forEach(fill);
+    });
+  });
 });

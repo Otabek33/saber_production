@@ -23,7 +23,9 @@ from .models import (
     ProductShipment,
     ProductShipmentLine,
     RecipeLine,
+    RunLine,
 )
+from .periods import OpenPeriodFormMixin
 
 DATE_WIDGET = forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
 SEARCHABLE = {"data-searchable": ""}  # production.js turns these selects into Select2
@@ -127,7 +129,7 @@ class DailyProductionForm(BootstrapFormMixin, forms.Form):
         return {product: self.cleaned_data.get(self.field_name(product)) or 0 for product in self.products}
 
 
-class MaterialMoveForm(BootstrapFormMixin, forms.ModelForm):
+class MaterialMoveForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.ModelForm):
     """A material movement entered by hand; ``kind`` and ``sign`` (+1 in, −1 out) say what it is."""
 
     quantity = QuantityField(label=_("Quantity"))
@@ -143,7 +145,7 @@ class MaterialMoveForm(BootstrapFormMixin, forms.ModelForm):
         self.fields["date"].initial = timezone.localdate()
 
 
-class MaterialReceiptForm(BootstrapFormMixin, forms.ModelForm):
+class MaterialReceiptForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.ModelForm):
     """The receipt document's header: who it came from, when, and the supplier's invoice number."""
 
     class Meta:
@@ -175,6 +177,27 @@ class MaterialReceiptForm(BootstrapFormMixin, forms.ModelForm):
                 _("This supplier's document № %(number)s is already entered.") % {"number": number},
             )
         return cleaned
+
+
+class MaterialAnalysisForm(BootstrapFormMixin, forms.Form):
+    """The material analysis page's question: this material, this much of it (its stock if left empty)."""
+
+    material = forms.ModelChoiceField(
+        label=_("Material"), queryset=Material.objects.filter(is_active=True), widget=forms.Select(attrs=SEARCHABLE)
+    )
+    amount = QuantityField(
+        label=_("Amount"),
+        required=False,
+        min_value=Decimal(0),
+        widget=forms.TextInput(attrs={"data-number": "4"}),
+        help_text=_("Empty: the stock now. Type any amount to try it."),
+    )
+    transit = forms.BooleanField(label=_("Add goods in transit"), required=False)
+    with_loss = forms.BooleanField(
+        label=_("Norms with the allowed loss"),
+        required=False,
+        help_text=_("A margin: each norm plus its allowed loss, %."),
+    )
 
 
 class ReceiptLineForm(BootstrapFormMixin, forms.ModelForm):
@@ -254,7 +277,7 @@ class MaterialWriteOffForm(MaterialMoveForm):
         labels = {"note": _("Reason")}
 
 
-class ShipmentForm(BootstrapFormMixin, forms.ModelForm):
+class ShipmentForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.ModelForm):
     """The shipment document's header: the customer (a company of the handbook), its date and waybill number."""
 
     class Meta:
@@ -323,7 +346,7 @@ ShipmentLineFormSet = inlineformset_factory(
 )
 
 
-class StockCountForm(BootstrapFormMixin, forms.Form):
+class StockCountForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.Form):
     """A physical stock count: the books are corrected to the counted quantity."""
 
     date = forms.DateField(label=_("Date"), widget=DATE_WIDGET)
@@ -341,15 +364,43 @@ class StockCountForm(BootstrapFormMixin, forms.Form):
 
 
 class MaterialForm(BootstrapFormMixin, forms.ModelForm):
+    price = MoneyField(
+        label=_("Standard price"),
+        required=False,
+        min_value=Decimal(0),
+        help_text=_("UZS per unit, with VAT. Used for production cost only while no receipt has a price."),
+    )
+
     class Meta:
         model = Material
-        fields = ["name", "unit", "kind", "shelf_life", "min_stock", "is_active"]
+        fields = ["name", "unit", "kind", "shelf_life", "min_stock", "price", "is_active"]
+        widgets = {"shelf_life": forms.TextInput(attrs={"placeholder": "18 месяцев"})}
+
+    def clean_price(self):
+        return self.cleaned_data["price"] or Decimal(0)
+
+    def clean_shelf_life(self):
+        return _readable_shelf_life(self.cleaned_data["shelf_life"])
+
+
+def _readable_shelf_life(text: str) -> str:
+    """A shelf life the stock pages can read (expiry.parse), or empty; else the user is asked again."""
+    from .expiry import parse
+
+    text = " ".join((text or "").split())
+    if text and parse(text) is None:
+        raise forms.ValidationError(_("Write the number and the unit, e.g. 18 месяцев, 2 года or 180 дней."))
+    return text
 
 
 class ProductForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "sales_name", "volume", "position", "is_active"]
+        fields = ["name", "sales_name", "volume", "position", "shelf_life", "is_active"]
+        widgets = {"shelf_life": forms.TextInput(attrs={"placeholder": "18 месяцев"})}
+
+    def clean_shelf_life(self):
+        return _readable_shelf_life(self.cleaned_data["shelf_life"])
 
 
 class RecipeLineForm(BootstrapFormMixin, forms.ModelForm):
@@ -410,6 +461,15 @@ class CalculationLineForm(BootstrapFormMixin, forms.Form):
         required=False,
         widget=forms.TextInput(attrs={"data-calc": "defect", "placeholder": "0"}),
     )
+    # Shown under the defect once one is typed (production.js); needed with a defect.
+    defect_reason = forms.ChoiceField(
+        label=_("Defect reason"),
+        choices=[("", _("Why?")), *RunLine.DefectReason.choices],
+        required=False,
+        widget=forms.Select(
+            attrs={"class": "form-select form-select-sm mt-1", "data-defect-reason": "", "hidden": True}
+        ),
+    )
     allowed_loss = NormField(
         label=_("Allowed loss, %"),
         max_digits=5,
@@ -422,6 +482,12 @@ class CalculationLineForm(BootstrapFormMixin, forms.Form):
     def __init__(self, *args, materials=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["material"].queryset = materials if materials is not None else Material.objects.all()
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("defect") and not cleaned.get("defect_reason") and not cleaned.get("DELETE"):
+            self.add_error("defect_reason", _("Choose why it was scrapped."))
+        return cleaned
 
 
 class BaseCalculationLineFormSet(forms.BaseFormSet):
@@ -456,6 +522,7 @@ class BaseCalculationLineFormSet(forms.BaseFormSet):
                 material=form.cleaned_data["material"],
                 quantity_per_unit=self.per_unit(form.cleaned_data["material"], form.cleaned_data["norm"]),
                 defect=form.cleaned_data.get("defect") or Decimal(0),
+                defect_reason=form.cleaned_data.get("defect_reason") or "",
                 allowed_loss=(
                     form.cleaned_data["allowed_loss"]
                     if form.cleaned_data.get("allowed_loss") is not None
@@ -479,6 +546,7 @@ class BaseCalculationLineFormSet(forms.BaseFormSet):
                     "material": line.material,
                     "norm": plain(norm),
                     "defect": plain(line.defect) if line.defect else "",
+                    "defect_reason": getattr(line, "defect_reason", ""),
                     "allowed_loss": plain(line.allowed_loss),
                 }
             )

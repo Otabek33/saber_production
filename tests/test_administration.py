@@ -77,7 +77,7 @@ def test_access_matrix_shows_who_works_and_who_views(db):
     assert recipes[Role.FINANCE] == VIEW
     cash = dict(zip(order, rows["Cash desks and bank"], strict=True))
     assert (cash[Role.FINANCE], cash[Role.PLANNER], cash[Role.TECHNOLOGIST]) == (EDIT, NONE, NONE)
-    materials = dict(zip(order, rows["Raw materials: receipts, write-offs, counts"], strict=True))
+    materials = dict(zip(order, rows["Raw materials: receipts, goods in transit, write-offs, counts"], strict=True))
     assert (materials[Role.PLANNER], materials[Role.TECHNOLOGIST], materials[Role.FINANCE]) == (EDIT, EDIT, VIEW)
     users = dict(zip(order, rows["Users, roles and permissions"], strict=True))
     assert [users[role] for role in Role] == [NONE] * len(Role)
@@ -201,9 +201,11 @@ def test_production_roles_see_only_production(request, client, role_fixture):
     sections = {str(entry.label) for entry in menu if entry.children}
     assert sections == {"Производство"}
     production = next(entry for entry in menu if str(entry.label) == "Производство")
-    assert [str(child.label) for child in production.children] == [
-        "Выпуск за день", "Журнал выпуска", "Партии выпуска", "Сырьё на складе", "Поступления сырья",
-        "Готовая продукция", "Отгрузки", "Рецептуры и нормы", "Движения склада",
+    assert [str(child.label) for child in production.links] == [
+        "Обзор", "Выпуск за день", "Журнал выпуска", "Партии выпуска", "Сырьё на складе", "Поступления сырья",
+        "Товары в пути", "Поставщики", "Анализ сырья",
+        "Готовая продукция", "Сроки годности", "Отгрузки", "Рецептуры и нормы", "Нормы и потери",
+        "Движения склада", "Закрытие периода",
     ]  # fmt: skip
 
 
@@ -218,7 +220,7 @@ def test_operator_enters_sales_and_sees_nothing_else(client, operator):
     """The operator loads and enters shipments (sales) and views settlements; nothing else."""
     client.force_login(operator)
     menu = client.get(reverse("core:home")).context["nav_menu"]
-    sections = {str(entry.label): [str(child.label) for child in entry.children] for entry in menu}
+    sections = {str(entry.label): [str(child.label) for child in entry.links] for entry in menu}
     assert set(sections) == {"Главная", "Производство", "Продажи"}
     assert sections["Производство"] == ["Отгрузки"]
     assert sections["Продажи"] == ["Взаиморасчёты"]

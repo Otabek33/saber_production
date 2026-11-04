@@ -21,19 +21,23 @@ calculation sheet (Калькуляция производства):
     packaging:     norm per can × finished cans      + defect
 """
 
+import datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q, Sum
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 QUANTITY = {"max_digits": 18, "decimal_places": 4}
 MONEY = {"max_digits": 18, "decimal_places": 2}
 NORM = {"max_digits": 20, "decimal_places": 10}  # norms per can go down to millionths of a kilogram
 PERCENT = {"max_digits": 5, "decimal_places": 2}
 QUANTITY_STEP = Decimal("0.0001")
+SHELF_LIFE_HELP = _("e.g. 12 месяцев, 2 года, 180 дней. Stock shows until when it is good.")
 DEFAULT_ALLOWED_LOSS = Decimal(2)  # %, as in the production calculation sheet
 
 
@@ -47,13 +51,22 @@ class Material(models.Model):
     name = models.CharField(_("name"), max_length=150, unique=True)
     unit = models.CharField(_("unit"), max_length=20, help_text=_("e.g. кг, шт, л"))
     kind = models.CharField(_("type"), max_length=10, choices=Kind.choices, default=Kind.RAW)
-    shelf_life = models.CharField(_("shelf life"), max_length=50, blank=True)
+    shelf_life = models.CharField(_("shelf life"), max_length=50, blank=True, help_text=SHELF_LIFE_HELP)
     min_stock = models.DecimalField(
         _("minimum stock"),
         **QUANTITY,
         default=0,
         validators=[MinValueValidator(0)],
         help_text=_("Highlighted when stock falls below this."),
+    )
+    # Production cost (costing.py) takes the price of the deliveries actually used; this one
+    # only stands in where no delivery of the material has a price yet.
+    price = models.DecimalField(
+        _("standard price"),
+        **MONEY,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text=_("UZS per unit, with VAT. Used for production cost only while no receipt has a price."),
     )
     is_active = models.BooleanField(_("active"), default=True)
 
@@ -75,13 +88,18 @@ class Product(models.Model):
         _("volume, l"), max_digits=6, decimal_places=3, validators=[MinValueValidator(Decimal("0.001"))]
     )
     position = models.PositiveSmallIntegerField(_("position"), default=0, help_text=_("Order in lists and reports."))
+    # Read by expiry.py: a batch is good until its production date + this.
+    shelf_life = models.CharField(_("shelf life"), max_length=50, blank=True, help_text=SHELF_LIFE_HELP)
     is_active = models.BooleanField(_("active"), default=True)
 
     class Meta:
         ordering = ["position", "name"]
         verbose_name = _("product")
         verbose_name_plural = _("products")
-        permissions = [("import_excel", _("Can import production data from Excel"))]
+        permissions = [
+            ("import_excel", _("Can import production data from Excel")),
+            ("view_costs", _("Can view production cost and margin")),
+        ]
 
     def __str__(self):
         return self.name
@@ -295,6 +313,17 @@ class RunLine(models.Model):
     that run (the calculation sheet of the day), so each day keeps its own norms.
     """
 
+    class DefectReason(models.TextChoices):
+        """Why material was scrapped in production: the losses report (losses.py) adds them up."""
+
+        PACKAGING = "packaging", _("Faulty packaging (cans, lids)")
+        LABELLING = "labelling", _("Label or marking")
+        SPILLAGE = "spillage", _("Spillage, leak")
+        EQUIPMENT = "equipment", _("Equipment fault")
+        RAW = "raw", _("Poor raw material")
+        SETUP = "setup", _("Line setup, start-up")
+        OTHER = "other", _("Other")
+
     run = models.ForeignKey(ProductionRun, models.CASCADE, related_name="lines", verbose_name=_("production run"))
     material = models.ForeignKey(Material, models.PROTECT, related_name="run_lines", verbose_name=_("material"))
     quantity_per_unit = models.DecimalField(_("norm per unit"), **NORM, validators=[MinValueValidator(0)])
@@ -304,6 +333,9 @@ class RunLine(models.Model):
         default=0,
         validators=[MinValueValidator(0)],
         help_text=_("Scrapped in production, in the material's unit; written off on top of the norm."),
+    )
+    defect_reason = models.CharField(
+        _("defect reason"), max_length=12, choices=DefectReason.choices, blank=True, db_index=True
     )
     allowed_loss = models.DecimalField(
         _("allowed loss, %"), **PERCENT, default=DEFAULT_ALLOWED_LOSS, validators=[MinValueValidator(0)]
@@ -429,6 +461,16 @@ class MaterialReceipt(models.Model):
         _("registration number"), max_length=50, help_text=_("The number of the supplier's invoice or waybill.")
     )
     note = models.CharField(_("note"), max_length=255, blank=True)
+    order = models.ForeignKey(
+        "MaterialOrder",
+        models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="receipts",
+        verbose_name=_("material order"),
+        help_text=_("The supplier order (goods in transit) this receipt received, in full or in part."),
+    )
     is_cancelled = models.BooleanField(_("cancelled"), default=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, models.PROTECT, null=True, blank=True, related_name="+", verbose_name=_("created by")
@@ -492,6 +534,15 @@ class MaterialReceiptLine(models.Model):
     amount = models.DecimalField(
         _("amount"), **MONEY, default=0, validators=[MinValueValidator(0)], help_text=_("With VAT, in UZS.")
     )
+    order_line = models.ForeignKey(
+        "MaterialOrderLine",
+        models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="receipt_lines",
+        verbose_name=_("material order line"),
+    )
 
     class Meta:
         ordering = ["id"]
@@ -507,6 +558,193 @@ class MaterialReceiptLine(models.Model):
     @property
     def price(self) -> Decimal | None:
         return (self.amount / self.quantity).quantize(Decimal("0.01")) if self.quantity else None
+
+
+class MaterialOrder(models.Model):
+    """Materials ordered from a supplier and not in the warehouse yet: goods in transit (товары в пути).
+
+    Like 1C's «Заказ поставщику»: the planner enters what was ordered, from whom, at what
+    price (in the supplier's currency) and when it is expected. The goods often don't
+    travel together, so each line has its own status (ordered, in transit, at customs)
+    and, if it differs, its own expected date. What arrives is received in parts: each
+    arrival makes a material receipt (in UZS, at the day's rate) for the quantities that
+    came, and the order shows what is still to come. Only that remainder shows on the
+    Raw materials page as in transit. The order doesn't move stock itself, and a wrong
+    one is cancelled, not deleted.
+    """
+
+    class Status(models.TextChoices):
+        ORDERED = "ordered", _("Ordered")
+        IN_TRANSIT = "in_transit", _("In transit")
+        CUSTOMS = "customs", _("At customs")
+        PARTIAL = "partial", _("Partly received")
+        RECEIVED = "received", pgettext_lazy("order", "Received")
+        CANCELLED = "cancelled", pgettext_lazy("order", "Cancelled")
+
+    OPEN = (Status.ORDERED, Status.IN_TRANSIT, Status.CUSTOMS, Status.PARTIAL)
+    # What the goods themselves can be doing: an order's lines and its manual status.
+    ON_THE_WAY = (Status.ORDERED, Status.IN_TRANSIT, Status.CUSTOMS)
+
+    class Currency(models.TextChoices):
+        UZS = "UZS", "UZS"
+        USD = "USD", "USD"
+        EUR = "EUR", "EUR"
+        RUB = "RUB", "RUB"
+        CNY = "CNY", "CNY"
+
+    supplier = models.ForeignKey(
+        "cashbook.Company", models.PROTECT, related_name="material_orders", verbose_name=_("supplier")
+    )
+    number = models.CharField(
+        _("order number"), max_length=50, blank=True, help_text=_("The contract or invoice number; empty: numbered.")
+    )
+    order_date = models.DateField(_("order date"))
+    expected_date = models.DateField(_("expected arrival"), db_index=True)
+    currency = models.CharField(_("currency"), max_length=3, choices=Currency.choices, default=Currency.USD)
+    status = models.CharField(_("status"), max_length=12, choices=Status.choices, default=Status.ORDERED)
+    note = models.CharField(_("note"), max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, models.PROTECT, null=True, blank=True, related_name="+", verbose_name=_("created by")
+    )
+    created_at = models.DateTimeField(_("created"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("updated"), auto_now=True)
+
+    class Meta:
+        ordering = ["expected_date", "id"]
+        verbose_name = _("material order")
+        verbose_name_plural = _("material orders")
+
+    def __str__(self):
+        return f"№ {self.number} {self.supplier}"
+
+    def assign_number(self):
+        """A number for an order saved without one: "ЗК-00042" from its id."""
+        if not self.number:
+            self.number = f"ЗК-{self.pk:05d}"
+            self.save(update_fields=["number"])
+
+    @property
+    def is_open(self) -> bool:
+        return self.status in self.OPEN
+
+    @property
+    def days_left(self) -> int:
+        """Days until the expected arrival; negative when it is late."""
+        return (self.expected_date - timezone.localdate()).days
+
+    @property
+    def is_late(self) -> bool:
+        return self.is_open and self.days_left < 0
+
+    @property
+    def days_late(self) -> int:
+        return max(-self.days_left, 0)
+
+    @property
+    def total(self) -> Decimal:
+        return sum((line.amount for line in self.lines.all()), Decimal(0))
+
+    def refresh_status(self):
+        """After a receipt (or its cancelling): received when nothing is left to come, partly when some came."""
+        if self.status == self.Status.CANCELLED:
+            return
+        lines = list(with_received(MaterialOrderLine.objects.filter(order=self)))  # fresh, not a prefetched list
+        received = [line.received for line in lines]
+        if lines and all(line.remaining == 0 for line in lines):
+            status = self.Status.RECEIVED
+        elif any(received):
+            status = self.Status.PARTIAL
+        elif self.status in (self.Status.PARTIAL, self.Status.RECEIVED):
+            status = self.Status.IN_TRANSIT  # its receipts were cancelled: the goods are on the way again
+        else:
+            return
+        if status != self.status:
+            self.status = status
+            self.save(update_fields=["status", "updated_at"])
+
+
+class MaterialOrderLine(models.Model):
+    """One material of an order, with its own status and arrival: the goods may come separately."""
+
+    order = models.ForeignKey(MaterialOrder, models.CASCADE, related_name="lines", verbose_name=_("material order"))
+    material = models.ForeignKey(Material, models.PROTECT, related_name="order_lines", verbose_name=_("material"))
+    quantity = models.DecimalField(_("quantity"), **QUANTITY, validators=[MinValueValidator(QUANTITY_STEP)])
+    amount = models.DecimalField(
+        _("amount"), **MONEY, default=0, validators=[MinValueValidator(0)], help_text=_("In the order's currency.")
+    )
+    status = models.CharField(
+        _("status"),
+        max_length=12,
+        choices=[(value, label) for value, label in MaterialOrder.Status.choices if value in MaterialOrder.ON_THE_WAY],
+        default=MaterialOrder.Status.ORDERED,
+    )
+    expected_date = models.DateField(
+        _("expected arrival"), null=True, blank=True, help_text=_("Empty: the order's expected arrival.")
+    )
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = _("material order line")
+        verbose_name_plural = _("material order lines")
+        constraints = [models.UniqueConstraint(fields=["order", "material"], name="unique_material_per_order")]
+
+    def __str__(self):
+        return f"{self.material} {self.quantity}"
+
+    @property
+    def price(self) -> Decimal | None:
+        return (self.amount / self.quantity).quantize(Decimal("0.01")) if self.quantity else None
+
+    @property
+    def expected(self) -> datetime.date:
+        return self.expected_date or self.order.expected_date
+
+    @property
+    def received(self) -> Decimal:
+        """What has arrived: the quantities of its posted material receipts."""
+        if hasattr(self, "received_quantity"):  # annotated (with_received)
+            return self.received_quantity or Decimal(0)
+        total = self.receipt_lines.filter(receipt__is_cancelled=False).aggregate(total=models.Sum("quantity"))
+        return total["total"] or Decimal(0)
+
+    @property
+    def remaining(self) -> Decimal:
+        return max(self.quantity - self.received, Decimal(0))
+
+    @property
+    def is_late(self) -> bool:
+        return self.remaining > 0 and self.expected < timezone.localdate()
+
+
+def with_received(lines):
+    """Order lines annotated with what has arrived (``line.received`` without a query each)."""
+    return lines.annotate(
+        received_quantity=models.Sum("receipt_lines__quantity", filter=Q(receipt_lines__receipt__is_cancelled=False))
+    )
+
+
+def materials_in_transit() -> dict[int, dict]:
+    """{material id: what is still to come of open orders: quantity, of it at customs, the earliest arrival, late}."""
+    today = timezone.localdate()
+    found = {}
+    lines = with_received(
+        MaterialOrderLine.objects.filter(order__status__in=MaterialOrder.OPEN).select_related("order")
+    )
+    for line in lines:
+        if not line.remaining:
+            continue
+        item = found.setdefault(
+            line.material_id, {"quantity": Decimal(0), "customs": Decimal(0), "expected": None, "orders": 0}
+        )
+        item["quantity"] += line.remaining
+        if line.status == MaterialOrder.Status.CUSTOMS:
+            item["customs"] += line.remaining
+        item["orders"] += 1
+        if item["expected"] is None or line.expected < item["expected"]:
+            item["expected"] = line.expected
+    for item in found.values():
+        item["late"] = item["expected"] < today
+    return found
 
 
 class ProductMove(Move):
@@ -678,3 +916,25 @@ def product_stock(on_date=None) -> dict[int, Decimal]:
     if on_date:
         moves = moves.filter(date__lte=on_date)
     return moves.stock_by("product_id")
+
+
+class ClosedPeriod(models.Model):
+    """A closing (or reopening) of the period: from now on, nothing dated up to ``closed_until`` changes.
+
+    The latest row is in force (periods.py); earlier rows are the history. Never edited or deleted.
+    """
+
+    closed_until = models.DateField(_("closed until"))
+    note = models.CharField(_("note"), max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, models.PROTECT, null=True, blank=True, related_name="+", verbose_name=_("closed by")
+    )
+    created_at = models.DateTimeField(_("when"), auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        verbose_name = _("closed period")
+        verbose_name_plural = _("closed periods")
+
+    def __str__(self):
+        return f"{self.closed_until:%d.%m.%Y}"

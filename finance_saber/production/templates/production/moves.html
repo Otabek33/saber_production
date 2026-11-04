@@ -100,7 +100,7 @@
                         <iconify-icon icon="solar:restart-line-duotone"></iconify-icon>
                       </button>
                     {% else %}
-                      <button type="submit" class="btn btn-sm bg-danger-subtle text-danger ledger-action" title="{% translate "Cancel movement" %}" aria-label="{% translate "Cancel movement" %}" onclick="return confirm('{% translate "Cancel this movement? Stock will be recalculated." %}')">
+                      <button type="submit" class="btn btn-sm bg-danger-subtle text-danger ledger-action" title="{% translate "Cancel movement" %}" aria-label="{% translate "Cancel movement" %}" data-confirm="{% translate "Cancel this movement? Stock will be recalculated." %}">
                         <iconify-icon icon="solar:close-circle-line-duotone"></iconify-icon>
                       </button>
                     {% endif %}

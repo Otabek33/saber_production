@@ -1,0 +1,136 @@
+{% extends "layouts/app.html" %}
+{% load i18n %}
+{% comment %}
+  Margin on shipments (production/costing.py): what was shipped, for how much, and what
+  those units cost to make (the batches they were shipped from, first in, first out).
+  By product, customer (its head company) or month; returns count negative.
+{% endcomment %}
+
+{% block title %}{% translate "Margin" %}{% endblock %}
+
+{% block page_header %}
+  {% translate "Margin" as page_title %}
+  {% translate "Sales" as section %}
+  {% include "partials/_page_header.html" with title=page_title section=section %}
+{% endblock %}
+
+{% block content %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Shipped for" %}</span>
+      <h4 class="mb-0">{{ totals.revenue|floatformat:"0g" }}</h4>
+    </div></div></div>
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Cost" %}</span>
+      <h4 class="mb-0">{% if totals.cost_known %}{{ totals.cost|floatformat:"0g" }}{% else %}—{% endif %}</h4>
+    </div></div></div>
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Margin" %}</span>
+      <h4 class="mb-0 {% if totals.margin < 0 %}text-danger{% elif totals.cost_known %}text-success{% endif %}">{% if totals.cost_known %}{{ totals.margin|floatformat:"0g" }}{% else %}—{% endif %}</h4>
+    </div></div></div>
+    <div class="col-6 col-md-3"><div class="card mb-0"><div class="card-body p-3">
+      <span class="text-muted fs-2">{% translate "Margin, %" %}</span>
+      <h4 class="mb-0">{% if totals.percent is not None %}{{ totals.percent|floatformat:"1g" }}%{% else %}—{% endif %}</h4>
+    </div></div></div>
+  </div>
+
+  {% if totals.unknown_units %}
+    <div class="alert alert-warning">
+      {% blocktranslate with units=totals.unknown_units|floatformat:"0g" %}The cost of {{ units }} units is unknown (no material prices yet), so the margin is too high.{% endblocktranslate %}
+      {% if perms.production.view_costs %}<a href="{% url 'production:costs' %}" class="alert-link">{% translate "See which materials need a price" %}</a>{% endif %}
+    </div>
+  {% elif totals.estimated %}
+    <div class="alert alert-info py-2 fs-2">
+      {% blocktranslate with amount=totals.estimated|floatformat:"0g" %}{{ amount }} of the cost is estimated: stock from before receipts had prices, or shipments loaded as history.{% endblocktranslate %}
+    </div>
+  {% endif %}
+
+  <div class="card mb-3">
+    <div class="card-body py-3 px-4">
+      <form method="get" class="row g-2 align-items-end form-compact">
+        <div class="col-6 col-md-auto">
+          <label for="from" class="form-label">{% translate "From" %}</label>
+          <input type="date" name="from" id="from" value="{{ start|date:"Y-m-d" }}" class="form-control">
+        </div>
+        <div class="col-6 col-md-auto">
+          <label for="to" class="form-label">{% translate "To" %}</label>
+          <input type="date" name="to" id="to" value="{{ end|date:"Y-m-d" }}" class="form-control">
+        </div>
+        <div class="col-12 col-md-auto">
+          <span class="form-label d-block">{% translate "Show" %}</span>
+          <div class="btn-group btn-group-sm" role="group">
+            {% for value, label in groupings %}
+              <input type="radio" class="btn-check" name="by" id="by-{{ value }}" value="{{ value }}"{% if by == value %} checked{% endif %} data-autosubmit>
+              <label class="btn btn-outline-primary" for="by-{{ value }}">{{ label }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="col-12 col-md-auto d-flex gap-2">
+          <button type="submit" class="btn btn-sm btn-primary">{% translate "Show" %}</button>
+          <button type="submit" name="export" value="xlsx" class="btn btn-sm bg-success-subtle text-success">
+            <iconify-icon icon="solar:download-minimalistic-line-duotone"></iconify-icon> Excel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+        <thead>
+          <tr>
+            <th>{% if by == "customer" %}{% translate "Customer" %}{% elif by == "month" %}{% translate "Month" %}{% else %}{% translate "Product" %}{% endif %}</th>
+            <th class="num">{% translate "Units" %}</th>
+            <th class="num">{% translate "Shipped for" %}</th>
+            <th class="num">{% translate "Cost" %}</th>
+            <th class="num">{% translate "Per unit" %}</th>
+            <th class="num">{% translate "Margin" %}</th>
+            <th class="num">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>
+                {% if by == "month" %}<span class="text-capitalize">{{ row.label|date:"F Y" }}</span>{% else %}{{ row.label }}{% endif %}
+                {% if row.unknown_units %}<span class="badge bg-warning-subtle text-warning fs-1 ms-1">{% translate "incomplete" %}</span>
+                {% elif row.estimated %}<span class="badge bg-secondary-subtle text-secondary fs-1 ms-1">{% translate "estimate" %}</span>{% endif %}
+              </td>
+              <td class="num">{{ row.units|floatformat:"0g" }}</td>
+              <td class="num">{{ row.revenue|floatformat:"0g" }}</td>
+              {% if row.cost_known %}
+                <td class="num">{{ row.cost|floatformat:"0g" }}</td>
+                <td class="num text-muted">{% if row.unit_cost is not None %}{{ row.unit_cost|floatformat:"0g" }}{% else %}—{% endif %}</td>
+                <td class="num fw-semibold {% if row.margin < 0 %}text-danger{% endif %}">{{ row.margin|floatformat:"0g" }}</td>
+              {% else %}
+                <td class="num text-muted">—</td><td class="num text-muted">—</td><td class="num text-muted">—</td>
+              {% endif %}
+              <td class="num">{% if row.percent is not None %}{{ row.percent|floatformat:"1g" }}{% else %}—{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-6">{% translate "Nothing was shipped in this period." %}</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if rows %}
+          <tfoot>
+            <tr class="fw-semibold">
+              <td>{% translate "Total" %}</td>
+              <td class="num">{{ totals.units|floatformat:"0g" }}</td>
+              <td class="num">{{ totals.revenue|floatformat:"0g" }}</td>
+              {% if totals.cost_known %}
+                <td class="num">{{ totals.cost|floatformat:"0g" }}</td>
+                <td class="num">{% if totals.unit_cost is not None %}{{ totals.unit_cost|floatformat:"0g" }}{% endif %}</td>
+                <td class="num">{{ totals.margin|floatformat:"0g" }}</td>
+              {% else %}
+                <td class="num">—</td><td class="num">—</td><td class="num">—</td>
+              {% endif %}
+              <td class="num">{% if totals.percent is not None %}{{ totals.percent|floatformat:"1g" }}{% endif %}</td>
+            </tr>
+          </tfoot>
+        {% endif %}
+      </table>
+    </div>
+    <div class="px-4 py-2 border-top text-muted fs-2">{% translate "Cost: what the shipped units cost to make (their batches' materials, oldest stock shipped first). Amounts with VAT, as entered; returns count negative." %}</div>
+  </div>
+{% endblock %}

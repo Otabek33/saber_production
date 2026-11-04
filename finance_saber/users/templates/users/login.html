@@ -33,7 +33,7 @@
 {% endblock %}
 
 {% block scripts %}
-  <script>
+  <script nonce="{{ csp_nonce }}">
     // Light or dark, applied at once and saved the same way as the header switch (js/app.js).
     (function () {
       var select = document.getElementById("theme-select");

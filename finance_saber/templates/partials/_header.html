@@ -6,7 +6,7 @@
       <ul class="navbar-nav flex-row align-items-center">
         {# Opens the menu drawer below 1300px; see css/app.css #}
         <li class="nav-item d-flex nav-drawer-toggle">
-          <a class="nav-link sidebartoggler nav-icon-hover-bg rounded-circle" id="sidebarCollapse" href="javascript:void(0)" aria-label="{% translate "Toggle menu" %}">
+          <a class="nav-link sidebartoggler nav-icon-hover-bg rounded-circle" id="sidebarCollapse" href="#" aria-label="{% translate "Toggle menu" %}">
             <iconify-icon icon="solar:hamburger-menu-line-duotone" class="fs-7"></iconify-icon>
           </a>
         </li>
@@ -20,7 +20,7 @@
         {% include "partials/_navigation.html" %}
       </div>
 
-      <a class="navbar-toggler nav-icon-hover p-0 border-0 nav-icon-hover-bg rounded-circle ms-auto d-xl-none" href="javascript:void(0)" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="{% translate "Toggle toolbar" %}">
+      <a class="navbar-toggler nav-icon-hover p-0 border-0 nav-icon-hover-bg rounded-circle ms-auto d-xl-none" href="#" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="{% translate "Toggle toolbar" %}">
         <span class="p-2"><i class="ti ti-dots fs-7"></i></span>
       </a>
 
@@ -28,17 +28,17 @@
         <ul class="navbar-nav flex-row align-items-center ms-auto gap-1">
           {# Light / dark mode; the choice is remembered by js/app.js #}
           <li class="nav-item">
-            <a class="nav-link nav-icon-hover-bg rounded-circle moon dark-layout" href="javascript:void(0)" aria-label="{% translate "Dark mode" %}">
+            <a class="nav-link nav-icon-hover-bg rounded-circle moon dark-layout" href="#" aria-label="{% translate "Dark mode" %}">
               <iconify-icon icon="solar:moon-line-duotone" class="moon fs-6"></iconify-icon>
             </a>
-            <a class="nav-link nav-icon-hover-bg rounded-circle sun light-layout" href="javascript:void(0)" style="display: none" aria-label="{% translate "Light mode" %}">
+            <a class="nav-link nav-icon-hover-bg rounded-circle sun light-layout" href="#" style="display: none" aria-label="{% translate "Light mode" %}">
               <iconify-icon icon="solar:sun-2-line-duotone" class="sun fs-6"></iconify-icon>
             </a>
           </li>
 
           {# Full screen: hides the menu so the page fills the window; Esc or this button leaves it #}
           <li class="nav-item d-none d-md-block">
-            <a class="nav-link nav-icon-hover-bg rounded-circle fullscreen-toggle" href="javascript:void(0)" role="button" aria-pressed="false" aria-label="{% translate "Full screen" %}" title="{% translate "Full screen" %}">
+            <a class="nav-link nav-icon-hover-bg rounded-circle fullscreen-toggle" href="#" role="button" aria-pressed="false" aria-label="{% translate "Full screen" %}" title="{% translate "Full screen" %}">
               <iconify-icon icon="solar:maximize-square-line-duotone" class="fs-6 fullscreen-on"></iconify-icon>
               <iconify-icon icon="solar:minimize-square-line-duotone" class="fs-6 fullscreen-off" style="display: none"></iconify-icon>
             </a>
@@ -48,7 +48,7 @@
 
           {# Notifications: empty until the app has something to notify about #}
           <li class="nav-item dropdown">
-            <a class="nav-link nav-icon-hover-bg rounded-circle position-relative" href="javascript:void(0)" id="notificationsDropdown" aria-expanded="false" aria-label="{% translate "Notifications" %}">
+            <a class="nav-link nav-icon-hover-bg rounded-circle position-relative" href="#" id="notificationsDropdown" aria-expanded="false" aria-label="{% translate "Notifications" %}">
               <iconify-icon icon="solar:bell-bing-line-duotone" class="fs-6"></iconify-icon>
             </a>
             <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="notificationsDropdown">
@@ -64,7 +64,7 @@
 
           {# Account: name, role, and the account links #}
           <li class="nav-item dropdown">
-            <a class="nav-link" href="javascript:void(0)" id="profileDropdown" aria-expanded="false" aria-label="{% translate "Account menu" %}">
+            <a class="nav-link" href="#" id="profileDropdown" aria-expanded="false" aria-label="{% translate "Account menu" %}">
               <div class="d-flex align-items-center gap-2 lh-base">
                 <span class="user-avatar rounded-circle" style="--size: 35px">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</span>
                 <iconify-icon icon="solar:alt-arrow-down-bold" class="fs-2"></iconify-icon>
