@@ -453,6 +453,34 @@
   min-width: 0;
 }
 
+/* New pages in the menu (core/navigation.py NEW_PAGES): a small «Новое» badge on the page,
+   a dot on its section's icon; js/app.js hides them once the person has opened the page. */
+.nav-new {
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  background-color: var(--bs-success);
+  border-radius: 10px;
+}
+.sidebar-link .nav-new { flex-shrink: 0; }
+.nav-new-dot {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--bs-success);
+  border: 2px solid var(--bs-body-bg);
+  border-radius: 50%;
+}
+.nav-new[hidden], .nav-new-dot[hidden] { display: none !important; }
+/* In the narrow drawer a long name wraps rather than push the badge out of the menu. */
+@media (max-width: 1299.98px) {
+  .sidebar-link:has(.nav-new) .hide-menu { min-width: 0; white-space: normal; }
+}
+
 /* A menu section split into groups (core/navigation.py): headed blocks in the drawer,
    side-by-side columns in the desktop dropdown. */
 .nav-groups .nav-group-title {
@@ -471,6 +499,10 @@
   html[data-layout="horizontal"] .sidebar-nav #sidebarnav > .sidebar-item > ul.first-level.nav-groups {
     width: auto;
     padding: 8px;
+    /* Open from the menu item's left edge: the theme right-aligns dropdowns, which pushed the
+       first column off the left of the screen when the item sits near it (Производство). */
+    left: 0;
+    right: auto;
   }
   html[data-layout="horizontal"] .sidebar-nav #sidebarnav > .sidebar-item:hover > ul.first-level.collapse.nav-groups {
     display: grid;

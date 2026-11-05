@@ -7,11 +7,13 @@ A long section can be split into groups: a NavItem with children and no URL insi
 section is a group, shown as a headed column of the dropdown (a headed block in the drawer).
 """
 
+import datetime
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from django.http import HttpRequest
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
@@ -62,6 +64,12 @@ class MenuEntry:
     icon: str
     active: bool
     children: list["MenuEntry"] = field(default_factory=list)
+    new: bool = False  # a new page: a «Новое» badge until the person opens it (js/app.js)
+
+    @property
+    def has_new(self) -> bool:
+        """A section with a new page somewhere in it: a dot on the section."""
+        return any(child.new or child.has_new for child in self.children)
 
     @property
     def grouped(self) -> bool:
@@ -73,6 +81,15 @@ class MenuEntry:
         """The section's pages, with those inside its groups."""
         return [page for child in self.children for page in (child.links if child.children else [child])]
 
+
+# New pages get a «Новое» badge in the menu (and their section a dot) until NEW_UNTIL, and for each
+# person only until they open the page. Add a page's url name here when it is added; move the date on.
+NEW_UNTIL = datetime.date(2026, 12, 4)
+NEW_PAGES = frozenset({
+    "production:index", "production:orders", "production:material_analysis", "production:suppliers",
+    "production:costs", "production:expiry", "production:losses", "production:close", "production:margin",
+    "settlements:balances", "purchases:vendors", "purchases:bills", "purchases:payments",
+})  # fmt: skip
 
 # The money side of the menu (accounting, purchases, reports): for roles that see the cash desks.
 MONEY = "cashbook.view_operation"
@@ -294,6 +311,8 @@ def build_menu(request: HttpRequest) -> list[MenuEntry]:
     def allowed(item: NavItem) -> bool:
         return not item.permission or request.user.has_perm(item.permission)
 
+    showing_new = timezone.localdate() <= NEW_UNTIL
+
     def resolve(item: NavItem) -> MenuEntry | None:
         child_items = (*item.children_from(), *item.children) if item.children_from else item.children
         children = [entry for child in child_items if allowed(child) and (entry := resolve(child))]
@@ -305,6 +324,7 @@ def build_menu(request: HttpRequest) -> list[MenuEntry]:
             icon=item.icon,
             active=item.is_current(current, current_kwargs) or any(child.active for child in children),
             children=children,
+            new=showing_new and item.url_name in NEW_PAGES,
         )
 
     return [entry for item in NAVIGATION if allowed(item) and (entry := resolve(item))]

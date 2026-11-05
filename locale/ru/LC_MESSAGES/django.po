@@ -6606,3 +6606,12 @@ msgstr "Партии: просрочено %(expired)s, истекает за %(
 #: finance_saber/production/control
 msgid "closed by"
 msgstr "кем закрыто"
+
+#: finance_saber/templates/partials/_nav_link.html
+msgctxt "menu badge"
+msgid "New"
+msgstr "Новое"
+
+#: finance_saber/templates/partials/_navigation.html
+msgid "Something new here"
+msgstr "Здесь есть новое"

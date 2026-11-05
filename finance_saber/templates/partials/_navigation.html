@@ -15,7 +15,7 @@
           <li class="sidebar-item{% if item.active %} selected{% endif %}">
             {% if item.children %}
               <a class="sidebar-link has-arrow{% if item.active %} active{% endif %}" href="#" aria-expanded="false">
-                <span><iconify-icon icon="{{ item.icon }}" class="ti"></iconify-icon></span>
+                <span class="position-relative"><iconify-icon icon="{{ item.icon }}" class="ti"></iconify-icon>{% if item.has_new %}<span class="nav-new-dot" data-new-dot title="{% translate "Something new here" %}"></span>{% endif %}</span>
                 <span class="hide-menu">{{ item.label }}</span>
               </a>
               <ul aria-expanded="false" class="collapse first-level{% if item.grouped %} nav-groups{% endif %}">

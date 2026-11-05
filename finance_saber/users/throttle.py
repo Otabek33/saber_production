@@ -9,6 +9,7 @@ are counted from there: nothing extra to store, and they hold across server proc
 - Reset codes: at most ``CODES_PER_HOUR`` sent to one account an hour (each code allows 5 tries).
 """
 
+from django.conf import settings
 from django.utils import timezone
 
 from finance_saber.audit.context import client_ip
@@ -23,6 +24,8 @@ def login_blocked(username: str, request) -> bool:
     """True while ``username`` or the request's IP has failed to sign in too often lately."""
     from finance_saber.audit.models import AuditEvent
 
+    if settings.DEBUG:  # local development only: production runs with DEBUG off
+        return False
     since = timezone.now() - WINDOW
     events = AuditEvent.objects.filter(created_at__gte=since)
     if username:

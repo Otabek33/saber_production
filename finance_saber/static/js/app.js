@@ -57,6 +57,25 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // «Новое» badges on new menu pages: gone once this person has opened the page (remembered in
+  // this browser); a section's dot goes when none of its new pages is left unseen.
+  var seenNew = [];
+  try { seenNew = JSON.parse(localStorage.getItem("seenNew") || "[]"); } catch (e) { seenNew = []; }
+  var newBadges = document.querySelectorAll("[data-new]");
+  newBadges.forEach(function (badge) {
+    if (badge.dataset.new === window.location.pathname && seenNew.indexOf(badge.dataset.new) === -1) {
+      seenNew.push(badge.dataset.new);
+      try { localStorage.setItem("seenNew", JSON.stringify(seenNew)); } catch (e) { /* not remembered */ }
+    }
+  });
+  newBadges.forEach(function (badge) {
+    if (seenNew.indexOf(badge.dataset.new) !== -1) badge.hidden = true;
+  });
+  document.querySelectorAll("[data-new-dot]").forEach(function (dot) {
+    var section = dot.closest(".sidebar-item");
+    dot.hidden = !(section && section.querySelector("[data-new]:not([hidden])"));
+  });
+
   // Links that only open a menu or switch something (href="#") don't go anywhere.
   document.addEventListener("click", function (event) {
     var link = event.target.closest && event.target.closest('a[href="#"]');
