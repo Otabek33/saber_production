@@ -135,6 +135,8 @@ if [ ! -f "$ENV_FILE" ]; then
     set_env DJANGO_ADMIN_URL "admin-$(openssl rand -hex 8)/"
     echo "Created with a new secret key and admin address."
 fi
+# A copy of the settings as they were before this run (same owner and mode), to go back to.
+cp -p "$ENV_FILE" "$ENV_FILE.before-setup"
 # The address may change (the domain is temporary): these follow DOMAIN on every run.
 # DOMAIN stays first: deploy.sh's health check uses the first allowed host.
 hosts="$DOMAIN"
@@ -204,6 +206,11 @@ if [ -n "$DB_NAME$DB_USER" ]; then
     # PostgreSQL 15+ no longer lets every user create tables in "public"; the owner can.
     [ "$(psql_root -c "SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = '$DB_NAME'")" = "$DB_USER" ] \
         || psql_root -d "$DB_NAME" -c "GRANT USAGE, CREATE ON SCHEMA public TO \"$DB_USER\""
+elif [[ "$database_url" == postgres*://* ]] && [[ "$database_url" != *":password@"* ]] \
+    && [[ "$database_url" != "postgres://$APP:"*"@localhost:$DB_PORT/$APP" ]]; then
+    # A database chosen on an earlier run (DB_NAME/DB_USER): a run without them (e.g. only a
+    # new DOMAIN) keeps it, and never switches the site to a new, empty database.
+    echo "Keeping the database already set in $ENV_FILE."
 else
     if [[ "$database_url" != "postgres://$APP:"*"@localhost:$DB_PORT/$APP" ]] || [[ "$database_url" == *":password@"* ]]; then
         # New password, written only to the env file (hex: safe inside a URL).
@@ -296,6 +303,12 @@ fi
 step "9. First release: check, migrate, static files, start"
 # restart, not start: a run with a new PORT or WORKERS must take effect.
 systemctl restart finance_saber
+# Wait until the workers are up: deploy.sh clears the static files, and a worker still reading
+# them at boot would crash and take the service down just before deploy.sh reloads it.
+for _ in $(seq 30); do
+    curl -fsS -o /dev/null --max-time 5 -H "Host: $DOMAIN" "http://127.0.0.1:$PORT/health/" && break
+    sleep 2
+done
 as_app bash "$APP_DIR/deploy/deploy.sh"
 systemctl start finance_saber-daily-reports.timer
 
