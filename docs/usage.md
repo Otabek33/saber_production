@@ -79,7 +79,7 @@ The `deploy/` folder has everything the server needs:
 the code in `/srv/finance_saber` (or let the script clone it), then as root:
 
 ```sh
-sudo DOMAIN=work.fintechdev.uz CERTBOT_EMAIL=you@example.com bash /srv/finance_saber/deploy/setup_server.sh
+sudo DOMAIN=www.bonnatural.uz CERTBOT_EMAIL=you@example.com bash /srv/finance_saber/deploy/setup_server.sh
 ```
 
 It installs nginx, PostgreSQL, certbot and uv. It creates the `finance_saber` user,
@@ -87,7 +87,10 @@ and a PostgreSQL user and database with a random password. It writes
 `.env/production.env` with a new secret key and admin address, gets the HTTPS
 certificate, and installs the services and the nginx site. Then it does the first
 release with `deploy.sh`. Running it again is safe: it keeps the existing
-password, keys and data. To move to the real domain later, run it again with
+password, keys and data. With a `www` domain the bare one (`bonnatural.uz`) is served
+too — allowed hosts, nginx and the certificate include it — so point its DNS A record
+at the server as well (`ALIASES=""` turns this off; `ALIASES="a.uz b.uz"` names others).
+To move to the real domain later, run it again with
 `DOMAIN=new.domain.uz`: the hosts, nginx and certificate follow. When the repository is
 private and the code is not on the server yet, the script prints an SSH key: add it on
 GitHub as a read-only deploy key, then run it again.
@@ -97,7 +100,7 @@ asks for the password (hidden), checks that it connects, and writes `DATABASE_UR
 with the password percent-encoded:
 
 ```sh
-sudo DB_NAME=saber_finance DB_USER=saber DOMAIN=work.fintechdev.uz bash /srv/finance_saber/deploy/setup_server.sh
+sudo DB_NAME=saber_finance DB_USER=saber DOMAIN=www.bonnatural.uz bash /srv/finance_saber/deploy/setup_server.sh
 ```
 
 On a server that runs other sites, nothing of theirs is changed: the default nginx

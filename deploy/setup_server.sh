@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # First install of finance_saber on a fresh Ubuntu/Debian server, as root:
-#   sudo DOMAIN=work.fintechdev.uz CERTBOT_EMAIL=you@example.com bash deploy/setup_server.sh
+#   sudo DOMAIN=www.bonnatural.uz CERTBOT_EMAIL=you@example.com bash deploy/setup_server.sh
 #
 # Safe to run again: every step checks what is already there. Run it again with a
 # new DOMAIN to move the site to a new address (env file, nginx and certificate follow).
 # For later releases use deploy/deploy.sh, not this script.
 #
 # Before running:
-#   - the domain's DNS A record points at this server (Let's Encrypt checks it);
+#   - the domain's DNS A record points at this server (Let's Encrypt checks it); for a www
+#     domain the bare one (bonnatural.uz) is served too, so it needs its own A record;
 #   - the code is in /srv/finance_saber (copied there), or REPO_URL can be cloned. For a
 #     private repository the script makes an SSH key for the app user and prints it: add it
 #     on GitHub › Settings › Deploy keys (read-only), then run the script again.
@@ -26,7 +27,11 @@
 # there; the older one and its databases are not touched.
 set -euo pipefail
 
-DOMAIN="${DOMAIN:-work.fintechdev.uz}"
+DOMAIN="${DOMAIN:-www.bonnatural.uz}"
+# Other names the site also answers on (space-separated; allowed hosts, nginx and the certificate
+# include them). For a www domain the bare one is added by itself; ALIASES="" turns that off.
+if [ -z "${ALIASES+x}" ] && [[ "$DOMAIN" == www.* ]]; then ALIASES="${DOMAIN#www.}"; fi
+ALIASES="${ALIASES:-}"
 CERTBOT_EMAIL="${CERTBOT_EMAIL:-}"
 REPO_URL="${REPO_URL:-git@github.com:Otabek33/saber_production.git}"
 BRANCH="${BRANCH:-main}"
@@ -68,6 +73,7 @@ get_env() { grep -E "^$1=" "$ENV_FILE" | tail -n1 | cut -d= -f2- || true; }
 [ "$(id -u)" -eq 0 ] || fail "run as root: sudo bash $0"
 cd /tmp  # sudo -u postgres can't read root's home folder
 [[ "$DOMAIN" =~ ^[a-z0-9.-]+$ ]] || fail "DOMAIN looks wrong: $DOMAIN"
+[[ "$ALIASES" =~ ^[a-z0-9.\ -]*$ ]] || fail "ALIASES looks wrong: $ALIASES"
 [[ "$PORT" =~ ^[0-9]+$ ]] || fail "PORT must be a number: $PORT"
 [[ "$WORKERS" =~ ^[0-9]*$ ]] || fail "WORKERS must be a number: $WORKERS"
 [[ "$DB_PORT" =~ ^[0-9]*$ ]] || fail "DB_PORT must be a number: $DB_PORT"
@@ -130,8 +136,15 @@ if [ ! -f "$ENV_FILE" ]; then
     echo "Created with a new secret key and admin address."
 fi
 # The address may change (the domain is temporary): these follow DOMAIN on every run.
-set_env DJANGO_ALLOWED_HOSTS "$DOMAIN"
-set_env DJANGO_CSRF_TRUSTED_ORIGINS "https://$DOMAIN"
+# DOMAIN stays first: deploy.sh's health check uses the first allowed host.
+hosts="$DOMAIN"
+origins="https://$DOMAIN"
+for name in $ALIASES; do
+    hosts+=",$name"
+    origins+=",https://$name"
+done
+set_env DJANGO_ALLOWED_HOSTS "$hosts"
+set_env DJANGO_CSRF_TRUSTED_ORIGINS "$origins"
 set_env DJANGO_SITE_URL "https://$DOMAIN"
 chown "$APP:$APP" "$ENV_FILE"
 chmod 600 "$ENV_FILE"
@@ -228,17 +241,26 @@ install -d /etc/systemd/system/finance_saber.service.d
 systemctl daemon-reload
 systemctl enable finance_saber finance_saber-daily-reports.timer
 
-step "7. HTTPS certificate for $DOMAIN"
+NAMES="$DOMAIN${ALIASES:+ $ALIASES}"
+step "7. HTTPS certificate for $NAMES"
 NGINX_SITE=/etc/nginx/sites-available/finance_saber
+CERT="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
 # Other sites on this server are left alone: only the finance_saber site is written.
 install -d /var/www/html
-if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+# One certificate for every name; a name added later (an alias) extends the existing one.
+need_cert=""
+domain_args=()
+for name in $NAMES; do
+    domain_args+=(-d "$name")
+    [ -f "$CERT" ] && openssl x509 -in "$CERT" -noout -ext subjectAltName 2>/dev/null | grep -qF "DNS:$name" || need_cert=1
+done
+if [ -n "$need_cert" ]; then
     # nginx can't load the HTTPS site before the certificate exists: serve only the challenge first.
     cat > "$NGINX_SITE" <<EOF
 server {
     listen 80;
     listen [::]:80;
-    server_name $DOMAIN;
+    server_name $NAMES;
     location /.well-known/acme-challenge/ { root /var/www/html; }
     location / { return 503; }
 }
@@ -246,8 +268,9 @@ EOF
     ln -sf "$NGINX_SITE" /etc/nginx/sites-enabled/finance_saber
     nginx -t && systemctl reload nginx
     if [ -n "$CERTBOT_EMAIL" ]; then email_args=(--email "$CERTBOT_EMAIL"); else email_args=(--register-unsafely-without-email); fi
-    certbot certonly --webroot -w /var/www/html -d "$DOMAIN" --agree-tos --non-interactive "${email_args[@]}" \
-        || fail "no certificate: check that $DOMAIN points at this server and ports 80/443 are open"
+    certbot certonly --webroot -w /var/www/html --cert-name "$DOMAIN" --expand "${domain_args[@]}" \
+        --agree-tos --non-interactive "${email_args[@]}" \
+        || fail "no certificate: check that $NAMES all point at this server and ports 80/443 are open"
 fi
 # Renewals (certbot's timer) reload nginx so it picks up the new certificate.
 install -d /etc/letsencrypt/renewal-hooks/deploy
@@ -255,7 +278,8 @@ printf '#!/bin/sh\nsystemctl reload nginx\n' > /etc/letsencrypt/renewal-hooks/de
 chmod 755 /etc/letsencrypt/renewal-hooks/deploy/reload-nginx
 
 step "8. nginx site"
-sed -e "s/finance\.example\.uz/$DOMAIN/g" -e "s/127\.0\.0\.1:8000/127.0.0.1:$PORT/" \
+sed -e "s/server_name finance\.example\.uz;/server_name $NAMES;/" \
+    -e "s/finance\.example\.uz/$DOMAIN/g" -e "s/127\.0\.0\.1:8000/127.0.0.1:$PORT/" \
     "$APP_DIR/deploy/nginx/finance_saber.conf" > "$NGINX_SITE"
 # "http2 on;" needs nginx 1.25.1+; Ubuntu 22.04/24.04 ship 1.18/1.24, which take it on "listen".
 nginx_version=$(nginx -v 2>&1 | sed -n 's|.*nginx/\([0-9.]*\).*|\1|p')
