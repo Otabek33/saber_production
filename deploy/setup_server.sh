@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # First install of finance_saber on a fresh Ubuntu/Debian server, as root:
-#   sudo DOMAIN=www.bonnatural.uz CERTBOT_EMAIL=you@example.com bash deploy/setup_server.sh
+#   sudo DOMAIN=bonnatural.uz ALIASES=www.bonnatural.uz CERTBOT_EMAIL=you@example.com bash deploy/setup_server.sh
 #
 # Safe to run again: every step checks what is already there. Run it again with a
 # new DOMAIN to move the site to a new address (env file, nginx and certificate follow).
@@ -27,7 +27,7 @@
 # there; the older one and its databases are not touched.
 set -euo pipefail
 
-DOMAIN="${DOMAIN:-www.bonnatural.uz}"
+DOMAIN="${DOMAIN:-bonnatural.uz}"
 # Other names the site also answers on (space-separated; allowed hosts, nginx and the certificate
 # include them). For a www domain the bare one is added by itself; ALIASES="" turns that off.
 if [ -z "${ALIASES+x}" ] && [[ "$DOMAIN" == www.* ]]; then ALIASES="${DOMAIN#www.}"; fi

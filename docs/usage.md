@@ -79,7 +79,7 @@ The `deploy/` folder has everything the server needs:
 the code in `/srv/finance_saber` (or let the script clone it), then as root:
 
 ```sh
-sudo DOMAIN=www.bonnatural.uz CERTBOT_EMAIL=you@example.com bash /srv/finance_saber/deploy/setup_server.sh
+sudo DOMAIN=bonnatural.uz ALIASES=www.bonnatural.uz CERTBOT_EMAIL=you@example.com bash /srv/finance_saber/deploy/setup_server.sh
 ```
 
 It installs nginx, PostgreSQL, certbot and uv. It creates the `finance_saber` user,
@@ -100,7 +100,7 @@ asks for the password (hidden), checks that it connects, and writes `DATABASE_UR
 with the password percent-encoded:
 
 ```sh
-sudo DB_NAME=saber_finance DB_USER=saber DOMAIN=www.bonnatural.uz bash /srv/finance_saber/deploy/setup_server.sh
+sudo DB_NAME=saber_finance DB_USER=saber DOMAIN=bonnatural.uz bash /srv/finance_saber/deploy/setup_server.sh
 ```
 
 On a server that runs other sites, nothing of theirs is changed: the default nginx
