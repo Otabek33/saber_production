@@ -216,19 +216,22 @@ def order_receive(request, pk):
                 number=form.cleaned_data["number"],
                 note=str(_("By order № %(number)s") % {"number": order.number})[:255],
                 order=order,
+                currency=order.currency,
+                rate=rate if order.currency != MaterialOrder.Currency.UZS else None,
                 created_by=request.user,
             )
-            MaterialReceiptLine.objects.bulk_create(
-                MaterialReceiptLine(
-                    receipt=receipt,
-                    material_id=line.material_id,
-                    order_line=line,
-                    quantity=quantity,
-                    # The line's amount for the share that came.
-                    amount=(line.amount * quantity / line.quantity * rate).quantize(Decimal("0.01")),
-                )
-                for line, quantity in form.arrived()
-            )
+            lines = []
+            for line, quantity in form.arrived():
+                # The line's amount for the share that came: as ordered (its currency) and in UZS.
+                share = (line.amount * quantity / line.quantity).quantize(Decimal("0.01"))
+                lines.append(
+                    MaterialReceiptLine(
+                        receipt=receipt, material_id=line.material_id, order_line=line, quantity=quantity,
+                        currency_amount=share, amount=(share * rate).quantize(Decimal("0.01")),
+                        best_before=form.best_before(line),
+                    )
+                )  # fmt: skip
+            MaterialReceiptLine.objects.bulk_create(lines)
             receipt.rebuild_moves()
             order.refresh_status()
     except IntegrityError:  # the same receipt number saved a moment ago

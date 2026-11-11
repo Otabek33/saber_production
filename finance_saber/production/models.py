@@ -39,6 +39,13 @@ PERCENT = {"max_digits": 5, "decimal_places": 2}
 QUANTITY_STEP = Decimal("0.0001")
 SHELF_LIFE_HELP = _("e.g. 12 месяцев, 2 года, 180 дней. Stock shows until when it is good.")
 DEFAULT_ALLOWED_LOSS = Decimal(2)  # %, as in the production calculation sheet
+# Currencies a supplier's invoice (a receipt) may be in; UZS per unit of each at the receipt's rate.
+DOCUMENT_CURRENCIES = [
+    ("UZS", "UZS"),
+    ("USD", "USD"),
+    ("EUR", "EUR"),
+    ("RUB", "RUB"),
+]
 
 
 class Material(models.Model):
@@ -51,6 +58,11 @@ class Material(models.Model):
     name = models.CharField(_("name"), max_length=150, unique=True)
     unit = models.CharField(_("unit"), max_length=20, help_text=_("e.g. кг, шт, л"))
     kind = models.CharField(_("type"), max_length=10, choices=Kind.choices, default=Kind.RAW)
+    # The date the material in stock is good until (the supplier's label). Not required. The text
+    # shelf life ("18 месяцев", from the materials Excel) counts only for a material without one.
+    best_before = models.DateField(
+        _("good until"), null=True, blank=True, help_text=_("Not required: the date the stock is good until.")
+    )
     shelf_life = models.CharField(_("shelf life"), max_length=50, blank=True, help_text=SHELF_LIFE_HELP)
     min_stock = models.DecimalField(
         _("minimum stock"),
@@ -427,6 +439,9 @@ class MaterialMove(Move):
 
     material = models.ForeignKey(Material, models.PROTECT, related_name="moves", verbose_name=_("material"))
     kind = models.CharField(_("type"), max_length=12, choices=Kind.choices)
+    # Stock entered as an opening balance (or found by a count) really arrived earlier than its
+    # ledger date. This is that day, for shelf life only (expiry.py): the ledger keeps ``date``.
+    received_on = models.DateField(_("actually received"), null=True, blank=True)
 
     class Meta(Move.Meta):
         verbose_name = _("material movement")
@@ -461,6 +476,18 @@ class MaterialReceipt(models.Model):
         _("registration number"), max_length=50, help_text=_("The number of the supplier's invoice or waybill.")
     )
     note = models.CharField(_("note"), max_length=255, blank=True)
+    # The supplier's invoice may be in another currency: its lines keep the amounts as invoiced
+    # (currency_amount) and in UZS at this rate (amount), which costs and settlements read.
+    currency = models.CharField(_("currency"), max_length=3, choices=DOCUMENT_CURRENCIES, default="UZS")
+    rate = models.DecimalField(
+        _("exchange rate"),
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal("0.0001"))],
+        help_text=_("UZS per 1 unit of the currency, on the receipt's date."),
+    )
     order = models.ForeignKey(
         "MaterialOrder",
         models.SET_NULL,
@@ -500,6 +527,28 @@ class MaterialReceipt(models.Model):
         return sum((line.amount for line in self.lines.all()), Decimal(0))
 
     @property
+    def currency_total(self) -> Decimal:
+        """The total as invoiced, in the receipt's currency."""
+        return sum((line.currency_amount for line in self.lines.all()), Decimal(0))
+
+    @property
+    def in_foreign_currency(self) -> bool:
+        return self.currency != "UZS"
+
+    def in_uzs(self, value: Decimal) -> Decimal:
+        """An amount in the receipt's currency, in UZS at its rate."""
+        if not self.in_foreign_currency:
+            return value
+        return (value * (self.rate or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def price_lines_as_invoiced(self):
+        """Its lines were entered in the receipt's currency: keep that as invoiced, and the amount in UZS."""
+        for line in self.lines.all():
+            line.currency_amount = line.amount
+            line.amount = self.in_uzs(line.amount)
+            line.save(update_fields=["currency_amount", "amount"])
+
+    @property
     def stock_source(self) -> str:
         """Prefix of its movements' source: "receipt:<document>:<line>"."""
         return f"receipt:{self.pk}:"
@@ -534,6 +583,16 @@ class MaterialReceiptLine(models.Model):
     amount = models.DecimalField(
         _("amount"), **MONEY, default=0, validators=[MinValueValidator(0)], help_text=_("With VAT, in UZS.")
     )
+    # This delivery's own "good until" (its label); not required. The shelf-life page uses it first,
+    # then the material's date, then its text shelf life (expiry.py).
+    best_before = models.DateField(_("good until"), null=True, blank=True)
+    currency_amount = models.DecimalField(
+        _("amount in the currency"),
+        **MONEY,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text=_("As invoiced, in the receipt's currency (the same as the amount for UZS)."),
+    )
     order_line = models.ForeignKey(
         "MaterialOrderLine",
         models.SET_NULL,
@@ -558,6 +617,11 @@ class MaterialReceiptLine(models.Model):
     @property
     def price(self) -> Decimal | None:
         return (self.amount / self.quantity).quantize(Decimal("0.01")) if self.quantity else None
+
+    @property
+    def currency_price(self) -> Decimal | None:
+        """The price per unit as invoiced, in the receipt's currency."""
+        return (self.currency_amount / self.quantity).quantize(Decimal("0.0001")) if self.quantity else None
 
 
 class MaterialOrder(models.Model):

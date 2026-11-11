@@ -34,7 +34,10 @@
           <div class="col-md-6">{% include "forms/_field.html" with field=form.supplier %}</div>
           <div class="col-6 col-md-3">{% include "forms/_field.html" with field=form.number %}</div>
           <div class="col-6 col-md-3">{% include "forms/_field.html" with field=form.date %}</div>
-          <div class="col-12">{% include "forms/_field.html" with field=form.note %}</div>
+          <div class="col-6 col-md-3">{% include "forms/_field.html" with field=form.currency %}</div>
+          {# The rate shows for a currency other than UZS (production.js) #}
+          <div class="col-6 col-md-3" data-receipt-rate>{% include "forms/_field.html" with field=form.rate %}</div>
+          <div class="col-12 col-md">{% include "forms/_field.html" with field=form.note %}</div>
         </div>
       </div>
     </div>
@@ -54,7 +57,9 @@
               <th>{% translate "Material" %}</th>
               <th class="num receipt-col-quantity">{% translate "Quantity" %}</th>
               <th class="receipt-col-unit">{% translate "Unit" %}</th>
-              <th class="num receipt-col-quantity">{% translate "Amount" %}</th>
+              <th class="num receipt-col-quantity">{% translate "Price per unit" %}, <span data-currency-code>{{ form.currency.value|default:"UZS" }}</span></th>
+              <th class="num receipt-col-quantity">{% translate "Amount" %}, <span data-currency-code>{{ form.currency.value|default:"UZS" }}</span></th>
+              <th class="receipt-col-date" title="{% translate "From the label; not required" %}">{% translate "Good until" %}</th>
               <th class="receipt-col-remove"><span class="visually-hidden">{% translate "Remove" %}</span></th>
             </tr>
           </thead>
@@ -75,8 +80,16 @@
                 </td>
                 <td class="text-muted" data-unit></td>
                 <td>
+                  {{ line.price }}
+                  {% for error in line.price.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
+                <td>
                   {{ line.amount }}
                   {% for error in line.amount.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
+                <td>
+                  {{ line.best_before }}
+                  {% for error in line.best_before.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                 </td>
                 <td class="text-end">
                   <button type="button" class="btn btn-sm bg-danger-subtle text-danger ledger-action" data-remove-line title="{% translate "Remove the line" %}" aria-label="{% translate "Remove the line" %}">
@@ -86,6 +99,14 @@
               </tr>
             {% endfor %}
           </tbody>
+          {# The document's total, summed as the lines are typed (production.js) #}
+          <tfoot>
+            <tr class="fw-semibold">
+              <td></td><td colspan="4">{% translate "Total" %}</td>
+              <td class="num text-nowrap"><span data-lines-total="lines">—</span> <span class="text-muted fs-2" data-currency-code>{{ form.currency.value|default:"UZS" }}</span></td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
       <template id="lines-empty-line">
@@ -94,7 +115,9 @@
           <td>{% for hidden in lines.empty_form.hidden_fields %}{{ hidden }}{% endfor %}{{ lines.empty_form.material }}</td>
           <td>{{ lines.empty_form.quantity }}</td>
           <td class="text-muted" data-unit></td>
+          <td>{{ lines.empty_form.price }}</td>
           <td>{{ lines.empty_form.amount }}</td>
+          <td>{{ lines.empty_form.best_before }}</td>
           <td class="text-end">
             <button type="button" class="btn btn-sm bg-danger-subtle text-danger ledger-action" data-remove-line title="{% translate "Remove the line" %}" aria-label="{% translate "Remove the line" %}">
               <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon>

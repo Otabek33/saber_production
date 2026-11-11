@@ -5,9 +5,11 @@ Shelf life is typed as text, the way people write it ("18 месяц", "24 ме�
 
 * Finished goods: each batch still in stock (first in, first out: traceability.trace_products)
   is good until its production date + the product's shelf life.
-* Raw materials: each delivery still in stock is good until its receipt date + the material's
-  shelf life. A delivery's own manufacture date isn't recorded, so this is the latest it can
-  be good: the supplier's label may say earlier.
+* Raw materials: each delivery's own "good until" (typed from its label when it arrived); else
+  the material's date (typed on the material); else an older text shelf life (from the
+  materials Excel), counted from the delivery's receipt date. Stock entered as an opening
+  balance really arrived earlier: its "actually received" day (MaterialMove.received_on, set on
+  the shelf-life page) is counted from instead, without touching the stock ledger.
 
 Stock that has no date of its own (an opening balance, a count surplus, a customer's return)
 is listed with the date it came in, so nothing in stock is left out.
@@ -95,7 +97,13 @@ class StockLot:
 
     @property
     def date(self) -> datetime.date:
-        return self.lot.date
+        """When it came in: the day it really arrived, when that was given (an opening balance), else its date."""
+        return getattr(self.lot.move, "received_on", None) or self.lot.date
+
+    @property
+    def editable(self) -> bool:
+        """Its arrival day can be corrected: stock that didn't come by a receipt or a batch (an opening balance)."""
+        return self.lot.receipt is None and self.lot.run is None and hasattr(self.lot.move, "received_on")
 
     @property
     def run(self):
@@ -122,13 +130,19 @@ class StockLot:
         return Status.SOON if self.days_left <= SOON_DAYS else Status.GOOD
 
 
-def _in_stock(traced, items, today) -> list[StockLot]:
+def _in_stock(traced, items, today, lot_dates=None) -> list[StockLot]:
     lots = []
     for lot in traced.lots:
         if lot.remaining <= 0:
             continue
         item = items[getattr(lot.move, "product_id", None) or lot.move.material_id]
-        lots.append(StockLot(item=item, lot=lot, best_before=best_before(lot.date, item.shelf_life), today=today))
+        arrived = getattr(lot.move, "received_on", None) or lot.date
+        date = (
+            (lot_dates or {}).get(lot.receipt_line_id)
+            or getattr(item, "best_before", None)
+            or best_before(arrived, item.shelf_life)
+        )
+        lots.append(StockLot(item=item, lot=lot, best_before=date, today=today))
     # The first to go off first; those without a shelf life last.
     lots.sort(key=lambda stock: (stock.best_before is None, stock.best_before or stock.date, stock.item.name))
     return lots
@@ -142,8 +156,11 @@ def product_lots(today: datetime.date | None = None) -> list[StockLot]:
 
 def material_lots(today: datetime.date | None = None) -> list[StockLot]:
     """Every delivery of raw material still in stock, the first to expire first."""
+    from .models import MaterialReceiptLine
+
     materials = Material.objects.in_bulk()
-    return _in_stock(traceability.trace(list(materials)), materials, today or timezone.localdate())
+    lot_dates = dict(MaterialReceiptLine.objects.filter(best_before__isnull=False).values_list("pk", "best_before"))
+    return _in_stock(traceability.trace(list(materials)), materials, today or timezone.localdate(), lot_dates)
 
 
 def summary(lots: list[StockLot]) -> dict:

@@ -193,6 +193,8 @@
 .order-form { max-width: 1400px; }
 .order-lines .order-col-quantity { width: 120px; }
 .order-lines .order-col-unit { width: 56px; }
+.order-lines .order-col-price { width: 120px; }
+.receipt-lines .receipt-col-date { width: 150px; }
 .order-lines .order-col-amount { width: 130px; }
 .order-lines .order-col-status { width: 135px; }
 .order-lines .order-col-date { width: 150px; }

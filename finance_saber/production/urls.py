@@ -21,6 +21,7 @@ urlpatterns = [
     path("margin/", cost_views.margin, name="margin"),
     path("losses/", cost_views.losses, name="losses"),
     path("expiry/", cost_views.expiry_page, name="expiry"),
+    path("expiry/dates/", cost_views.expiry_dates, name="expiry_dates"),
     path("close/", control_views.close_page, name="close"),
     path("close/month/", control_views.close_month, name="close_month"),
     path("close/reopen/", control_views.reopen_month, name="reopen_month"),

@@ -62,6 +62,25 @@
     </div>
   </div>
 
+  {% if stock_value %}
+    {# What all the raw materials in stock are worth, in USD (production/costing.py stock_value_usd) #}
+    <div class="row g-3 mb-3">
+      <div class="col-sm-6 col-lg-4"><div class="card mb-0"><div class="card-body p-3">
+        <span class="text-muted fs-2">{% translate "Raw materials in stock are worth" %}</span>
+        <h4 class="mb-0">$ {{ stock_value.total|floatformat:"2g" }}</h4>
+        <span class="text-muted fs-1">
+          {% if stock_value.rate %}{% blocktranslate with rate=stock_value.rate|floatformat:"2g" %}UZS prices at {{ rate }} per USD{% endblocktranslate %}{% else %}<span class="text-warning">{% translate "No USD rate: only deliveries invoiced in USD are counted." %}</span>{% endif %}
+        </span>
+      </div></div></div>
+      {% if stock_value.estimated or stock_value.unpriced %}
+        <div class="col-sm-6 col-lg-8"><div class="card mb-0 h-100"><div class="card-body p-3 fs-2 text-muted d-flex flex-column justify-content-center">
+          {% if stock_value.estimated %}<span>{% blocktranslate with amount=stock_value.estimated|floatformat:"0g" %}$ {{ amount }} of it is estimated: stock without a priced receipt, at another receipt's or the standard price.{% endblocktranslate %}</span>{% endif %}
+          {% if stock_value.unpriced %}<span class="text-warning">{% blocktranslate count counter=stock_value.unpriced %}{{ counter }} material in stock has no price and isn't counted.{% plural %}{{ counter }} materials in stock have no price and aren't counted.{% endblocktranslate %}</span>{% endif %}
+        </div></div></div>
+      {% endif %}
+    </div>
+  {% endif %}
+
   <div class="card">
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle mb-0 ledger-table">
@@ -72,6 +91,7 @@
             <th class="num">{% translate "Received this month" %}</th>
             <th class="num">{% translate "Used this month" %}</th>
             <th class="num">{% translate "Stock" %}</th>
+            {% if stock_value %}<th class="num" title="{% translate "What is left of each delivery, at its price" %}">{% translate "Value" %}, $</th>{% endif %}
             <th class="num">{% translate "In transit" %}</th>
             <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
           </tr>
@@ -79,17 +99,21 @@
         <tbody>
           {% for row in rows %}
             {% ifchanged row.material.kind %}
-              <tr class="ledger-opening"><td colspan="7" class="fw-semibold">{{ row.material.get_kind_display }}</td></tr>
+              <tr class="ledger-opening"><td colspan="{% if stock_value %}8{% else %}7{% endif %}" class="fw-semibold">{{ row.material.get_kind_display }}</td></tr>
             {% endifchanged %}
             <tr>
               <td>
                 {{ row.material.name }}
-                {% if row.material.shelf_life %}<a href="{% url 'production:expiry' %}?show=all#materials" class="d-block fs-1 text-muted">{% translate "Shelf life" %}: {{ row.material.shelf_life }}</a>{% endif %}
+                {% if row.material.best_before %}<a href="{% url 'production:expiry' %}?show=all#materials" class="d-block fs-1 {% if row.material.best_before < today %}text-danger{% else %}text-muted{% endif %}">{% translate "Good until" %}: {{ row.material.best_before|date:"d.m.Y" }}</a>
+                {% elif row.material.shelf_life %}<a href="{% url 'production:expiry' %}?show=all#materials" class="d-block fs-1 text-muted">{% translate "Shelf life" %}: {{ row.material.shelf_life }}</a>{% endif %}
               </td>
               <td class="text-muted">{{ row.material.unit }}</td>
               <td class="num">{% if row.received %}{{ row.received|floatformat:"-3g" }}{% endif %}</td>
               <td class="num">{% if row.used %}{{ row.used|floatformat:"-3g" }}{% endif %}</td>
               <td class="num fw-semibold{% if row.low %} text-danger{% endif %}">{{ row.stock|floatformat:"-3g" }}</td>
+              {% if stock_value %}
+                <td class="num text-nowrap">{% if row.value %}{{ row.value|floatformat:"2g" }}{% elif row.unpriced %}<span class="text-warning fs-2" title="{% translate "No price on its receipts and no standard price" %}">{% translate "no price" %}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+              {% endif %}
               <td class="num text-nowrap">
                 {% if row.transit %}
                   <a href="{% url 'production:orders' %}?material={{ row.material.pk }}" class="text-body fw-semibold">{{ row.transit.quantity|floatformat:"-3g" }}</a>
@@ -121,7 +145,7 @@
               </td>
             </tr>
           {% empty %}
-            <tr><td colspan="7" class="text-center text-muted py-6">{% translate "No materials found." %}</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-6">{% translate "No materials found." %}</td></tr>
           {% endfor %}
         </tbody>
       </table>

@@ -6615,3 +6615,119 @@ msgstr "Новое"
 #: finance_saber/templates/partials/_navigation.html
 msgid "Something new here"
 msgstr "Здесь есть новое"
+
+#: finance_saber/production/forms.py
+msgid "Price per unit"
+msgstr "Цена за единицу"
+
+#: finance_saber/production/forms.py
+msgid "In the order's currency"
+msgstr "В валюте заказа"
+
+#: finance_saber/production
+msgid "Exchange rate"
+msgstr "Курс"
+
+#: finance_saber/production
+msgid "UZS per 1 unit of the currency, on the receipt's date."
+msgstr "Сумов за 1 единицу валюты на дату поступления."
+
+#: finance_saber/production
+msgid "amount in the currency"
+msgstr "сумма в валюте"
+
+#: finance_saber/production
+msgid "As invoiced, in the receipt's currency (the same as the amount for UZS)."
+msgstr "Как в счёте поставщика, в валюте поступления (для сумов — то же, что сумма)."
+
+#: finance_saber/production
+msgid "What is left of each delivery, at its price"
+msgstr "Остаток каждой поставки по её цене"
+
+#: finance_saber/production
+msgid "Value"
+msgstr "Стоимость"
+
+#: finance_saber/production
+msgid "No price on its receipts and no standard price"
+msgstr "Нет цены в поступлениях и нет учётной цены"
+
+#: finance_saber/production
+msgid "Raw materials in stock are worth"
+msgstr "Стоимость сырья на складе"
+
+#: finance_saber/production
+msgid "No USD rate: only deliveries invoiced in USD are counted."
+msgstr "Нет курса доллара: учтены только поставки в USD."
+
+#: finance_saber/production
+#, python-format
+msgid "Give the rate: UZS per 1 %(currency)s."
+msgstr "Укажите курс: сумов за 1 %(currency)s."
+
+#: finance_saber/production
+#, python-format
+msgid "UZS prices at %(rate)s per USD"
+msgstr "Цены в сумах — по курсу %(rate)s за USD"
+
+#: finance_saber/production
+#, python-format
+msgid "$ %(amount)s of it is estimated: stock without a priced receipt, at another receipt's or the standard price."
+msgstr "Из них $ %(amount)s — оценка: остатки без цены в поступлении, по цене другого поступления или учётной цене."
+
+#: finance_saber/production/templates/production/material_stock.html
+#, python-format
+msgid "%(counter)s material in stock has no price and isn't counted."
+msgid_plural "%(counter)s materials in stock have no price and aren't counted."
+msgstr[0] "%(counter)s материал на складе без цены — не учтён."
+msgstr[1] "%(counter)s материала на складе без цены — не учтены."
+msgstr[2] "%(counter)s материалов на складе без цены — не учтены."
+msgstr[3] "%(counter)s материала на складе без цены — не учтены."
+
+#: finance_saber/production
+msgid "good until"
+msgstr "годен до"
+
+#: finance_saber/production
+msgid "Not required: the date the stock is good until."
+msgstr "Необязательно: дата, до которой годно сырьё на складе."
+
+#: finance_saber/production
+msgid "Good until the date given on the material; a material without one: its receipt date + its shelf life from the materials Excel."
+msgstr "Годно до даты, указанной у материала; если её нет — дата поступления + срок годности из Excel материалов."
+
+#: finance_saber/production
+msgid "Earlier than the receipt's date: check the date on the label."
+msgstr "Раньше даты поступления: проверьте дату на этикетке."
+
+#: finance_saber/production
+msgid "From the label; not required"
+msgstr "С этикетки; необязательно"
+
+#: finance_saber/production
+msgid "Type what came this time, as counted at the warehouse: «all» fills in what is still to come. Empty: didn't come. «Good until»: from the label, if it has one. It makes a material receipt; the rest stays on the way."
+msgstr "Введите, что пришло сейчас, по факту на складе: «всё» подставит остаток в пути. Пусто — не пришло. «Годен до» — с этикетки, если указан. Будет создано поступление сырья; остальное останется в пути."
+
+#: finance_saber/production/expiry
+msgid "actually received"
+msgstr "фактически поступило"
+
+#: finance_saber/production/expiry
+msgid "A day in the future can't be when it arrived: those were left as they were."
+msgstr "Дата поступления не может быть в будущем: такие строки не изменены."
+
+#: finance_saber/production/expiry
+msgid "Saved: shelf life now counts from the days it really arrived."
+msgstr "Сохранено: срок годности считается от фактических дат поступления."
+
+#: finance_saber/production/expiry
+msgid "Nothing was changed."
+msgstr "Ничего не изменилось."
+
+#: finance_saber/production/expiry
+msgid "Save the arrival days"
+msgstr "Сохранить даты поступления"
+
+#: finance_saber/production/expiry
+msgid "Stock entered as an opening balance arrived earlier: give the day it really did, and its shelf life counts from then. Stock quantities and their history don't change."
+msgstr "Начальный остаток на самом деле поступил раньше: укажите фактическую дату, и срок годности посчитается от неё. Остатки и их история не меняются."

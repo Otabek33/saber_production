@@ -116,7 +116,7 @@
               <h5 class="card-title mb-0">{% translate "Goods arrived" %}</h5>
               <button type="button" class="btn btn-sm bg-success-subtle text-success text-nowrap" data-fill-all="receive-form">{% translate "All arrived" %}</button>
             </div>
-            <p class="text-muted fs-2 mb-0">{% translate "Type what came this time, as counted at the warehouse: «all» fills in what is still to come. Empty: didn't come. It makes a material receipt; the rest stays on the way." %}</p>
+            <p class="text-muted fs-2 mb-0">{% translate "Type what came this time, as counted at the warehouse: «all» fills in what is still to come. Empty: didn't come. «Good until»: from the label, if it has one. It makes a material receipt; the rest stays on the way." %}</p>
           </div>
           <form method="post" action="{% url 'production:order_receive' order.pk %}" novalidate class="form-compact" id="receive-form">
             {% csrf_token %}
@@ -126,11 +126,12 @@
                   <tr>
                     <th>{% translate "Material" %}</th>
                     <th class="num text-nowrap">{% translate "Still to come" %}</th>
-                    <th class="text-nowrap" style="width: 190px">{% translate "Arrived now" %}</th>
+                    <th class="text-nowrap" style="width: 170px">{% translate "Arrived now" %}</th>
+                    <th class="text-nowrap" style="width: 150px" title="{% translate "From the label; not required" %}">{% translate "Good until" %}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {% for line, field in receive.line_fields %}
+                  {% for line, field, best_before in receive.line_fields %}
                     <tr>
                       {# One line: a long name is cut (full name on hover); the customs mark comes first #}
                       <td class="text-truncate" style="max-width: 1px; width: 100%" title="{{ line.material.name }}">{% if line.status == "customs" %}<span class="badge bg-warning-subtle text-warning fs-1 me-1">{{ line.get_status_display }}</span>{% endif %}{{ line.material.name }}</td>
@@ -141,6 +142,10 @@
                           <button type="button" class="btn bg-success-subtle text-success" data-fill="{{ field.id_for_label }}" data-value="{{ line.remaining|floatformat:"-4" }}" title="{% translate "All that is still to come" %}">{% translate "all" %}</button>
                         </div>
                         {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                      </td>
+                      <td>
+                        {{ best_before }}
+                        {% for error in best_before.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                       </td>
                     </tr>
                   {% endfor %}

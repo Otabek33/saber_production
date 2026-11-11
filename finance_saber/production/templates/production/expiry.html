@@ -27,6 +27,7 @@
   </div>
 
   {% for group in groups %}
+    {% if group.key == "materials" and perms.production.change_materialmove %}<form method="post" action="{% url 'production:expiry_dates' %}">{% csrf_token %}<input type="hidden" name="show" value="{{ show }}">{% endif %}
     <div class="card" id="{{ group.key }}">
       <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
         <h5 class="card-title mb-0">{{ group.title }}</h5>
@@ -57,7 +58,12 @@
                   {% elif stock.receipt %}<a href="{% url 'production:receipt' stock.receipt.pk %}">№ {{ stock.receipt.number }}</a>{% if stock.receipt.supplier %} <span class="text-muted fs-2">{{ stock.receipt.supplier.name|truncatechars:24 }}</span>{% endif %}
                   {% else %}<span class="text-muted">{{ stock.lot.label }}</span>{% endif %}
                 </td>
-                <td class="text-nowrap">{{ stock.date|date:"d.m.Y" }}</td>
+                <td class="text-nowrap">
+                  {% if group.key == "materials" and stock.editable and perms.production.change_materialmove %}
+                    {# An opening balance really arrived earlier: the day it did, for its shelf life #}
+                    <input type="date" name="received_{{ stock.lot.move.pk }}" value="{{ stock.date|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}" class="form-control form-control-sm" style="width: 150px" aria-label="{% translate "Received" %}: {{ stock.item.name }}">
+                  {% else %}{{ stock.date|date:"d.m.Y" }}{% endif %}
+                </td>
                 <td class="text-nowrap">
                   {% if stock.best_before %}
                     <span class="{% if stock.status == 'expired' %}text-danger fw-semibold{% elif stock.status == 'soon' %}text-warning fw-semibold{% endif %}">{{ stock.best_before|date:"d.m.Y" }}</span>
@@ -78,8 +84,15 @@
       </div>
       <div class="px-4 py-2 border-top text-muted fs-2">
         {% if group.key == "goods" %}{% translate "A batch is good until its production date + the product's shelf life (Рецептуры и нормы › product). Shipments take the oldest batches first." %}
-        {% else %}{% translate "A delivery is good until its receipt date + the material's shelf life: the latest it can be good; the supplier's label may say earlier." %}{% endif %}
+        {% else %}{% translate "Good until the date given on the material; a material without one: its receipt date + its shelf life from the materials Excel." %}{% endif %}
       </div>
+      {% if group.key == "materials" and perms.production.change_materialmove and group.lots %}
+        <div class="px-4 py-3 border-top d-flex flex-wrap align-items-center gap-3">
+          <button type="submit" class="btn btn-primary">{% translate "Save the arrival days" %}</button>
+          <span class="text-muted fs-2">{% translate "Stock entered as an opening balance arrived earlier: give the day it really did, and its shelf life counts from then. Stock quantities and their history don't change." %}</span>
+        </div>
+      {% endif %}
     </div>
+    {% if group.key == "materials" and perms.production.change_materialmove %}</form>{% endif %}
   {% endfor %}
 {% endblock %}

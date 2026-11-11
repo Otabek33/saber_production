@@ -9,10 +9,18 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from finance_saber.cashbook.forms import MoneyField
-from finance_saber.cashbook.models import Company, ExchangeRate
+from finance_saber.cashbook.models import Company
 from finance_saber.core.forms import BootstrapFormMixin
 
-from .forms import DATE_WIDGET, SEARCHABLE, BaseDocumentLineFormSet, QuantityField
+from .forms import (
+    DATE_WIDGET,
+    SEARCHABLE,
+    BaseDocumentLineFormSet,
+    PricedLineMixin,
+    QuantityField,
+    price_field,
+    rate_on,
+)
 from .models import QUANTITY_STEP, Material, MaterialOrder, MaterialOrderLine, MaterialReceipt
 from .periods import OpenPeriodFormMixin
 
@@ -78,30 +86,26 @@ class MaterialOrderForm(BootstrapFormMixin, forms.ModelForm):
         return cleaned
 
 
-class OrderLineForm(BootstrapFormMixin, forms.ModelForm):
+class OrderLineForm(PricedLineMixin, BootstrapFormMixin, forms.ModelForm):
     quantity = QuantityField(
         label=_("Quantity"), min_value=QUANTITY_STEP, widget=forms.TextInput(attrs={"data-number": "4"})
     )
+    price = price_field()
 
     class Meta:
         model = MaterialOrderLine
-        fields = ["material", "quantity", "amount", "status", "expected_date"]
+        fields = ["material", "quantity", "price", "amount", "status", "expected_date"]
         field_classes = {"amount": MoneyField}
         widgets = {
             "material": forms.Select(attrs=SEARCHABLE),
-            "amount": forms.TextInput(attrs={"data-number": "2"}),
+            "amount": forms.TextInput(),
             "expected_date": DATE_WIDGET,
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["material"].queryset = Material.objects.filter(is_active=True)
-        self.fields["amount"].required = False  # the price may come later
-        if not self.instance.pk:
-            self.initial["amount"] = None  # a new line starts empty, so an untouched extra line is skipped
-
-    def clean_amount(self):
-        return self.cleaned_data.get("amount") or Decimal(0)
+        self._setup_price()  # the price may come later
 
 
 class BaseOrderLineFormSet(BaseDocumentLineFormSet):
@@ -134,12 +138,6 @@ OrderLineFormSet = inlineformset_factory(
     min_num=1,
     validate_min=True,
 )
-
-
-def rate_on(date) -> Decimal | None:
-    """The USD exchange rate on that day (the latest one from it back), if there is one."""
-    rate = ExchangeRate.objects.filter(date__lte=date).order_by("-date").first()
-    return rate.rate if rate else None
 
 
 class ReceiveOrderForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.Form):
@@ -177,10 +175,17 @@ class ReceiveOrderForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.Form):
                 label=str(line.material), required=False, min_value=Decimal(0),
                 widget=forms.TextInput(attrs={"data-number": "4", "placeholder": "0"}),
             )  # fmt: skip
+            # The delivery's "good until" from its label: not required.
+            self.fields[f"best_before_{line.pk}"] = forms.DateField(
+                label=_("Good until"), required=False, widget=DATE_WIDGET
+            )
 
     def line_fields(self):
-        """(order line, its bound field) for the template's table."""
-        return [(line, self[f"line_{line.pk}"]) for line in self.lines]
+        """(order line, its quantity field, its "good until" field) for the template's table."""
+        return [(line, self[f"line_{line.pk}"], self[f"best_before_{line.pk}"]) for line in self.lines]
+
+    def best_before(self, line) -> datetime.date | None:
+        return self.cleaned_data.get(f"best_before_{line.pk}")
 
     def arrived(self) -> list[tuple[MaterialOrderLine, Decimal]]:
         return [
@@ -201,6 +206,11 @@ class ReceiveOrderForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.Form):
                 self.add_error(name, _("At most %(left)s: %(ordered)s ordered, %(received)s arrived already.") % {
                     "left": plain(line.remaining), "ordered": plain(line.quantity), "received": plain(line.received),
                 })  # fmt: skip
+        received = cleaned.get("date")
+        for line in self.lines:
+            name = f"best_before_{line.pk}"
+            if received and cleaned.get(name) and cleaned[name] < received:
+                self.add_error(name, _("Earlier than the receipt's date: check the date on the label."))
         if not self.errors and not self.arrived():
             raise forms.ValidationError(_("Give the quantity of at least one material that arrived."))
         if "rate" in self.fields and not cleaned.get("rate") and any(line.amount for line, _q in self.arrived()):

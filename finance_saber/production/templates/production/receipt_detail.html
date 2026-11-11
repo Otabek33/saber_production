@@ -32,6 +32,7 @@
           <dl class="row mb-0">
             <dt class="col-sm-4">{% translate "Registration number" %}</dt><dd class="col-sm-8">№ {{ receipt.number }}</dd>
             <dt class="col-sm-4">{% translate "Date" %}</dt><dd class="col-sm-8">{{ receipt.date|date:"d.m.Y" }}</dd>
+            {% if receipt.in_foreign_currency %}<dt class="col-sm-4">{% translate "Currency" %}</dt><dd class="col-sm-8">{{ receipt.currency }} · {% translate "rate" %} {{ receipt.rate|floatformat:"-4g" }}</dd>{% endif %}
             {% if receipt.note %}<dt class="col-sm-4">{% translate "Note" %}</dt><dd class="col-sm-8">{{ receipt.note }}</dd>{% endif %}
             <dt class="col-sm-4">{% translate "Author" %}</dt><dd class="col-sm-8 mb-0">{{ receipt.created_by|default:"—" }}, {{ receipt.created_at|date:"d.m.Y H:i" }}</dd>
           </dl>
@@ -44,8 +45,10 @@
                 <th>{% translate "Material" %}</th>
                 <th class="num">{% translate "Quantity" %}</th>
                 <th>{% translate "Unit" %}</th>
-                <th class="num">{% translate "Price" %}</th>
-                <th class="num">{% translate "Amount" %}</th>
+                <th class="num">{% translate "Price" %}{% if receipt.in_foreign_currency %}, {{ receipt.currency }}{% endif %}</th>
+                {% if receipt.in_foreign_currency %}<th class="num">{% translate "Amount" %}, {{ receipt.currency }}</th>{% endif %}
+                <th class="num">{% translate "Amount" %}, UZS</th>
+                <th>{% translate "Good until" %}</th>
               </tr>
             </thead>
             <tbody>
@@ -55,15 +58,23 @@
                   <td>{{ line.material.name }}</td>
                   <td class="num fw-semibold">{{ line.quantity|floatformat:"-3g" }}</td>
                   <td class="text-muted">{{ line.material.unit }}</td>
-                  <td class="num">{{ line.price|floatformat:"2g" }}</td>
+                  {% if receipt.in_foreign_currency %}
+                    <td class="num">{{ line.currency_price|floatformat:"-4g" }}</td>
+                    <td class="num">{{ line.currency_amount|floatformat:"2g" }}</td>
+                  {% else %}
+                    <td class="num">{{ line.price|floatformat:"2g" }}</td>
+                  {% endif %}
                   <td class="num">{{ line.amount|floatformat:"2g" }}</td>
+                  <td class="text-nowrap">{{ line.best_before|date:"d.m.Y"|default:"—" }}</td>
                 </tr>
               {% endfor %}
             </tbody>
             <tfoot>
               <tr class="fw-semibold">
                 <td></td><td>{% translate "Total" %}</td><td></td><td></td><td></td>
+                {% if receipt.in_foreign_currency %}<td class="num">{{ receipt.currency_total|floatformat:"2g" }}</td>{% endif %}
                 <td class="num">{{ receipt.total|floatformat:"2g" }}</td>
+                <td></td>
               </tr>
             </tfoot>
           </table>

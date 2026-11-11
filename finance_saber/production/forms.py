@@ -145,14 +145,35 @@ class MaterialMoveForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.ModelForm)
         self.fields["date"].initial = timezone.localdate()
 
 
+def rate_on(date) -> Decimal | None:
+    """The USD exchange rate on that day (the latest one from it back), if there is one."""
+    from finance_saber.cashbook.models import ExchangeRate
+
+    rate = ExchangeRate.objects.filter(date__lte=date).order_by("-date").first()
+    return rate.rate if rate else None
+
+
 class MaterialReceiptForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.ModelForm):
-    """The receipt document's header: who it came from, when, and the supplier's invoice number."""
+    """The receipt document's header: who it came from, when, the supplier's invoice number and currency."""
+
+    rate = QuantityField(
+        label=_("Exchange rate"),
+        required=False,
+        min_value=Decimal("0.0001"),
+        widget=forms.TextInput(attrs={"data-number": "4"}),
+        help_text=_("UZS per 1 unit of the currency, on the receipt's date."),
+    )
 
     class Meta:
         model = MaterialReceipt
-        fields = ["supplier", "date", "number", "note"]
-        # data-choose-first: production.js shows the material lines once a supplier is chosen
-        widgets = {"date": DATE_WIDGET, "supplier": forms.Select(attrs={**SEARCHABLE, "data-choose-first": ""})}
+        fields = ["supplier", "date", "number", "currency", "rate", "note"]
+        # data-choose-first: production.js shows the material lines once a supplier is chosen;
+        # data-receipt-currency: it shows the rate, and the currency over the amounts, once one is chosen.
+        widgets = {
+            "date": DATE_WIDGET,
+            "supplier": forms.Select(attrs={**SEARCHABLE, "data-choose-first": ""}),
+            "currency": forms.Select(attrs={"data-receipt-currency": ""}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -161,6 +182,23 @@ class MaterialReceiptForm(OpenPeriodFormMixin, BootstrapFormMixin, forms.ModelFo
         self.fields["supplier"].empty_label = _("Choose a supplier")
         # Today by default. Not field.initial: with an instance, its empty date would win.
         self.initial["date"] = self.initial.get("date") or timezone.localdate()
+        # The Central Bank's USD rate of the day, ready for a USD invoice.
+        if not self.initial.get("rate"):  # a new receipt's own rate is empty: that mustn't win
+            self.initial["rate"] = rate_on(self.initial["date"])
+        self.fields["currency"].required = False  # not given: UZS
+
+    def clean_currency(self):
+        return self.cleaned_data.get("currency") or "UZS"
+
+    def clean_rate(self):
+        currency, rate = self.cleaned_data.get("currency"), self.cleaned_data.get("rate")
+        if currency == "UZS":
+            return None
+        if rate is None and currency == "USD" and self.cleaned_data.get("date"):
+            rate = rate_on(self.cleaned_data["date"])
+        if rate is None:
+            raise forms.ValidationError(_("Give the rate: UZS per 1 %(currency)s.") % {"currency": currency})
+        return rate
 
     def clean_number(self):
         # Kept in capitals, so "нк-101" and "НК-101" are one number on any database (SQLite
@@ -200,27 +238,61 @@ class MaterialAnalysisForm(BootstrapFormMixin, forms.Form):
     )
 
 
-class ReceiptLineForm(BootstrapFormMixin, forms.ModelForm):
+class PricedLineMixin:
+    """A document line priced per unit: quantity x price = amount.
+
+    The price isn't stored: the amount is. On the page production.js fills the amount as the
+    quantity and price are typed (or the price, when the amount is typed); without it, an empty
+    amount is worked out here. A saved line shows its price again (amount / quantity).
+    """
+
+    def _setup_price(self):
+        self.fields["amount"].required = False  # empty: not priced yet (the amount is 0)
+        self.fields["amount"].widget.attrs.update({"data-number": "2", "data-line-role": "amount"})
+        self.fields["quantity"].widget.attrs["data-line-role"] = "quantity"
+        if not self.instance.pk:
+            self.initial["amount"] = None  # a new line starts empty, so an untouched extra line is skipped
+        elif self.instance.amount and self.instance.quantity:
+            price = (self.instance.amount / self.instance.quantity).quantize(Decimal("0.0001"))
+            self.initial["price"] = plain(price)
+
+    def clean(self):
+        cleaned = super().clean()
+        price, quantity = cleaned.get("price"), cleaned.get("quantity")
+        if not cleaned.get("amount") and price and quantity:
+            cleaned["amount"] = (price * quantity).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return cleaned
+
+    def clean_amount(self):
+        return self.cleaned_data.get("amount") or Decimal(0)
+
+
+def price_field():
+    return QuantityField(
+        label=_("Price per unit"),
+        required=False,
+        min_value=Decimal(0),
+        widget=forms.TextInput(attrs={"data-number": "4", "data-line-role": "price"}),
+    )
+
+
+class ReceiptLineForm(PricedLineMixin, BootstrapFormMixin, forms.ModelForm):
     # data-number: app.js groups the digits as they are typed ("1 250,5"), as QuantityField reads them
     quantity = QuantityField(
         label=_("Quantity"), min_value=QUANTITY_STEP, widget=forms.TextInput(attrs={"data-number": "4"})
     )
+    price = price_field()
 
     class Meta:
         model = MaterialReceiptLine
-        fields = ["material", "quantity", "amount"]
+        fields = ["material", "quantity", "price", "amount", "best_before"]
         field_classes = {"amount": MoneyField}
-        widgets = {"material": forms.Select(attrs=SEARCHABLE), "amount": forms.TextInput(attrs={"data-number": "2"})}
+        widgets = {"material": forms.Select(attrs=SEARCHABLE), "amount": forms.TextInput(), "best_before": DATE_WIDGET}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["material"].queryset = Material.objects.filter(is_active=True)
-        self.fields["amount"].required = False  # empty: not priced yet (the amount is 0)
-        if not self.instance.pk:
-            self.initial["amount"] = None  # a new line starts empty, so an untouched extra line is skipped
-
-    def clean_amount(self):
-        return self.cleaned_data.get("amount") or Decimal(0)
+        self._setup_price()
 
 
 class BaseDocumentLineFormSet(forms.BaseInlineFormSet):
@@ -373,14 +445,12 @@ class MaterialForm(BootstrapFormMixin, forms.ModelForm):
 
     class Meta:
         model = Material
-        fields = ["name", "unit", "kind", "shelf_life", "min_stock", "price", "is_active"]
-        widgets = {"shelf_life": forms.TextInput(attrs={"placeholder": "18 месяцев"})}
+        fields = ["name", "unit", "kind", "best_before", "min_stock", "price", "is_active"]
+        labels = {"best_before": _("Shelf life")}
+        widgets = {"best_before": DATE_WIDGET}
 
     def clean_price(self):
         return self.cleaned_data["price"] or Decimal(0)
-
-    def clean_shelf_life(self):
-        return _readable_shelf_life(self.cleaned_data["shelf_life"])
 
 
 def _readable_shelf_life(text: str) -> str:

@@ -75,9 +75,16 @@ def _dates(instance) -> list:
     return dates
 
 
+# Fields that say nothing about stock or money: they may change in a closed period too.
+FREE_FIELDS = frozenset({"received_on"})
+
+
 def guard(sender, instance, **kwargs):
     if kwargs.get("raw"):
         return  # loading fixtures
+    fields = kwargs.get("update_fields")
+    if fields and set(fields) <= FREE_FIELDS:
+        return
     check(*_dates(instance))
 
 

@@ -315,6 +315,8 @@ class MaterialStockView(StockListView):
         stock = material_stock()
         month = self.month_totals(MaterialMove.objects, "material_id")
         transit = materials_in_transit()  # ordered, not received yet (Goods in transit)
+        # What the stock is worth, in USD: for those who may see costs only.
+        value = costing.stock_value_usd() if self.request.user.has_perm("production.view_costs") else None
         rows = []
         for material in context["items"]:
             totals = month.get(material.pk, {})
@@ -326,8 +328,12 @@ class MaterialStockView(StockListView):
                 "used": -(totals.get(MaterialMove.Kind.CONSUMPTION) or 0),
                 "transit": transit.get(material.pk),
                 "low": amount < 0 or (material.min_stock and amount < material.min_stock),
+                "value": value.by_material.get(material.pk) if value else None,
+                "unpriced": bool(value) and amount > 0 and value.by_material.get(material.pk) is None,
             })  # fmt: skip
         context["rows"] = rows
+        context["today"] = timezone.localdate()
+        context["stock_value"] = value
         context["short_count"] = sum(1 for pk, amount in stock.items() if amount < 0)
         return context
 
@@ -412,12 +418,20 @@ def material_receipt(request):
     receipt = MaterialReceipt(created_by=request.user)
     form = MaterialReceiptForm(request.POST or None, instance=receipt)
     lines = ReceiptLineFormSet(request.POST or None, instance=receipt, prefix="lines")
-    if request.method == "POST" and all([form.is_valid(), lines.is_valid()]):
+    valid = request.method == "POST" and all([form.is_valid(), lines.is_valid()])
+    if valid:  # a delivery can't be good only until before it arrived: a mistyped date
+        for line in lines.forms:
+            best_before = line.cleaned_data.get("best_before")
+            if best_before and not line.cleaned_data.get("DELETE") and best_before < form.cleaned_data["date"]:
+                line.add_error("best_before", _("Earlier than the receipt's date: check the date on the label."))
+                valid = False
+    if valid:
         try:
             with transaction.atomic():
                 receipt = form.save()
                 lines.instance = receipt
                 lines.save()
+                receipt.price_lines_as_invoiced()  # typed in its currency; UZS at its rate
                 receipt.rebuild_moves()
         except IntegrityError:  # the same number was saved a moment ago, e.g. a double click
             form.add_error("number", DUPLICATE_NUMBER % {"number": receipt.number})

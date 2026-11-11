@@ -15,6 +15,7 @@ from finance_saber.production.models import (
     MaterialOrder,
     MaterialOrderLine,
     MaterialReceipt,
+    MaterialReceiptLine,
     material_stock,
     materials_in_transit,
 )
@@ -280,3 +281,35 @@ def test_what_arrives_never_adds_up_to_more_than_was_ordered(client, planner, su
     receive(client, order, {line: "300"}, number="INV-2")
     order.refresh_from_db()
     assert order.status == MaterialOrder.Status.RECEIVED and material_stock()[sugar.pk] == D(1000)
+
+
+# --- Each delivery's "good until" ----------------------------------------------------------------
+
+
+def test_an_arrival_takes_its_good_until_date_and_the_shelf_life_page_uses_it(client, planner, supplier, sugar):
+    client.force_login(planner)
+    from finance_saber.production import expiry
+
+    sugar.best_before = TODAY + datetime.timedelta(days=300)  # the material's date: this delivery's wins
+    sugar.save()
+    order = make_order(supplier, [(sugar, 100, 500)], TODAY)
+    line = order.lines.get()
+    good_until = TODAY + datetime.timedelta(days=20)
+    data = {"date": TODAY.isoformat(), "number": "INV-9", "rate": "12 150", f"line_{line.pk}": "100",
+            f"best_before_{line.pk}": good_until.isoformat()}  # fmt: skip
+    assert client.post(reverse("production:order_receive", args=[order.pk]), data).status_code == 302
+    assert MaterialReceiptLine.objects.get().best_before == good_until
+    [lot] = [lot for lot in expiry.material_lots(TODAY) if lot.receipt is not None]
+    assert (lot.best_before, lot.status) == (good_until, expiry.Status.SOON)
+
+
+def test_the_good_until_date_is_not_required_but_not_before_the_arrival(client, planner, supplier, sugar):
+    client.force_login(planner)
+    order = make_order(supplier, [(sugar, 100, 500)], TODAY)
+    line = order.lines.get()
+    data = {"date": TODAY.isoformat(), "number": "INV-9", "rate": "12 150", f"line_{line.pk}": "100",
+            f"best_before_{line.pk}": (TODAY - datetime.timedelta(days=1)).isoformat()}  # fmt: skip
+    response = client.post(reverse("production:order_receive", args=[order.pk]), data)
+    assert f"best_before_{line.pk}" in response.context["receive"].errors
+    receive(client, order, {line: "100"})  # without a date: fine
+    assert MaterialReceiptLine.objects.get().best_before is None

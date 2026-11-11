@@ -51,6 +51,7 @@
               <th>{% translate "Material" %}</th>
               <th class="num order-col-quantity">{% translate "Quantity" %}</th>
               <th class="order-col-unit">{% translate "Unit" %}</th>
+              <th class="num order-col-price" title="{% translate "In the order's currency" %}">{% translate "Price per unit" %}</th>
               <th class="num order-col-amount" title="{% translate "Amount, in the order's currency" %}">{% translate "Amount" %}</th>
               <th class="order-col-status">{% translate "Status" %}</th>
               <th class="order-col-date" title="{% translate "Empty: the order's expected arrival." %}">{% translate "Own date" %}</th>
@@ -73,6 +74,10 @@
                 </td>
                 <td class="text-muted" data-unit></td>
                 <td>
+                  {{ line.price }}
+                  {% for error in line.price.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </td>
+                <td>
                   {{ line.amount }}
                   {% for error in line.amount.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
                 </td>
@@ -89,6 +94,14 @@
               </tr>
             {% endfor %}
           </tbody>
+          {# The order's total, summed as the lines are typed (production.js) #}
+          <tfoot>
+            <tr class="fw-semibold">
+              <td></td><td colspan="4">{% translate "Total" %}</td>
+              <td class="num text-nowrap" data-lines-total="lines">—</td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
       <template id="lines-empty-line">
@@ -97,6 +110,7 @@
           <td>{% for hidden in lines.empty_form.hidden_fields %}{{ hidden }}{% endfor %}{{ lines.empty_form.material }}</td>
           <td>{{ lines.empty_form.quantity }}</td>
           <td class="text-muted" data-unit></td>
+          <td>{{ lines.empty_form.price }}</td>
           <td>{{ lines.empty_form.amount }}</td>
           <td>{{ lines.empty_form.status }}</td>
           <td>{{ lines.empty_form.expected_date }}</td>

@@ -14,6 +14,70 @@
 
   makeSearchable(document);
 
+  // A receipt's currency: the rate shows for anything but UZS, and the amounts say their currency.
+  document.querySelectorAll("[data-receipt-currency]").forEach(function (select) {
+    function show() {
+      document.querySelectorAll("[data-receipt-rate]").forEach(function (box) { box.hidden = select.value === "UZS"; });
+      document.querySelectorAll("[data-currency-code]").forEach(function (label) { label.textContent = select.value; });
+    }
+    select.addEventListener("change", show);
+    show();
+  });
+
+  // Document lines priced per unit (receipts, supplier orders): quantity x price = amount, filled
+  // as either is typed; typing the amount instead fills the price. The total sums the lines.
+  function readNumber(input) {
+    if (!input) return NaN;
+    return parseFloat((input.value || "").replace(/[\s ']/g, "").replace(",", "."));
+  }
+  function setNumber(input, value, decimals) {
+    // Up to ``decimals`` places, no trailing zeros; app.js then groups the digits.
+    input.value = isFinite(value) ? String(parseFloat(value.toFixed(decimals))).replace(".", ",") : "";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  function lineTotal(body) {
+    var total = document.querySelector('[data-lines-total="' + body.dataset.lines + '"]');
+    if (!total) return;
+    var sum = 0, any = false;
+    body.querySelectorAll("tr:not([hidden])").forEach(function (row) {
+      var amount = readNumber(row.querySelector('[data-line-role="amount"]'));
+      if (amount > 0) { sum += amount; any = true; }
+    });
+    total.textContent = any
+      ? sum.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : "—";
+  }
+  var settingLine = false;
+  document.addEventListener("input", function (event) {
+    var role = event.target.dataset && event.target.dataset.lineRole;
+    if (!role || settingLine) return;
+    var row = event.target.closest("tr");
+    var body = event.target.closest("[data-lines]");
+    if (!row || !body) return;
+    var quantity = row.querySelector('[data-line-role="quantity"]');
+    var price = row.querySelector('[data-line-role="price"]');
+    var amount = row.querySelector('[data-line-role="amount"]');
+    var q = readNumber(quantity), p = readNumber(price), a = readNumber(amount);
+    settingLine = true;
+    if ((role === "quantity" || role === "price") && q > 0 && p >= 0 && price.value !== "") {
+      setNumber(amount, q * p, 2);
+    } else if (role === "quantity" && q > 0 && a > 0 && price.value === "") {
+      setNumber(price, a / q, 4);
+    } else if (role === "amount" && q > 0) {
+      if (a >= 0 && amount.value !== "") setNumber(price, a / q, 4);
+    }
+    settingLine = false;
+    lineTotal(body);
+  });
+  document.querySelectorAll("[data-lines]").forEach(lineTotal);
+  // A removed line leaves the total.
+  document.addEventListener("click", function (event) {
+    if (event.target.closest && event.target.closest("[data-remove-line]")) {
+      var body = event.target.closest("[data-lines]");
+      if (body) setTimeout(function () { lineTotal(body); }, 0);
+    }
+  });
+
   // A production defect needs its reason: the reason list shows once a defect is typed.
   function showReason(defect) {
     var reason = defect.closest("td") && defect.closest("td").querySelector("[data-defect-reason]");

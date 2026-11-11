@@ -2,17 +2,20 @@
 
 import datetime
 
-from django.shortcuts import render
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.utils.translation import gettext as _
+from django.views.decorators.http import require_POST
 
 from finance_saber.cashbook import exports
 from finance_saber.core.permissions import permission
 
 from . import costing, expiry
 from . import losses as loss_report
-from .models import ProductShipment
+from .models import MaterialMove, ProductShipment
 
 COSTS = "production.view_costs"
 GROUPINGS = ("product", "customer", "month")
@@ -165,3 +168,35 @@ def expiry_page(request):
         "production/expiry.html",
         {"groups": groups, "show": show, "soon_days": expiry.SOON_DAYS, "today": today},
     )
+
+
+@require_POST
+@permission(view="production.view_product", change="production.change_materialmove")
+def expiry_dates(request):
+    """Save when opening-balance stock really arrived (received_<movement id>): shelf life counts from it."""
+    today = timezone.localdate()
+    changed, refused = 0, 0
+    for name, value in request.POST.items():
+        if not name.startswith("received_") or not name[9:].isdigit():
+            continue
+        move = MaterialMove.objects.filter(pk=name[9:], quantity__gt=0, run__isnull=True).first()
+        if move is None or move.source.startswith("receipt:"):
+            continue  # a receipt's date is the receipt's own
+        date = parse_date(value) if value else None
+        if value and (date is None or date > today):
+            refused += 1
+            continue
+        if date == move.date:
+            date = None  # the same day as the ledger's: nothing to keep
+        if move.received_on != date:
+            move.received_on = date
+            move.save(update_fields=["received_on"])
+            changed += 1
+    if refused:
+        messages.error(request, _("A day in the future can't be when it arrived: those were left as they were."))
+    if changed:
+        messages.success(request, _("Saved: shelf life now counts from the days it really arrived."))
+    elif not refused:
+        messages.info(request, _("Nothing was changed."))
+    show = request.POST.get("show") if request.POST.get("show") in SHOW else "all"
+    return redirect(f"{reverse('production:expiry')}?show={show}#materials")

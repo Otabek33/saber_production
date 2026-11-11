@@ -88,14 +88,27 @@ def test_the_page_lists_what_needs_attention(client, technologist, stock):
     assert "Сроки годности" in response.content.decode()
 
 
-def test_a_shelf_life_the_pages_cant_read_is_refused(client, user, stock):
+def test_a_material_takes_a_good_until_date_or_none(client, user, stock):
     client.force_login(user)
     url = reverse("production:material_edit", args=[stock["salt"].pk])
-    data = {"name": "Соль", "unit": "кг", "kind": "raw", "min_stock": "0", "shelf_life": "долго", "is_active": "on"}
-    assert "shelf_life" in client.post(url, data).context["form"].errors
-    assert client.post(url, data | {"shelf_life": "2 года"}).status_code == 302
+    data = {"name": "Соль", "unit": "кг", "kind": "raw", "min_stock": "0", "is_active": "on"}
+    assert "best_before" in client.post(url, data | {"best_before": "завтра"}).context["form"].errors
+    assert client.post(url, data | {"best_before": ""}).status_code == 302  # not required
     stock["salt"].refresh_from_db()
-    assert stock["salt"].shelf_life == "2 года"
+    assert stock["salt"].best_before is None
+    assert client.post(url, data | {"best_before": "2026-12-01"}).status_code == 302
+    stock["salt"].refresh_from_db()
+    assert stock["salt"].best_before == datetime.date(2026, 12, 1)
+
+
+def test_the_material_date_wins_over_the_text_shelf_life(stock):
+    stock["sugar"].best_before = datetime.date(2026, 11, 20)  # its text says 12 months from receipt
+    stock["sugar"].save()
+    stock["salt"].best_before = datetime.date(2026, 11, 1)
+    stock["salt"].save()
+    salt, sugar = expiry.material_lots(TODAY)
+    assert (salt.best_before, salt.status) == (datetime.date(2026, 11, 1), expiry.Status.EXPIRED)
+    assert (sugar.best_before, sugar.days_left, sugar.status) == (datetime.date(2026, 11, 20), 16, expiry.Status.SOON)
 
 
 def test_the_dashboard_tile_counts_expiring_batches(client, technologist, stock):
@@ -103,3 +116,66 @@ def test_the_dashboard_tile_counts_expiring_batches(client, technologist, stock)
     response = client.get(reverse("production:index"))
     assert response.context["expiring"]["expired"] >= 1
     assert reverse("production:expiry") in response.content.decode()
+
+
+# --- An opening balance really arrived earlier ------------------------------------------------------
+
+
+def opening(material):
+    return MaterialMove.objects.get(material=material, kind=MaterialMove.Kind.OPENING)
+
+
+def test_the_arrival_day_of_an_opening_balance_can_be_given(client, technologist, stock):
+    """Salt: 5 kg opening on 1 Jan 2026: with «6 месяцев», good until 1 July. It really came on 1 Oct 2025."""
+    salt = stock["salt"]
+    salt.shelf_life = "6 месяцев"
+    salt.save()
+    move = opening(salt)
+    client.force_login(technologist)
+    response = client.post(reverse("production:expiry_dates"), {f"received_{move.pk}": "2025-10-01", "show": "all"})
+    assert response["Location"].endswith("?show=all#materials")
+    move.refresh_from_db()
+    assert (move.received_on, move.date) == (
+        datetime.date(2025, 10, 1),
+        datetime.date(2026, 1, 1),
+    )  # the ledger's date stays
+    [lot] = [lot for lot in expiry.material_lots(TODAY) if lot.item == salt]
+    assert (lot.date, lot.best_before, lot.status) == (
+        datetime.date(2025, 10, 1), datetime.date(2026, 4, 1), expiry.Status.EXPIRED,
+    )  # fmt: skip
+
+
+def test_a_future_day_or_a_receipt_is_left_alone(client, technologist, stock):
+    client.force_login(technologist)
+    move = opening(stock["salt"])
+    receipt_move = MaterialMove.objects.get(material=stock["sugar"], kind=MaterialMove.Kind.RECEIPT)
+    client.post(
+        reverse("production:expiry_dates"),
+        {f"received_{move.pk}": "2030-01-01", f"received_{receipt_move.pk}": "2025-01-01"},
+    )
+    move.refresh_from_db()
+    receipt_move.refresh_from_db()
+    assert move.received_on is None and receipt_move.received_on is None
+
+
+def test_the_day_can_be_given_in_a_closed_period_and_needs_the_right_to_change_stock(
+    client, technologist, finance, stock
+):
+    from finance_saber.production.models import ClosedPeriod
+
+    move = opening(stock["salt"])
+    ClosedPeriod.objects.create(closed_until=datetime.date(2026, 10, 31))  # the opening balance is in it
+    client.force_login(finance)  # views production, doesn't change stock
+    assert client.post(reverse("production:expiry_dates"), {f"received_{move.pk}": "2025-10-01"}).status_code == 403
+    client.force_login(technologist)
+    client.post(reverse("production:expiry_dates"), {f"received_{move.pk}": "2025-10-01"})
+    move.refresh_from_db()
+    assert move.received_on == datetime.date(2025, 10, 1)  # not an accounting change: allowed
+
+
+def test_the_page_offers_the_day_for_opening_balances_only(client, technologist, stock):
+    client.force_login(technologist)
+    content = client.get(reverse("production:expiry"), {"show": "all"}).content.decode()
+    assert f'name="received_{opening(stock["salt"]).pk}"' in content
+    receipt_move = MaterialMove.objects.get(material=stock["sugar"], kind=MaterialMove.Kind.RECEIPT)
+    assert f'name="received_{receipt_move.pk}"' not in content

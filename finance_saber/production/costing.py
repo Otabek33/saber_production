@@ -471,3 +471,64 @@ def product_costs(start: datetime.date, end: datetime.date, previous_start: date
         if product_id in before:
             item.previous = before[product_id].per_unit
     return sorted(current.values(), key=lambda item: (item.product.position, item.product.name))
+
+
+# --- What the materials in stock are worth, in USD ------------------------------------------------
+
+
+@dataclass
+class StockValue:
+    """Raw materials in stock valued in USD: each delivery still in stock at its own price."""
+
+    by_material: dict[int, Decimal | None]  # None: in stock, but no price known
+    rate: Decimal | None  # UZS per USD used for prices in UZS (the latest rate)
+    estimated: Decimal = ZERO  # of the total, valued at an estimate (not the delivery's own price)
+
+    @property
+    def total(self) -> Decimal:
+        return sum((value for value in self.by_material.values() if value), ZERO)
+
+    @property
+    def unpriced(self) -> int:
+        return sum(1 for value in self.by_material.values() if value is None)
+
+
+def stock_value_usd(today: datetime.date | None = None, book: PriceBook | None = None) -> StockValue:
+    """The stock of every material in USD, first in, first out: what is left of each delivery at its price.
+
+    A delivery invoiced in USD keeps its USD price; one in UZS (or stock without a receipt, valued
+    at an estimate as for costs) is converted at the latest USD rate up to ``today``.
+    """
+    from django.utils import timezone
+
+    from finance_saber.cashbook.models import ExchangeRate
+
+    today = today or timezone.localdate()
+    book = book or PriceBook()
+    latest = ExchangeRate.objects.filter(date__lte=today).order_by("-date").first()
+    rate = latest.rate if latest else None
+    usd_price = {
+        pk: amount / quantity
+        for pk, amount, quantity in MaterialReceiptLine.objects.filter(
+            receipt__currency="USD", receipt__is_cancelled=False, currency_amount__gt=0, quantity__gt=0
+        ).values_list("pk", "currency_amount", "quantity")
+    }
+    traced = traceability.trace(Material.objects.values_list("pk", flat=True))
+    values: dict[int, Decimal | None] = {}
+    estimated = ZERO
+    for lot in traced.lots:
+        if lot.remaining <= 0:
+            continue
+        material_id = lot.move.material_id
+        if lot.receipt_line_id in usd_price:
+            value, exact = lot.remaining * usd_price[lot.receipt_line_id], True
+        else:
+            price = book.of_lot(lot, material_id, lot.date)
+            if not price.known or not rate:
+                values.setdefault(material_id, None)
+                continue
+            value, exact = lot.remaining * price.value / rate, price.source in Source.EXACT
+        values[material_id] = (values.get(material_id) or ZERO) + value
+        if not exact:
+            estimated += value
+    return StockValue(by_material=values, rate=rate, estimated=estimated)
