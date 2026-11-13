@@ -1,0 +1,68 @@
+{% load i18n %}
+{% comment %}
+  Header › Notifications (the bell, beside the profile icon): the user's latest notifications
+  (users.Notification, from users/context_processors.py). Each morning at 06:00, if finished-goods
+  batches need checking at the warehouse, an expiry notification arrives (production/notifications.py).
+  Opening one marks it read; the count on the bell is what is still unread.
+{% endcomment %}
+{% with notes=bell %}
+<li class="nav-item dropdown">
+  <a class="nav-link nav-icon-hover-bg rounded-circle position-relative" href="#" id="notificationsDropdown" aria-expanded="false"
+     aria-label="{% translate "Notifications" %}{% if notes.unread %}: {{ notes.unread }}{% endif %}">
+    <iconify-icon icon="solar:bell-bing-line-duotone" class="fs-6"></iconify-icon>
+    {% if notes.unread %}<span class="notify-badge bg-danger">{% if notes.unread > 99 %}99+{% else %}{{ notes.unread }}{% endif %}</span>{% endif %}
+  </a>
+  <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up notify-menu" aria-labelledby="notificationsDropdown">
+    <div class="d-flex align-items-center justify-content-between gap-2 py-3 px-4 border-bottom">
+      <h5 class="mb-0 fs-5 fw-semibold">{% translate "Notifications" %}</h5>
+      {% if notes.unread %}
+        <form method="post" action="{% url 'users:notifications_read' %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none fs-2">{% translate "Mark all as read" %}</button>
+        </form>
+      {% endif %}
+    </div>
+    {% if notes.items %}
+      <div class="notify-list">
+        {% for note in notes.items %}
+          <form method="post" action="{% url 'users:notification_open' note.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="notify-item{% if not note.is_read %} is-unread{% endif %} d-flex gap-3 w-100 px-4 py-3 border-0 text-start text-reset">
+              {% if note.kind == "expiry" %}
+                <span class="notify-icon {% if note.data.urgent %}bg-danger-subtle text-danger{% else %}bg-warning-subtle text-warning{% endif %}">
+                  <iconify-icon icon="solar:danger-triangle-line-duotone"></iconify-icon>
+                </span>
+                <span class="min-w-0 flex-grow-1">
+                  <span class="d-flex align-items-start justify-content-between gap-2">
+                    <span class="fw-semibold">{% translate "Shelf life: check at the warehouse" %}</span>
+                    {% if not note.is_read %}<span class="notify-dot" aria-label="{% translate "Unread" %}"></span>{% endif %}
+                  </span>
+                  <span class="d-block fs-2 text-muted">{% blocktranslate count counter=note.data.count %}{{ counter }} batch expires within 3 months or has expired{% plural %}{{ counter }} batches expire within 3 months or have expired{% endblocktranslate %}</span>
+                  <span class="d-flex flex-wrap gap-1 mt-1">
+                    {% for level in note.levels %}<span class="badge bg-{{ level.tone }}-subtle text-{{ level.tone }}">{{ level.label }}: {{ level.count }}</span>{% endfor %}
+                  </span>
+                  {% for item in note.data.items|slice:":3" %}
+                    <span class="d-block fs-2 text-truncate mt-1">• {{ item.product }}{% if item.code %} <span class="font-monospace text-muted">{{ item.code }}</span>{% endif %}</span>
+                  {% endfor %}
+                  <span class="d-block fs-1 text-muted mt-1">{{ note.created_at|date:"d.m.Y H:i" }}</span>
+                </span>
+              {% endif %}
+            </button>
+          </form>
+        {% endfor %}
+      </div>
+      {% if perms.production.view_product %}
+        <a href="{% url 'production:expiry' %}?show=alerts" class="d-flex align-items-center justify-content-center gap-1 py-2 border-top fs-3 text-primary text-decoration-none">
+          {% translate "Open the shelf-life page" %} <iconify-icon icon="solar:alt-arrow-right-line-duotone"></iconify-icon>
+        </a>
+      {% endif %}
+    {% else %}
+      <div class="text-center py-6 px-7">
+        <iconify-icon icon="solar:bell-off-line-duotone" class="fs-9 text-muted"></iconify-icon>
+        <p class="mb-0 mt-2 text-muted">{% translate "You're all caught up." %}</p>
+      </div>
+    {% endif %}
+  </div>
+</li>
+{% endwith %}

@@ -54,6 +54,7 @@ urlpatterns = [
     path("count/<str:kind>/", views.stock_count, name="stock_count"),
     path("recipes/", views.RecipeListView.as_view(), name="recipes"),
     path("recipes/<int:pk>/", views.recipe_edit, name="recipe_edit"),
+    path("recipes/<int:pk>/delete/", views.product_delete, name="product_delete"),
     path("recipes/export/", views.recipe_export, name="recipe_export"),
     path("recipes/project-file/", views.recipe_seed, name="recipe_seed"),
     path("recipes/import/", views.recipe_import, name="recipe_import"),

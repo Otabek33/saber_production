@@ -61,6 +61,13 @@
                 <a href="{% url 'production:recipe_edit' row.product.pk %}" class="btn btn-sm bg-primary-subtle text-primary ledger-action" title="{% translate "Edit recipe" %}" aria-label="{% translate "Edit recipe" %}">
                   <iconify-icon icon="solar:pen-2-line-duotone"></iconify-icon>
                 </a>
+                {% if can_delete %}
+                  <button type="button" class="btn btn-sm bg-danger-subtle text-danger ledger-action" title="{% translate "Delete product" %}" aria-label="{% translate "Delete product" %}"
+                          data-bs-toggle="modal" data-bs-target="#delete-product-modal"
+                          data-action="{% url 'production:product_delete' row.product.pk %}" data-name="{{ row.product.name }}">
+                    <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon>
+                  </button>
+                {% endif %}
               </td>
             </tr>
           {% empty %}
@@ -70,4 +77,5 @@
       </table>
     </div>
   </div>
+  {% if can_delete %}{% include "production/_delete_product_modal.html" %}{% endif %}
 {% endblock %}

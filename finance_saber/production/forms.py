@@ -440,37 +440,55 @@ class MaterialForm(BootstrapFormMixin, forms.ModelForm):
         label=_("Standard price"),
         required=False,
         min_value=Decimal(0),
-        help_text=_("UZS per unit, with VAT. Used for production cost only while no receipt has a price."),
+        help_text=_("Per unit, with VAT, in the currency beside it. Used only while no receipt has a price."),
     )
 
     class Meta:
         model = Material
-        fields = ["name", "unit", "kind", "best_before", "min_stock", "price", "is_active"]
+        fields = ["name", "unit", "kind", "best_before", "min_stock", "price", "price_currency", "is_active"]
         labels = {"best_before": _("Shelf life")}
         widgets = {"best_before": DATE_WIDGET}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["price_currency"].required = False  # not given: UZS
+
+    def clean_price_currency(self):
+        return self.cleaned_data.get("price_currency") or "UZS"
 
     def clean_price(self):
         return self.cleaned_data["price"] or Decimal(0)
 
 
-def _readable_shelf_life(text: str) -> str:
-    """A shelf life the stock pages can read (expiry.parse), or empty; else the user is asked again."""
-    from .expiry import parse
-
-    text = " ".join((text or "").split())
-    if text and parse(text) is None:
-        raise forms.ValidationError(_("Write the number and the unit, e.g. 18 месяцев, 2 года or 180 дней."))
-    return text
-
-
 class ProductForm(BootstrapFormMixin, forms.ModelForm):
+    # Typed as a number of months. Stored as text ("12 месяцев") because expiry.py reads that text.
+    shelf_life_months = forms.IntegerField(
+        label=_("Shelf life, months"),
+        min_value=1,
+        max_value=600,
+        required=False,
+        widget=forms.NumberInput(attrs={"placeholder": "12"}),
+        help_text=_("Number of months, e.g. 12. Stock shows until when each batch is good."),
+    )
+
     class Meta:
         model = Product
-        fields = ["name", "sales_name", "volume", "position", "shelf_life", "is_active"]
-        widgets = {"shelf_life": forms.TextInput(attrs={"placeholder": "18 месяцев"})}
+        fields = ["name", "sales_name", "volume", "position", "is_active"]
 
-    def clean_shelf_life(self):
-        return _readable_shelf_life(self.cleaned_data["shelf_life"])
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .expiry import in_months
+
+        # An existing shelf life shows as months (years x 12; days and weeks are rounded to months).
+        self.initial["shelf_life_months"] = in_months(self.instance.shelf_life)
+
+    def clean(self):
+        from .expiry import months_text
+
+        cleaned = super().clean()
+        months = cleaned.get("shelf_life_months")
+        self.instance.shelf_life = months_text(months) if months else ""
+        return cleaned
 
 
 class RecipeLineForm(BootstrapFormMixin, forms.ModelForm):

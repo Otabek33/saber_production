@@ -174,6 +174,7 @@ AREAS = [
         _("Recipes and norms"),
         _perms("production", "view_recipeline"),
         # Editing a recipe removes lines; products and their other names are kept with recipes.
+        # A product entered by mistake can be deleted; one with production, stock or shipments can't.
         _perms(
             "production",
             "add_recipeline",
@@ -181,6 +182,7 @@ AREAS = [
             "delete_recipeline",
             "add_product",
             "change_product",
+            "delete_product",
             "view_productalias",
             "add_productalias",
             "change_productalias",

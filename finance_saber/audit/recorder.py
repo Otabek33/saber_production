@@ -25,7 +25,13 @@ from django.utils.translation import gettext as _
 from .context import client_ip, current
 
 TRACKED_APPS = {"cashbook", "production", "sales", "planning", "settlements", "purchases", "users"}
-SKIPPED_MODELS = {"users.telegramlinktoken", "users.passwordresetcode", "users.roleaccess", "users.roleaccesschange"}
+SKIPPED_MODELS = {
+    "users.telegramlinktoken",
+    "users.passwordresetcode",
+    "users.roleaccess",
+    "users.roleaccesschange",
+    "users.notification",  # the system's messages and their read marks, not business records
+}
 DERIVED_MOVES = {"production.materialmove", "production.productmove"}
 IGNORED_FIELDS = {"id", "last_login", "created_at", "updated_at"}
 SECRET_WORDS = ("password", "hash", "token", "secret")

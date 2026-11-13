@@ -7,7 +7,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Prefetch, Q, Sum
+from django.db.models import Prefetch, ProtectedError, Q, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -23,7 +23,7 @@ from finance_saber.cashbook.models import Company
 from finance_saber.core import dashboard
 from finance_saber.core.permissions import PermissionMixin, permission
 
-from . import capacity, costing, importer, recipe_excel, services, shipment_import, traceability
+from . import capacity, costing, expiry, importer, recipe_excel, services, shipment_import, traceability
 from . import overview as production_overview
 from .forms import (
     MAX_WORKBOOK_SIZE,
@@ -329,6 +329,7 @@ class MaterialStockView(StockListView):
                 "transit": transit.get(material.pk),
                 "low": amount < 0 or (material.min_stock and amount < material.min_stock),
                 "value": value.by_material.get(material.pk) if value else None,
+                "explain": value.explain(material.pk) if value else [],
                 "unpriced": bool(value) and amount > 0 and value.by_material.get(material.pk) is None,
             })  # fmt: skip
         context["rows"] = rows
@@ -371,25 +372,59 @@ def material_analysis(request):
 
 
 class ProductStockView(StockListView):
+    """Finished goods in stock and, for each, its batches with the date each is good until (its
+    production date + the product's shelf life). ``?expiry=alerts`` (3 months or less left, or
+    expired) or ``?expiry=expired`` keeps only the products that have such batches."""
+
     model = Product
     template_name = "production/product_stock.html"
     permission_required = "production.view_product"
+    EXPIRY_FILTERS = ("alerts", "expired")
+
+    def get(self, request, *args, **kwargs):
+        # Below zero, what batches show left isn't real: batches only for products with stock.
+        self.stock = product_stock()
+        self.lots = {
+            pk: lots for pk, lots in expiry.by_item(expiry.product_lots()).items() if self.stock.get(pk, 0) > 0
+        }
+        self.expiry_filter = request.GET.get("expiry") if request.GET.get("expiry") in self.EXPIRY_FILTERS else ""
+        return super().get(request, *args, **kwargs)
+
+    def flagged(self, lots) -> list:
+        if self.expiry_filter == "expired":
+            return [lot for lot in lots if lot.alert == "expired"]
+        return [lot for lot in lots if lot.alert]
+
+    def get_queryset(self):
+        items = super().get_queryset()
+        if self.expiry_filter:
+            items = items.filter(pk__in=[pk for pk, lots in self.lots.items() if self.flagged(lots)])
+        return items
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        stock = product_stock()
         month = self.month_totals(ProductMove.objects, "product_id")
-        context["rows"] = [
-            {
+        context["rows"] = []
+        for product in context["items"]:
+            lots = self.lots.get(product.pk, [])
+            context["rows"].append({
                 "product": product,
-                "stock": stock.get(product.pk, Decimal(0)),
+                "stock": self.stock.get(product.pk, Decimal(0)),
                 "produced": month.get(product.pk, {}).get(ProductMove.Kind.OUTPUT, 0),
                 # Shipped less what customers returned.
                 "shipped": -(month.get(product.pk, {}).get(ProductMove.Kind.SHIPMENT) or 0)
                 - (month.get(product.pk, {}).get(ProductMove.Kind.RETURN) or 0),
-            }
-            for product in context["items"]
-        ]
+                "lots": lots,
+                "first": lots[0] if lots else None,  # the batch that goes off first
+            })  # fmt: skip
+        every_lot = [lot for lots in self.lots.values() for lot in lots]
+        context["expiry"] = {
+            "filter": self.expiry_filter,
+            "batches": len(every_lot),
+            "alerts": sum(bool(lot.alert) for lot in every_lot),
+            "expired": sum(lot.alert == "expired" for lot in every_lot),
+            "no_shelf_life": sum(1 for lot in every_lot if lot.best_before is None),
+        }
         return context
 
 
@@ -966,6 +1001,7 @@ class RecipeListView(PermissionMixin, TemplateView):
         return super().get_context_data(
             rows=[{"product": product, "possible": possible[product.pk]} for product in products],
             can_load=self.request.user.has_perms(RECIPE_IMPORT_PERMISSIONS),
+            can_delete=self.request.user.has_perm("production.delete_product"),
             **kwargs,
         )
 
@@ -1003,8 +1039,31 @@ def recipe_edit(request, pk):
     return render(
         request,
         "production/recipe_form.html",
-        {"product": product, "form": form, "formset": formset, "can_edit": can_edit},
+        {
+            "product": product,
+            "form": form,
+            "formset": formset,
+            "can_edit": can_edit,
+            "can_delete": request.user.has_perm("production.delete_product"),
+        },
     )
+
+
+@require_POST
+@permission(view="production.view_recipeline", change="production.delete_product")
+def product_delete(request, pk):
+    """Delete a product entered by mistake, with its recipe. One already in production, stock or shipments
+    is kept (its history depends on it): switch it off instead."""
+    product = get_object_or_404(Product, pk=pk)
+    name = product.name
+    try:
+        product.delete()  # its recipe lines and other names go with it
+    except ProtectedError:
+        text = _("%(name)s is already in production, stock or shipments, so it can't be deleted.")
+        messages.error(request, text % {"name": name} + " " + _("Switch it off instead (uncheck Active)."))
+        return redirect("production:recipe_edit", pk=pk)
+    messages.success(request, _("Product %(name)s deleted.") % {"name": name})
+    return redirect("production:recipes")
 
 
 @permission(view="production.view_recipeline")

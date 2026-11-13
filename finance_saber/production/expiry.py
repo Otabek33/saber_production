@@ -13,6 +13,10 @@ Shelf life is typed as text, the way people write it ("18 месяц", "24 ме�
 
 Stock that has no date of its own (an opening balance, a count surplus, a customer's return)
 is listed with the date it came in, so nothing in stock is left out.
+
+Alerts (``alert_level``): a batch is flagged 3, 2 and 1 months before it goes off, then 2 weeks
+before, then as expired; the warehouse checks it. They show in the header's notifications (each
+morning from 06:00, production/notifications.py), on the production overview and the shelf-life page.
 """
 
 import calendar
@@ -22,12 +26,24 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from . import traceability
 from .models import Material, Product
 
 SOON_DAYS = 30
 ZERO = Decimal(0)
+ALERT_WEEKS_DAYS = 14  # the last alert before a batch goes off: 2 weeks
+# Alert levels, the most urgent first: key, how it reads, Bootstrap colour.
+ALERT_LEVELS = (
+    ("expired", gettext_lazy("Expired"), "danger"),
+    ("weeks_2", gettext_lazy("2 weeks left"), "danger"),
+    ("month_1", gettext_lazy("1 month left"), "warning"),
+    ("months_2", gettext_lazy("2 months left"), "warning"),
+    ("months_3", gettext_lazy("3 months left"), "info"),
+)
+ALERT_LABELS = {key: label for key, label, _tone in ALERT_LEVELS}
+ALERT_TONES = {key: tone for key, _label, tone in ALERT_LEVELS}
 
 # The unit's first letters, in Russian or English; months unless it says otherwise.
 UNITS = (
@@ -56,10 +72,46 @@ def parse(text: str) -> tuple[int, str] | None:
     return None
 
 
+def months_text(months: int) -> str:
+    """A number of months as it is stored and read back by ``parse``: 1 месяц, 2 месяца, 12 месяцев."""
+    if months % 10 == 1 and months % 100 != 11:
+        word = "месяц"
+    elif months % 10 in (2, 3, 4) and months % 100 not in (12, 13, 14):
+        word = "месяца"
+    else:
+        word = "месяцев"
+    return f"{months} {word}"
+
+
+def in_months(shelf_life: str) -> int | None:
+    """A shelf life as a whole number of months (days and weeks rounded); None when it can't be read."""
+    parsed = parse(shelf_life)
+    if parsed is None:
+        return None
+    number, unit = parsed
+    days = {"days": number, "weeks": number * 7, "months": number * 30, "years": number * 365}[unit]
+    return max(1, round(days / 30))
+
+
 def add_months(date: datetime.date, months: int) -> datetime.date:
     month = date.month - 1 + months
     year, month = date.year + month // 12, month % 12 + 1
     return date.replace(year=year, month=month, day=min(date.day, calendar.monthrange(year, month)[1]))
+
+
+def alert_level(best_before: datetime.date | None, today: datetime.date) -> str | None:
+    """Which alert a batch good until ``best_before`` is at (ALERT_LEVELS), or None: more than
+    3 months left, or no shelf life. Months are calendar months from today."""
+    if best_before is None:
+        return None
+    if best_before < today:
+        return "expired"
+    if best_before <= today + datetime.timedelta(days=ALERT_WEEKS_DAYS):
+        return "weeks_2"
+    for months, key in ((1, "month_1"), (2, "months_2"), (3, "months_3")):
+        if best_before <= add_months(today, months):
+            return key
+    return None
 
 
 def best_before(date: datetime.date, shelf_life: str) -> datetime.date | None:
@@ -122,6 +174,34 @@ class StockLot:
         return (self.best_before - self.today).days if self.best_before else None
 
     @property
+    def alert(self) -> str | None:
+        """Its alert level (ALERT_LEVELS) or None."""
+        return alert_level(self.best_before, self.today)
+
+    @property
+    def alert_label(self) -> str:
+        return ALERT_LABELS.get(self.alert, "")
+
+    @property
+    def alert_tone(self) -> str:
+        return ALERT_TONES.get(self.alert, "secondary")
+
+    @property
+    def tone(self) -> str:
+        """The Bootstrap colour of its status: danger expired, warning soon, success good."""
+        return {Status.EXPIRED: "danger", Status.SOON: "warning", Status.GOOD: "success"}.get(self.status, "secondary")
+
+    @property
+    def life_left_percent(self) -> int | None:
+        """How much of its shelf life is still ahead, 0–100 (for a progress bar); None without one."""
+        if self.best_before is None:
+            return None
+        total = (self.best_before - self.date).days
+        if total <= 0:
+            return 0
+        return max(0, min(100, round(100 * (self.best_before - self.today).days / total)))
+
+    @property
     def status(self) -> str:
         if self.best_before is None:
             return Status.UNKNOWN
@@ -161,6 +241,26 @@ def material_lots(today: datetime.date | None = None) -> list[StockLot]:
     materials = Material.objects.in_bulk()
     lot_dates = dict(MaterialReceiptLine.objects.filter(best_before__isnull=False).values_list("pk", "best_before"))
     return _in_stock(traceability.trace(list(materials)), materials, today or timezone.localdate(), lot_dates)
+
+
+def by_item(lots: list[StockLot]) -> dict[int, list[StockLot]]:
+    """Each item's lots in stock, the first to go off first (``lots`` come sorted that way)."""
+    grouped = {}
+    for lot in lots:
+        grouped.setdefault(lot.item.pk, []).append(lot)
+    return grouped
+
+
+def alerts(lots: list[StockLot]) -> dict:
+    """The lots to check at the warehouse (3 months or less left, or expired), the first to go off
+    first, and how many are at each level."""
+    flagged = [lot for lot in lots if lot.alert]
+    levels = [
+        {"key": key, "label": label, "tone": tone, "count": sum(lot.alert == key for lot in flagged)}
+        for key, label, tone in ALERT_LEVELS
+    ]
+    urgent = sum(lot.alert in ("expired", "weeks_2") for lot in flagged)
+    return {"lots": flagged, "levels": levels, "count": len(flagged), "urgent": urgent}
 
 
 def summary(lots: list[StockLot]) -> dict:

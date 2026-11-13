@@ -98,6 +98,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }, true);
 
+  // Confirmation modals (data-action-modal) shared by several buttons: the button that opens one
+  // carries data-action="<url the modal's form posts to>" and data-name="<what is affected>".
+  document.addEventListener("show.bs.modal", function (event) {
+    var modal = event.target;
+    var button = event.relatedTarget;
+    if (!button || !modal.matches("[data-action-modal]")) {
+      return;
+    }
+    modal.querySelector("form").action = button.dataset.action;
+    modal.querySelectorAll("[data-modal-name]").forEach(function (element) {
+      element.textContent = button.dataset.name || "";
+    });
+  });
+
   // Number inputs (data-number="<decimals>"): digits grouped by spaces and a decimal comma
   // as they are typed, "1250.5" -> "1 250,5", the way the server reads them (QuantityField).
   function formatNumber(text, decimals) {

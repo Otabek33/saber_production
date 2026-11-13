@@ -7,7 +7,7 @@ shipping (finished goods) of the 30 days to the period's end.
 """
 
 import datetime
-from collections import defaultdict
+from collections import Counter, defaultdict
 from decimal import Decimal
 
 from django.db.models import Case, F, Sum, Value, When
@@ -154,8 +154,26 @@ def transit() -> dict:
     }
 
 
-def goods(period: Period) -> dict:
-    """Finished goods in stock, and how many days each lasts at the recent shipping."""
+# The order of the finished goods list: what needs action first, then the rest of the stock.
+GOODS_ORDER = ("expired", "soon", "negative", "good", "unknown", "empty")
+
+
+def _goods_state(amount: Decimal, lots: list) -> str:
+    """expired / soon / good: its first batch to go off; unknown: in stock without a shelf life;
+    negative: shipped more than production entered; empty: nothing in stock."""
+    if amount < 0:
+        return "negative"
+    if amount == 0:
+        return "empty"
+    if lots and lots[0].best_before:
+        return lots[0].status
+    return "unknown"
+
+
+def goods(period: Period, lots_by_product: dict | None = None) -> dict:
+    """Finished goods: stock, how many days each lasts at the recent shipping, and its batches in
+    stock with their own good-until dates (``lots_by_product`` from expiry.by_item)."""
+    lots_by_product = lots_by_product or {}
     stock = product_stock()
     sign = Case(When(shipment__is_return=True, then=Value(-1)), default=Value(1))
     start = period.date_to - datetime.timedelta(days=USAGE_DAYS - 1)
@@ -172,14 +190,28 @@ def goods(period: Period) -> dict:
     for product in Product.objects.filter(is_active=True):
         amount = stock.get(product.pk, ZERO)
         per_day = Decimal(shipped_recently.get(product.pk, 0)) / USAGE_DAYS
-        rows.append({"product": product, "stock": amount, "days": cover(amount, per_day)})
+        # Batches only when there is stock: below zero, what batches show left isn't real.
+        lots = lots_by_product.get(product.pk, []) if amount > 0 else []
+        rows.append({
+            "product": product, "stock": amount, "days": cover(amount, per_day), "lots": lots,
+            "first": lots[0] if lots else None, "state": _goods_state(amount, lots),
+        })  # fmt: skip
     rows.sort(
-        key=lambda row: (row["stock"] >= 0, row["days"] if row["days"] is not None else 9999, row["product"].name)
+        key=lambda row: (
+            GOODS_ORDER.index(row["state"]),
+            row["first"].best_before if row["first"] and row["first"].best_before else datetime.date.max,
+            row["days"] if row["days"] is not None else 9999,
+            row["product"].name,
+        )
     )
+    states = Counter(row["state"] for row in rows)
     return {
         "rows": rows,
         "units": sum((row["stock"] for row in rows if row["stock"] > 0), ZERO),
-        "negative": sum(row["stock"] < 0 for row in rows),
+        "negative": states["negative"],
+        "batches": sum(len(row["lots"]) for row in rows),
+        "expired": sum(lot.status == "expired" for row in rows for lot in row["lots"]),
+        "soon": sum(lot.status == "soon" for row in rows for lot in row["lots"]),
     }
 
 
@@ -213,8 +245,10 @@ def build(user, period: Period) -> dict:
     if can("production.view_materialorder"):
         context["transit"] = transit()
     if can("production.view_product"):
-        context["goods"] = goods(period)
-        context["expiring"] = expiry.summary(expiry.product_lots())
+        lots = expiry.product_lots()
+        context["goods"] = goods(period, expiry.by_item(lots))
+        context["expiring"] = expiry.summary(lots)
+        context["shelf_alerts"] = expiry.alerts(lots)  # batches to check: 3 months or less left
     if can("production.view_materialreceipt"):
         context["receipts"] = receipts()
     return context

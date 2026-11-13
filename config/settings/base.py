@@ -178,6 +178,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "finance_saber.core.context_processors.site",
                 "finance_saber.core.context_processors.navigation",
+                "finance_saber.users.context_processors.notifications",
             ],
         },
     },

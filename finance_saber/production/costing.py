@@ -136,7 +136,23 @@ class PriceBook:
             self.by_line[pk] = price
             self.dates[material_id].append(date)
             self.prices[material_id].append(price)
-        self.standard = dict(Material.objects.filter(price__gt=0).values_list("pk", "price"))
+        # Standard prices, in UZS or in USD (a USD one is in UZS at the rate of the day it is used for).
+        self.standard: dict[int, Decimal] = {}
+        self.standard_usd: dict[int, Decimal] = {}
+        for pk, price, currency in Material.objects.filter(price__gt=0).values_list("pk", "price", "price_currency"):
+            (self.standard_usd if currency == "USD" else self.standard)[pk] = price
+        from finance_saber.cashbook.models import ExchangeRate
+
+        rates = list(ExchangeRate.objects.order_by("date").values_list("date", "rate"))
+        self.rate_dates = [date for date, _rate in rates]
+        self.rates = [rate for _date, rate in rates]
+
+    def usd_rate(self, date: datetime.date) -> Decimal | None:
+        """UZS per USD on ``date``: the latest rate up to it, else the first one after."""
+        if not self.rate_dates:
+            return None
+        index = bisect.bisect_right(self.rate_dates, date)
+        return self.rates[index - 1 if index else 0]
 
     def at(self, material_id: int, date: datetime.date) -> Price:
         """An estimate for the material on ``date``: a receipt near it, else its standard price."""
@@ -146,6 +162,8 @@ class PriceBook:
             return Price(self.prices[material_id][index - 1 if index else 0], Source.ESTIMATE)
         if material_id in self.standard:
             return Price(self.standard[material_id], Source.STANDARD)
+        if material_id in self.standard_usd and (rate := self.usd_rate(date)):
+            return Price(self.standard_usd[material_id] * rate, Source.STANDARD)
         return UNKNOWN
 
     def of_lot(self, lot: traceability.Lot | None, material_id: int, date: datetime.date) -> Price:
@@ -483,6 +501,18 @@ class StockValue:
     by_material: dict[int, Decimal | None]  # None: in stock, but no price known
     rate: Decimal | None  # UZS per USD used for prices in UZS (the latest rate)
     estimated: Decimal = ZERO  # of the total, valued at an estimate (not the delivery's own price)
+    # How each material was valued, for showing the sum: [(quantity, USD per unit, Source, in UZS?)]
+    parts: dict[int, list[tuple]] = field(default_factory=dict)
+
+    def explain(self, material_id: int) -> list[dict]:
+        """The material's value as its parts: quantity x price, where the price came from, and the UZS price."""
+        merged: dict[tuple, dict] = {}
+        for quantity, usd, source, uzs in self.parts.get(material_id, []):
+            item = merged.setdefault((usd, source, uzs), {"quantity": ZERO, "usd": usd, "source": source, "uzs": uzs})
+            item["quantity"] += quantity
+        for item in merged.values():
+            item["value"] = item["quantity"] * item["usd"]
+        return list(merged.values())
 
     @property
     def total(self) -> Decimal:
@@ -515,20 +545,27 @@ def stock_value_usd(today: datetime.date | None = None, book: PriceBook | None =
     }
     traced = traceability.trace(Material.objects.values_list("pk", flat=True))
     values: dict[int, Decimal | None] = {}
+    parts: dict[int, list[tuple]] = {}
     estimated = ZERO
     for lot in traced.lots:
         if lot.remaining <= 0:
             continue
         material_id = lot.move.material_id
+        uzs = None  # the price in UZS, when that is what was converted
         if lot.receipt_line_id in usd_price:
-            value, exact = lot.remaining * usd_price[lot.receipt_line_id], True
+            usd, source = usd_price[lot.receipt_line_id], Source.RECEIPT
         else:
             price = book.of_lot(lot, material_id, lot.date)
-            if not price.known or not rate:
+            if price.source == Source.STANDARD and material_id in book.standard_usd:
+                usd, source = book.standard_usd[material_id], Source.STANDARD  # typed in USD: as it is
+            elif price.known and rate:
+                usd, source, uzs = price.value / rate, price.source, price.value
+            else:
                 values.setdefault(material_id, None)
                 continue
-            value, exact = lot.remaining * price.value / rate, price.source in Source.EXACT
+        value = lot.remaining * usd
         values[material_id] = (values.get(material_id) or ZERO) + value
-        if not exact:
+        parts.setdefault(material_id, []).append((lot.remaining, usd, source, uzs))
+        if source not in Source.EXACT:
             estimated += value
-    return StockValue(by_material=values, rate=rate, estimated=estimated)
+    return StockValue(by_material=values, rate=rate, estimated=estimated, parts=parts)

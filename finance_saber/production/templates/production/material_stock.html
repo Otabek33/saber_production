@@ -72,8 +72,20 @@
           {% if stock_value.rate %}{% blocktranslate with rate=stock_value.rate|floatformat:"2g" %}UZS prices at {{ rate }} per USD{% endblocktranslate %}{% else %}<span class="text-warning">{% translate "No USD rate: only deliveries invoiced in USD are counted." %}</span>{% endif %}
         </span>
       </div></div></div>
+      <div class="col-sm-6 col-lg-8"><div class="card mb-0 h-100"><div class="card-body p-3 fs-2">
+        <details>
+          <summary class="fw-semibold">{% translate "How the value is worked out" %}</summary>
+          <ol class="mb-0 mt-2 ps-3 text-muted">
+            <li>{% translate "Value = what is left in stock × the price per unit. Under each value you see that sum." %}</li>
+            <li>{% translate "The price is taken from the receipt the stock came by: its amount ÷ its quantity. Oldest stock is used first, so what is left belongs to the latest receipts." %}</li>
+            <li>{% translate "Stock with no priced receipt (an opening balance) takes the price of another receipt of that material; if there is none, the material's «Учётная цена»." %}</li>
+            <li>{% blocktranslate with rate=stock_value.rate|floatformat:"2g"|default:"—" %}A price in UZS is divided by the USD rate ({{ rate }}); a price in USD is used as it is.{% endblocktranslate %}</li>
+            <li>{% translate "«Учётная цена» is per unit, in the currency chosen beside it (UZS or USD): open the material to set it." %}</li>
+          </ol>
+        </details>
+      </div></div></div>
       {% if stock_value.estimated or stock_value.unpriced %}
-        <div class="col-sm-6 col-lg-8"><div class="card mb-0 h-100"><div class="card-body p-3 fs-2 text-muted d-flex flex-column justify-content-center">
+        <div class="col-12"><div class="card mb-0"><div class="card-body p-3 fs-2 text-muted d-flex flex-column justify-content-center">
           {% if stock_value.estimated %}<span>{% blocktranslate with amount=stock_value.estimated|floatformat:"0g" %}$ {{ amount }} of it is estimated: stock without a priced receipt, at another receipt's or the standard price.{% endblocktranslate %}</span>{% endif %}
           {% if stock_value.unpriced %}<span class="text-warning">{% blocktranslate count counter=stock_value.unpriced %}{{ counter }} material in stock has no price and isn't counted.{% plural %}{{ counter }} materials in stock have no price and aren't counted.{% endblocktranslate %}</span>{% endif %}
         </div></div></div>
@@ -112,7 +124,15 @@
               <td class="num">{% if row.used %}{{ row.used|floatformat:"-3g" }}{% endif %}</td>
               <td class="num fw-semibold{% if row.low %} text-danger{% endif %}">{{ row.stock|floatformat:"-3g" }}</td>
               {% if stock_value %}
-                <td class="num text-nowrap">{% if row.value %}{{ row.value|floatformat:"2g" }}{% elif row.unpriced %}<span class="text-warning fs-2" title="{% translate "No price on its receipts and no standard price" %}">{% translate "no price" %}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td class="num text-nowrap">{% if row.value %}{{ row.value|floatformat:"2g" }}
+                  {# How it comes about: quantity x price, and where the price is from #}
+                  {% for part in row.explain %}
+                    <span class="d-block fs-1 text-muted">
+                      {{ part.quantity|floatformat:"-3g" }} × {% if part.uzs %}{{ part.uzs|floatformat:"-2g" }} {% translate "UZS" %}{% else %}${{ part.usd|floatformat:"-4g" }}{% endif %}
+                      · {% if part.source == "receipt" %}{% translate "receipt price" %}{% elif part.source == "standard" %}{% translate "standard price" %}{% else %}{% translate "another receipt's price" %}{% endif %}
+                    </span>
+                  {% endfor %}
+                {% elif row.unpriced %}<span class="text-warning fs-2" title="{% translate "No price on its receipts and no standard price" %}">{% translate "no price" %}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
               {% endif %}
               <td class="num text-nowrap">
                 {% if row.transit %}

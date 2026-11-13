@@ -96,3 +96,37 @@ class RoleAccessChange(models.Model):
     def __str__(self):
         old, new = self.old_level or "—", self.new_level or "—"
         return f"{self.changed_at:%Y-%m-%d %H:%M} {self.role}: {self.area} {old} → {new}"
+
+
+class Notification(models.Model):
+    """A message in the header's notifications (the bell), for one user. The text is written when
+    it is shown, from ``kind`` and ``data``, so it reads in the viewer's language.
+
+    Kinds: "expiry" — finished-goods batches to check at the warehouse, made each morning
+    (production/notifications.py) when there are any; ``data`` holds what was found then.
+    """
+
+    class Kind(models.TextChoices):
+        EXPIRY = "expiry", _("Shelf life")
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, related_name="notifications")
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    day = models.DateField(help_text=_("The day it is for: one of each kind a day."))
+    data = models.JSONField(default=dict, blank=True)
+    url = models.CharField(max_length=300, blank=True, help_text=_("Where opening it leads, inside the site."))
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        verbose_name = _("notification")
+        verbose_name_plural = _("notifications")
+        constraints = [models.UniqueConstraint(fields=["user", "kind", "day"], name="one_notification_a_day")]
+        indexes = [models.Index(fields=["user", "read_at"], name="notification_unread")]
+
+    def __str__(self):
+        return f"{self.user} {self.kind} {self.day}"
+
+    @property
+    def is_read(self) -> bool:
+        return self.read_at is not None

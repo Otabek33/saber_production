@@ -46,21 +46,8 @@
 
           {% include "partials/_language_switcher.html" %}
 
-          {# Notifications: empty until the app has something to notify about #}
-          <li class="nav-item dropdown">
-            <a class="nav-link nav-icon-hover-bg rounded-circle position-relative" href="#" id="notificationsDropdown" aria-expanded="false" aria-label="{% translate "Notifications" %}">
-              <iconify-icon icon="solar:bell-bing-line-duotone" class="fs-6"></iconify-icon>
-            </a>
-            <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="notificationsDropdown">
-              <div class="d-flex align-items-center justify-content-between py-3 px-7">
-                <h5 class="mb-0 fs-5 fw-semibold">{% translate "Notifications" %}</h5>
-              </div>
-              <div class="text-center py-6 px-7">
-                <iconify-icon icon="solar:bell-off-line-duotone" class="fs-9 text-muted"></iconify-icon>
-                <p class="mb-0 mt-2 text-muted">{% translate "You're all caught up." %}</p>
-              </div>
-            </div>
-          </li>
+          {# Notifications: the bell beside the profile icon (partials/_notifications.html) #}
+          {% include "partials/_notifications.html" %}
 
           {# Account: name, role, and the account links #}
           <li class="nav-item dropdown">

@@ -78,7 +78,10 @@ class Material(models.Model):
         **MONEY,
         default=0,
         validators=[MinValueValidator(0)],
-        help_text=_("UZS per unit, with VAT. Used for production cost only while no receipt has a price."),
+        help_text=_("Per unit, with VAT, in the currency beside it. Used only while no receipt has a price."),
+    )
+    price_currency = models.CharField(
+        _("price currency"), max_length=3, choices=[("UZS", "UZS"), ("USD", "USD")], default="UZS"
     )
     is_active = models.BooleanField(_("active"), default=True)
 

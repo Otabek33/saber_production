@@ -109,6 +109,11 @@
     {% endif %}
   </div>
 
+  {% if shelf_alerts.count %}
+    {# Finished goods whose shelf life ends within 3 months: right under the tiles, it needs action #}
+    <div class="row"><div class="col-12">{% include "production/_shelf_alerts_card.html" %}</div></div>
+  {% endif %}
+
   {% if chart %}
     <div class="row">
       <div class="col-xl-8">
@@ -232,30 +237,7 @@
     {% endif %}
     {% if goods %}
       <div class="col-xl-5">
-        <div class="card">
-          <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
-            <h5 class="card-title mb-0">{% translate "Finished goods" %}</h5>
-            <a href="{% url 'production:products' %}" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "All" %}</a>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0 ledger-table">
-              <thead><tr><th>{% translate "Product" %}</th><th class="num">{% translate "In stock" %}</th><th>{% translate "Lasts" %}</th></tr></thead>
-              <tbody>
-                {% for row in goods.rows|slice:":8" %}
-                  <tr>
-                    <td class="text-truncate" style="max-width: 220px">{{ row.product.name }}</td>
-                    <td class="num {% if row.stock < 0 %}text-danger fw-semibold{% endif %}">{{ row.stock|floatformat:"0g" }}</td>
-                    <td>{% if row.stock < 0 %}<span class="badge bg-danger-subtle text-danger">{% translate "below zero" %}</span>{% elif row.days is not None %}<span class="badge {% if row.days < 7 %}bg-warning-subtle text-warning{% else %}bg-success-subtle text-success{% endif %}">{% blocktranslate count counter=row.days %}{{ counter }} day{% plural %}{{ counter }} days{% endblocktranslate %}</span>{% else %}<span class="text-muted fs-2">{% translate "not shipped lately" %}</span>{% endif %}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          <div class="px-4 py-2 border-top text-muted fs-2">
-            {% translate "«Lasts»: the stock at the average daily shipping of the last 30 days." %}
-            {% if goods.rows|length > 8 %}<a href="{% url 'production:products' %}">{% blocktranslate count counter=goods.rows|length|add:"-8" %}and {{ counter }} more product{% plural %}and {{ counter }} more products{% endblocktranslate %}</a>{% endif %}
-          </div>
-        </div>
+        {% include "production/_goods_card.html" %}
       </div>
     {% endif %}
   </div>

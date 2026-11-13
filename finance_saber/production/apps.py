@@ -8,6 +8,8 @@ class ProductionConfig(AppConfig):
 
     def ready(self):
         # A closed period's records can't be saved or deleted (periods.py).
-        from . import periods
+        from . import notifications, periods
 
         periods.connect()
+        # Expiry alerts in the header are worked out again when product stock moves.
+        notifications.connect()

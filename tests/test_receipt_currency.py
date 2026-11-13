@@ -111,3 +111,35 @@ def test_a_receipt_line_takes_its_good_until_date(client, technologist, setup):
     assert "best_before" in response.context["lines"].forms[0].errors and not MaterialReceipt.objects.exists()
     assert client.post(url, data | {"lines-0-best_before": "2027-05-01"}).status_code == 302
     assert MaterialReceipt.objects.get().lines.get().best_before == datetime.date(2027, 5, 1)
+
+
+def test_a_standard_price_in_usd_is_used_as_it_is(db):
+    """What the user meant: 5 USD a kg, not 5 UZS."""
+    from finance_saber.production.models import MaterialMove
+
+    ExchangeRate.objects.create(date=datetime.date(2026, 11, 1), rate=D(12120))
+    tea = Material.objects.create(name="Экстракт чая", unit="кг", price=D(5), price_currency="USD")
+    sugar = Material.objects.create(name="Сахар", unit="кг", price=D(12120))  # in UZS: 1 USD a kg
+    for material, quantity in ((tea, 100), (sugar, 50)):
+        MaterialMove.objects.create(
+            material=material, date=datetime.date(2026, 11, 2), kind=MaterialMove.Kind.OPENING, quantity=quantity
+        )
+    value = costing.stock_value_usd(datetime.date(2026, 11, 10))
+    assert (value.by_material[tea.pk], value.by_material[sugar.pk]) == (D(500), D(50))
+    [part] = value.explain(tea.pk)
+    assert (part["quantity"], part["usd"], part["source"], part["uzs"]) == (100, D(5), costing.Source.STANDARD, None)
+    [part] = value.explain(sugar.pk)
+    assert (part["usd"], part["uzs"]) == (D(1), D(12120))
+    # For costs (in UZS) the USD price is taken at the day's rate.
+    assert costing.PriceBook().at(tea.pk, datetime.date(2026, 11, 10)).value == D(60600)
+
+
+def test_the_stock_page_shows_how_a_value_comes_about(client, finance, db):
+    from finance_saber.production.models import MaterialMove
+
+    ExchangeRate.objects.create(date=datetime.date(2026, 11, 1), rate=D(12120))
+    tea = Material.objects.create(name="Экстракт чая", unit="кг", price=D(5), price_currency="USD")
+    MaterialMove.objects.create(material=tea, date=datetime.date(2026, 11, 2), kind="opening", quantity=100)
+    client.force_login(finance)
+    content = client.get(reverse("production:materials")).content.decode()
+    assert "Как считается стоимость" in content and "учётная цена" in content and "$5" in content

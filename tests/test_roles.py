@@ -60,8 +60,14 @@ def test_every_role_permission_exists(db):
 
 def test_nobody_but_the_superuser_deletes(db):
     # Whatever access the superuser gives a role, no section grants deleting records.
-    # Exceptions: recipe lines (editing a recipe) and plans (drafts, cleared by emptying a cell).
-    allowed = {"production.delete_recipeline", "planning.delete_cashplan", "planning.delete_collectionplan"}
+    # Exceptions: recipe lines (editing a recipe), plans (drafts, cleared by emptying a cell) and
+    # products (only one entered by mistake: any with production, stock or shipments is protected).
+    allowed = {
+        "production.delete_recipeline",
+        "production.delete_product",
+        "planning.delete_cashplan",
+        "planning.delete_collectionplan",
+    }
     grantable = {perm for area in AREAS if area.editable for perm in area.permissions("edit")}
     assert not {perm for perm in grantable if ".delete_" in perm} - allowed
 

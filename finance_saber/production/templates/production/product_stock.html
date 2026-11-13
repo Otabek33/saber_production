@@ -14,8 +14,15 @@
     <div class="card-body py-3 px-4">
       <form method="get" class="d-flex flex-wrap align-items-center gap-2 form-compact">
         <input type="search" name="q" value="{{ request.GET.q }}" class="form-control form-control-sm" style="max-width: 260px" placeholder="{% translate "Search by name" %}" aria-label="{% translate "Search" %}">
+        {% if expiry.filter %}<input type="hidden" name="expiry" value="{{ expiry.filter }}">{% endif %}
         <button type="submit" class="btn btn-sm btn-primary">{% translate "Apply" %}</button>
-        {% if request.GET.q %}<a href="{% url 'production:products' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>{% endif %}
+        {% if request.GET.q or expiry.filter %}<a href="{% url 'production:products' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "Reset" %}</a>{% endif %}
+        {# Shelf life: only the products with batches to check #}
+        <div class="btn-group btn-group-sm" role="group" aria-label="{% translate "Shelf life" %}">
+          <a href="?{% if request.GET.q %}q={{ request.GET.q|urlencode }}{% endif %}" class="btn {% if not expiry.filter %}btn-primary{% else %}btn-outline-primary{% endif %}">{% translate "All" %}</a>
+          <a href="?expiry=alerts{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="btn {% if expiry.filter == 'alerts' %}btn-warning{% else %}btn-outline-warning{% endif %}">{% translate "Within 3 months" %} <span class="badge bg-white text-warning ms-1">{{ expiry.alerts }}</span></a>
+          <a href="?expiry=expired{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="btn {% if expiry.filter == 'expired' %}btn-danger{% else %}btn-outline-danger{% endif %}">{% translate "Expired" %} <span class="badge bg-white text-danger ms-1">{{ expiry.expired }}</span></a>
+        </div>
         {% if perms.production.add_productmove %}
         <span class="ms-auto d-flex flex-wrap gap-2">
           <a href="{% url 'production:shipments' %}" class="btn btn-sm bg-secondary-subtle text-secondary">
@@ -43,6 +50,7 @@
             <th class="num">{% translate "Produced this month" %}</th>
             <th class="num">{% translate "Shipped this month" %}</th>
             <th class="num">{% translate "Stock, units" %}</th>
+            <th>{% translate "Good until" %} <span class="fw-normal text-muted fs-1">({% translate "first batch" %})</span></th>
             <th><span class="visually-hidden">{% translate "Actions" %}</span></th>
           </tr>
         </thead>
@@ -52,11 +60,32 @@
               <td>
                 {{ row.product.name }}
                 {% if row.product.sales_name %}<span class="d-block fs-1 text-muted">{{ row.product.sales_name }}</span>{% endif %}
+                <span class="d-block fs-1 text-muted">
+                  {% if row.product.shelf_life %}<iconify-icon icon="solar:calendar-line-duotone"></iconify-icon> {% translate "shelf life" %} {{ row.product.shelf_life }}
+                  {% elif perms.production.change_product %}<a href="{% url 'production:recipe_edit' row.product.pk %}" class="text-warning">{% translate "Set the shelf life" %}</a>
+                  {% else %}{% translate "no shelf life" %}{% endif %}
+                </span>
               </td>
               <td class="num text-muted">{{ row.product.volume|floatformat:"-3" }}</td>
               <td class="num">{% if row.produced %}{{ row.produced|floatformat:"0g" }}{% endif %}</td>
               <td class="num">{% if row.shipped %}{{ row.shipped|floatformat:"0g" }}{% endif %}</td>
               <td class="num fw-semibold{% if row.stock < 0 %} text-danger{% endif %}">{{ row.stock|floatformat:"0g" }}</td>
+              <td class="text-nowrap">
+                {% with lot=row.first %}
+                  {% if lot and lot.best_before %}
+                    <span class="fw-semibold{% if lot.alert %} text-{{ lot.alert_tone }}{% endif %}">{{ lot.best_before|date:"d.m.Y" }}</span>
+                    {% if lot.alert %}<span class="badge bg-{{ lot.alert_tone }}-subtle text-{{ lot.alert_tone }} ms-1">{{ lot.alert_label }}</span>{% endif %}
+                  {% elif lot %}<span class="text-muted">{% translate "no shelf life" %}</span>
+                  {% elif row.stock < 0 %}<span class="badge bg-danger-subtle text-danger">{% translate "below zero" %}</span>
+                  {% else %}<span class="text-muted">—</span>{% endif %}
+                {% endwith %}
+                {% if row.lots %}
+                  <button type="button" class="btn btn-link btn-sm p-0 d-block text-primary text-decoration-none fs-2 goods-toggle collapsed" data-bs-toggle="collapse" data-bs-target="#lots-{{ row.product.pk }}" aria-expanded="false" aria-controls="lots-{{ row.product.pk }}">
+                    <iconify-icon icon="solar:alt-arrow-down-bold" class="goods-chevron"></iconify-icon>
+                    {% blocktranslate count counter=row.lots|length %}{{ counter }} batch{% plural %}{{ counter }} batches{% endblocktranslate %}
+                  </button>
+                {% endif %}
+              </td>
               <td class="text-end text-nowrap">
                 <a href="{% url 'production:moves' %}?target=products&item={{ row.product.pk }}" class="btn btn-sm bg-secondary-subtle text-secondary ledger-action" title="{% translate "Movements" %}" aria-label="{% translate "Movements" %}">
                   <iconify-icon icon="solar:history-line-duotone"></iconify-icon>
@@ -68,12 +97,26 @@
                 {% endif %}
               </td>
             </tr>
+            {% if row.lots %}
+              {# Its batches, each good until its own production date + the shelf life #}
+              <tr class="collapse lots-row" id="lots-{{ row.product.pk }}">
+                <td colspan="7" class="px-4 py-2">
+                  {% include "production/_lots_table.html" with lots=row.lots limit=":20" %}
+                  {% if row.lots|length > 20 %}<a href="{% url 'production:expiry' %}?show=all" class="fs-2">{% blocktranslate count counter=row.lots|length|add:"-20" %}and {{ counter }} more batch{% plural %}and {{ counter }} more batches{% endblocktranslate %}</a>{% endif %}
+                </td>
+              </tr>
+            {% endif %}
           {% empty %}
-            <tr><td colspan="6" class="text-center text-muted py-6">{% translate "No products found." %}</td></tr>
+            <tr><td colspan="7" class="text-center text-muted py-6">{% if expiry.filter %}{% translate "Nothing expired or expiring soon." %}{% else %}{% translate "No products found." %}{% endif %}</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% include "partials/_pagination.html" %}
+    <div class="px-4 py-2 border-top text-muted fs-2">
+      {% translate "Each batch is good until its production date + the product's shelf life." %}
+      {% translate "Batches are shipped oldest first." %}
+      <a href="{% url 'production:expiry' %}?show=alerts">{% translate "Open the shelf-life page" %}</a>
+    </div>
   </div>
 {% endblock %}

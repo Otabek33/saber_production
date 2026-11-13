@@ -19,6 +19,7 @@
     <div class="card-body py-3 px-4 d-flex flex-wrap align-items-center gap-2">
       <div class="btn-group btn-group-sm" role="group" aria-label="{% translate "Show" %}">
         <a href="?show=attention" class="btn {% if show == 'attention' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% blocktranslate %}Expired or within {{ soon_days }} days{% endblocktranslate %}</a>
+        <a href="?show=alerts" class="btn {% if show == 'alerts' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% translate "Within 3 months" %}</a>
         <a href="?show=expired" class="btn {% if show == 'expired' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% translate "Expired" %}</a>
         <a href="?show=all" class="btn {% if show == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">{% translate "All in stock" %}</a>
       </div>
@@ -72,6 +73,7 @@
                 <td class="num">
                   {% if stock.status == "expired" %}<span class="badge bg-danger-subtle text-danger">{% translate "expired" %}</span>
                   {% elif stock.days_left is not None %}<span class="{% if stock.status == 'soon' %}text-warning fw-semibold{% endif %}">{{ stock.days_left }}</span>
+                    {% if stock.alert %}<span class="badge bg-{{ stock.alert_tone }}-subtle text-{{ stock.alert_tone }} ms-1">{{ stock.alert_label }}</span>{% endif %}
                   {% else %}—{% endif %}
                 </td>
                 <td class="num text-nowrap fw-semibold">{{ stock.remaining|floatformat:"-3g" }}{% if group.key == "materials" %} <span class="text-muted fs-1 fw-normal">{{ stock.item.unit }}</span>{% endif %}</td>

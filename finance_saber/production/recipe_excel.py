@@ -4,7 +4,7 @@ The workbook has four sheets, written by ``recipe_sheets()`` and read by
 ``load_recipes()``, so a downloaded file can be loaded as it is (also into a new
 server's empty database):
 
-* «Продукты» — products: name, sales name, volume, position, in use;
+* «Продукты» — products: name, sales name, volume, position, shelf life (a bare number is months), in use;
 * «Сырьё и упаковка» — materials: name, unit, type, shelf life, minimum stock, in use;
 * «Рецептуры» — one row per material of each product's recipe: the norm per
   unit (can), the same norm per 1000 l (for reading; used only when the norm per
@@ -48,6 +48,7 @@ from finance_saber.cashbook.bank import find_sheet
 from finance_saber.cashbook.exports import Sheet, attachment, xlsx_bytes
 from finance_saber.cashbook.handbooks import LANGUAGES, HandbookError, clean, table, texts
 
+from . import expiry
 from .models import (
     DEFAULT_ALLOWED_LOSS,
     NORM,
@@ -73,6 +74,7 @@ COLUMNS = {
         gettext_noop("Sales name"): "sales_name",
         gettext_noop("Volume, l"): "volume",
         gettext_noop("Position"): "position",
+        gettext_noop("Shelf life"): "shelf_life",
         gettext_noop("In use"): "is_active",
     },
     MATERIALS: {
@@ -115,6 +117,22 @@ def _yes_no(value: bool) -> str:
     return _("yes") if value else _("no")
 
 
+def product_shelf_life(value) -> str:
+    """A product's shelf life cell: a bare number is months (24 -> "24 месяца"); text must be readable."""
+    text = clean(value)
+    if not text:
+        return ""
+    try:
+        months = Decimal(text.replace(",", "."))
+    except InvalidOperation:
+        if expiry.parse(text) is None:
+            raise ValueError(_("write the shelf life in months, e.g. 24.")) from None
+        return text
+    if months <= 0 or months != months.to_integral_value():
+        raise ValueError(_("write the shelf life in months, e.g. 24."))
+    return expiry.months_text(int(months))
+
+
 # --- Download ------------------------------------------------------------------------
 
 
@@ -129,7 +147,14 @@ def recipe_sheets() -> list[Sheet]:
             _(PRODUCTS),
             headers(PRODUCTS),
             [
-                [product.name, product.sales_name, product.volume, product.position, _yes_no(product.is_active)]
+                [
+                    product.name,
+                    product.sales_name,
+                    product.volume,
+                    product.position,
+                    product.shelf_life,
+                    _yes_no(product.is_active),
+                ]
                 for product in products
             ],
         ),
@@ -366,6 +391,7 @@ class RecipeLoader:
             "sales_name": clean(row.get("sales_name")) if "sales_name" in row else product.sales_name,
             "volume": number(row.get("volume"), 3, 6) or product.volume,
             "position": self.position(row.get("position"), product.position),
+            "shelf_life": product_shelf_life(row["shelf_life"]) if "shelf_life" in row else product.shelf_life,
             "is_active": self.flag(row.get("is_active"), product.is_active),
         }
         if values["volume"] is None:

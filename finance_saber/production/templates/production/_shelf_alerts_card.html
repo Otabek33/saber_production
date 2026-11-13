@@ -1,0 +1,61 @@
+{% load i18n %}
+{% comment %}
+  Production overview › Shelf life to check (expiry.alerts): finished-goods batches with 3 months
+  or less left, or expired — flagged 3, 2 and 1 months before, then 2 weeks before. The same
+  batches are in the header's notifications and on the shelf-life page (?show=alerts).
+{% endcomment %}
+<div class="card shelf-alerts">
+  <div class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center gap-2">
+    <span class="notify-icon {% if shelf_alerts.urgent %}bg-danger-subtle text-danger{% else %}bg-warning-subtle text-warning{% endif %}">
+      <iconify-icon icon="solar:danger-triangle-line-duotone"></iconify-icon>
+    </span>
+    <div class="min-w-0">
+      <h5 class="card-title mb-0">{% translate "Shelf life: check at the warehouse" %}</h5>
+      <div class="text-muted fs-2">{% blocktranslate count counter=shelf_alerts.count %}{{ counter }} batch expires within 3 months or has expired{% plural %}{{ counter }} batches expire within 3 months or have expired{% endblocktranslate %}</div>
+    </div>
+    <a href="{% url 'production:expiry' %}?show=alerts" class="btn btn-sm bg-primary-subtle text-primary ms-auto">{% translate "All" %}</a>
+  </div>
+
+  {# How many batches at each step, the most urgent first #}
+  <div class="shelf-levels px-4 pt-3">
+    {% for level in shelf_alerts.levels %}
+      <div class="shelf-level shelf-level-{{ level.tone }}{% if not level.count %} is-empty{% endif %}">
+        <div class="shelf-level-count">{{ level.count }}</div>
+        <div class="shelf-level-label">{{ level.label }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="table-responsive mt-2">
+    <table class="table table-sm table-hover align-middle mb-0 ledger-table">
+      <thead>
+        <tr>
+          <th>{% translate "Product" %}</th>
+          <th>{% translate "Batch" %}</th>
+          <th class="num">{% translate "In stock" %}</th>
+          <th>{% translate "Good until" %}</th>
+          <th>{% translate "Left" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lot in shelf_alerts.lots|slice:":8" %}
+          <tr>
+            <td class="text-truncate" style="max-width: 260px" title="{{ lot.item.name }}">{{ lot.item.name }}</td>
+            <td class="text-nowrap">{% if lot.run %}<a href="{% url 'production:batch' lot.run.pk %}" class="font-monospace">{{ lot.code }}</a>{% else %}<span class="text-muted">{{ lot.lot.label }}</span>{% endif %}</td>
+            <td class="num">{{ lot.remaining|floatformat:"0g" }}</td>
+            <td class="text-nowrap fw-semibold text-{{ lot.alert_tone }}">{{ lot.best_before|date:"d.m.Y" }}</td>
+            <td class="text-nowrap">
+              <span class="badge bg-{{ lot.alert_tone }}-subtle text-{{ lot.alert_tone }}">
+                {% if lot.alert == "expired" %}{% translate "Expired" %}{% else %}{% blocktranslate count counter=lot.days_left %}{{ counter }} day left{% plural %}{{ counter }} days left{% endblocktranslate %}{% endif %}
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="px-4 py-2 border-top text-muted fs-2">
+    {% translate "A batch is flagged 3, 2 and 1 months before its shelf life ends, then 2 weeks before. Check it at the warehouse and ship it first." %}
+    {% if shelf_alerts.count > 8 %}<a href="{% url 'production:expiry' %}?show=alerts">{% blocktranslate count counter=shelf_alerts.count|add:"-8" %}and {{ counter }} more batch{% plural %}and {{ counter }} more batches{% endblocktranslate %}</a>{% endif %}
+  </div>
+</div>

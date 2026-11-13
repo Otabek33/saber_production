@@ -179,3 +179,35 @@ def test_the_page_offers_the_day_for_opening_balances_only(client, technologist,
     assert f'name="received_{opening(stock["salt"]).pk}"' in content
     receipt_move = MaterialMove.objects.get(material=stock["sugar"], kind=MaterialMove.Kind.RECEIPT)
     assert f'name="received_{receipt_move.pk}"' not in content
+
+
+def test_the_dashboard_lists_each_batch_with_its_own_date(client, technologist, stock):
+    """Tea: the May batch (good until 1 Nov 2026) and the September one (1 Mar 2027), first to go off first."""
+    client.force_login(technologist)
+    response = client.get(reverse("production:index"))
+    row = next(row for row in response.context["goods"]["rows"] if row["product"] == stock["tea"])
+    assert [lot.best_before for lot in row["lots"]] == [datetime.date(2026, 11, 1), datetime.date(2027, 3, 1)]
+    assert row["first"] is row["lots"][0]
+    page = response.content.decode()
+    assert "01.11.2026" in page and "01.03.2027" in page
+    assert f'id="goods-lots-{stock["tea"].pk}"' in page
+
+
+def test_by_item_groups_lots_first_to_go_off_first(stock):
+    lots = expiry.product_lots(TODAY)
+    assert expiry.by_item(lots)[stock["tea"].pk] == lots
+
+
+def test_shelf_life_left_for_the_progress_bar(stock):
+    may, september = expiry.product_lots(TODAY)
+    assert (may.life_left_percent, may.tone) == (0, "danger")
+    # 1 Sept – 1 Mar is 181 days; on 4 Nov 117 are left.
+    assert (september.life_left_percent, september.tone) == (65, "success")
+
+
+def test_goods_below_zero_show_no_batches(db):
+    from finance_saber.production.overview import _goods_state
+
+    assert _goods_state(D(-5), []) == "negative"
+    assert _goods_state(D(0), []) == "empty"
+    assert _goods_state(D(5), []) == "unknown"

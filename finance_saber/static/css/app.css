@@ -542,3 +542,47 @@
 @media (min-width: 1200px) {
   .prod-tile-col { flex: 0 0 auto; width: 16.6667%; }
 }
+
+/* Production overview › Finished goods (production/_goods_card.html): products with their batches. */
+.goods-chip { display: inline-flex; align-items: center; gap: .25rem; padding: .2rem .6rem; border-radius: 999px; font-size: .75rem; color: var(--bs-secondary-color); background: var(--bs-tertiary-bg, rgba(0, 0, 0, .05)); text-decoration: none; }
+.goods-chip b { color: var(--bs-body-color); font-variant-numeric: tabular-nums; }
+.goods-chip-danger, .goods-chip-danger b { color: var(--bs-danger); background: var(--bs-danger-bg-subtle); }
+.goods-chip-warning, .goods-chip-warning b { color: var(--bs-warning-text-emphasis, #b37400); background: var(--bs-warning-bg-subtle); }
+.goods-item { transition: background-color .15s; }
+.goods-item:hover { background: var(--bs-tertiary-bg, rgba(0, 0, 0, .02)); }
+/* An accent on the left (a shadow: the flush list's own borders override border-left). */
+.goods-expired, .goods-negative { box-shadow: inset 3px 0 0 var(--bs-danger); }
+.goods-soon { box-shadow: inset 3px 0 0 var(--bs-warning); }
+.goods-qty { font-variant-numeric: tabular-nums; }
+.goods-life { height: .375rem; background: var(--bs-tertiary-bg, rgba(0, 0, 0, .06)); }
+.goods-note { font-size: .75rem; padding: .35rem .6rem; border-radius: .375rem; display: flex; gap: .35rem; align-items: flex-start; }
+.goods-toggle { font-size: .78rem; }
+.goods-chevron { display: inline-block; transition: transform .2s; vertical-align: -2px; }
+.goods-toggle[aria-expanded="true"] .goods-chevron { transform: rotate(180deg); }
+.goods-lots { font-size: .78rem; }
+.goods-lots th { font-weight: 600; color: var(--bs-secondary-color); }
+
+/* Header › Notifications (partials/_header.html): the count on the bell and the alert list. */
+.notify-badge { position: absolute; top: 2px; right: 0; min-width: 1.1rem; height: 1.1rem; padding: 0 .3rem; border-radius: 999px; color: #fff; font-size: .65rem; font-weight: 700; line-height: 1.1rem; text-align: center; box-shadow: 0 0 0 2px var(--bs-body-bg); }
+.notify-menu { width: 360px; max-width: calc(100vw - 1.5rem); padding: 0; }
+.notify-list { max-height: 360px; overflow-y: auto; }
+.notify-item { transition: background-color .15s; }
+.notify-item:hover, .notify-item:focus { background: var(--bs-tertiary-bg, rgba(0, 0, 0, .04)); }
+.notify-icon { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; font-size: 1.1rem; }
+
+/* Production overview › Shelf life to check (production/_shelf_alerts_card.html): batches per alert step. */
+.shelf-levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: .5rem; }
+.shelf-level { --level: var(--bs-secondary); padding: .5rem .75rem; border-radius: .5rem; background: color-mix(in srgb, var(--level) 12%, transparent); border-top: 3px solid var(--level); }
+.shelf-level-danger { --level: var(--bs-danger); }
+.shelf-level-warning { --level: var(--bs-warning); }
+.shelf-level-info { --level: var(--bs-info); }
+.shelf-level.is-empty { --level: var(--bs-secondary-color); opacity: .55; }
+.shelf-level-count { font-size: 1.15rem; font-weight: 700; line-height: 1.2; color: var(--level); font-variant-numeric: tabular-nums; }
+.shelf-level-label { font-size: .72rem; color: var(--bs-secondary-color); overflow-wrap: normal; word-break: normal; hyphens: manual; }
+.notify-item { background: transparent; }
+.notify-item.is-unread { background: color-mix(in srgb, var(--bs-primary) 6%, transparent); }
+.notify-dot { flex: 0 0 auto; width: .5rem; height: .5rem; margin-top: .4rem; border-radius: 50%; background: var(--bs-primary); }
+.notify-list form + form .notify-item { border-top: 1px solid var(--bs-border-color) !important; }
+
+/* Finished goods page (production/product_stock.html): a product's batches open under its row. */
+.lots-row > td { background: var(--bs-tertiary-bg, rgba(0, 0, 0, .025)); }

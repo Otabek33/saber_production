@@ -1,0 +1,97 @@
+{% load i18n %}
+{% comment %}
+  Production overview › Finished goods (overview.goods): one item per product with its stock,
+  how long it lasts, and its batches in stock — each batch is good until its own production
+  date + the product's shelf life. What needs action comes first: expired, expiring within
+  30 days, below zero. A product's batches open under it (Bootstrap collapse, no own script).
+{% endcomment %}
+<div class="card goods-card">
+  <div class="px-4 py-3 border-bottom">
+    <div class="d-flex align-items-center gap-2">
+      <h5 class="card-title mb-0">{% translate "Finished goods" %}</h5>
+      <a href="{% url 'production:expiry' %}" class="btn btn-sm bg-secondary-subtle text-secondary ms-auto">
+        <iconify-icon icon="solar:calendar-line-duotone"></iconify-icon> {% translate "Shelf life" %}
+      </a>
+      <a href="{% url 'production:products' %}" class="btn btn-sm bg-primary-subtle text-primary">{% translate "All" %}</a>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-2">
+      <span class="goods-chip">{% translate "In stock" %}: <b>{{ goods.units|floatformat:"0g" }}</b> {% translate "units" %}</span>
+      <span class="goods-chip">{% translate "Batches" %}: <b>{{ goods.batches }}</b></span>
+      {% if goods.expired %}<a href="{% url 'production:expiry' %}" class="goods-chip goods-chip-danger">{% translate "Expired" %}: <b>{{ goods.expired }}</b></a>{% endif %}
+      {% if goods.soon %}<a href="{% url 'production:expiry' %}" class="goods-chip goods-chip-warning">{% translate "Within 30 days" %}: <b>{{ goods.soon }}</b></a>{% endif %}
+      {% if goods.negative %}<span class="goods-chip goods-chip-danger">{% translate "Below zero" %}: <b>{{ goods.negative }}</b></span>{% endif %}
+    </div>
+    {% if goods.negative %}
+      {# Said once for all such products, not on every row #}
+      <div class="goods-note bg-danger-subtle text-danger mt-2">
+        <iconify-icon icon="solar:danger-triangle-line-duotone"></iconify-icon>
+        <span>{% translate "Below zero: more was shipped than production entered. Check the daily production and shipments." %}</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <ul class="list-group list-group-flush">
+    {% for row in goods.rows|slice:":8" %}
+      {% with product=row.product first=row.first %}
+        <li class="list-group-item px-4 py-3 goods-item goods-{{ row.state }}">
+          <div class="d-flex align-items-start gap-3">
+            <div class="min-w-0 flex-grow-1">
+              <div class="fw-semibold text-truncate" title="{{ product.name }}">{{ product.name }}</div>
+              <div class="text-muted fs-2">
+                {% if product.shelf_life %}
+                  <iconify-icon icon="solar:calendar-line-duotone"></iconify-icon> {% translate "shelf life" %} {{ product.shelf_life }}
+                {% elif perms.production.change_product %}
+                  <a href="{% url 'production:recipe_edit' product.pk %}" class="text-warning">{% translate "Set the shelf life" %}</a>
+                {% else %}{% translate "no shelf life" %}{% endif %}
+                {% if row.lots %} · {% blocktranslate count counter=row.lots|length %}{{ counter }} batch{% plural %}{{ counter }} batches{% endblocktranslate %}{% endif %}
+              </div>
+            </div>
+            <div class="text-end text-nowrap">
+              <div class="fw-semibold goods-qty{% if row.stock < 0 %} text-danger{% endif %}">{{ row.stock|floatformat:"0g" }} <span class="fs-2 text-muted fw-normal">{% translate "units" %}</span></div>
+              <div class="fs-2">
+                {% if row.state == "negative" %}<span class="text-danger">{% translate "below zero" %}</span>
+                {% elif row.state == "empty" %}<span class="text-muted">{% translate "none in stock" %}</span>
+                {% elif row.days is not None %}<span class="{% if row.days < 7 %}text-warning{% else %}text-muted{% endif %}">{% blocktranslate count counter=row.days %}enough for {{ counter }} day{% plural %}enough for {{ counter }} days{% endblocktranslate %}</span>
+                {% else %}<span class="text-muted">{% translate "not shipped lately" %}</span>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          {% if first and first.best_before %}
+            {# The batch that goes off first: the bar is the part of its shelf life still ahead #}
+            <div class="mt-2">
+              <div class="d-flex justify-content-between gap-2 fs-2 mb-1">
+                <span class="text-muted">{% translate "First batch good until" %}</span>
+                <span class="fw-semibold text-{{ first.tone }}">
+                  {{ first.best_before|date:"d.m.Y" }} ·
+                  {% if first.status == "expired" %}{% translate "expired" %}{% else %}{% blocktranslate count counter=first.days_left %}{{ counter }} day left{% plural %}{{ counter }} days left{% endblocktranslate %}{% endif %}
+                </span>
+              </div>
+              <div class="progress goods-life" role="progressbar" aria-label="{% translate "Shelf life left" %}" aria-valuenow="{{ first.life_left_percent }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-{{ first.tone }}" style="width: {{ first.life_left_percent }}%"></div>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if row.lots %}
+            <button type="button" class="btn btn-link btn-sm p-0 mt-2 text-primary text-decoration-none goods-toggle collapsed" data-bs-toggle="collapse" data-bs-target="#goods-lots-{{ product.pk }}" aria-expanded="false" aria-controls="goods-lots-{{ product.pk }}">
+              <iconify-icon icon="solar:alt-arrow-down-bold" class="goods-chevron"></iconify-icon> {% translate "Batches and their dates" %}
+            </button>
+            <div class="collapse" id="goods-lots-{{ product.pk }}">
+              <div class="mt-2">{% include "production/_lots_table.html" with lots=row.lots limit=":6" %}</div>
+              {% if row.lots|length > 6 %}<a href="{% url 'production:expiry' %}" class="fs-2">{% blocktranslate count counter=row.lots|length|add:"-6" %}and {{ counter }} more batch{% plural %}and {{ counter }} more batches{% endblocktranslate %}</a>{% endif %}
+            </div>
+          {% endif %}
+        </li>
+      {% endwith %}
+    {% empty %}
+      <li class="list-group-item px-4 py-4 text-muted">{% translate "No products yet." %}</li>
+    {% endfor %}
+  </ul>
+
+  <div class="px-4 py-2 border-top text-muted fs-2">
+    {% translate "Each batch is good until its production date + the product's shelf life." %}
+    {% translate "«Lasts»: the stock at the average daily shipping of the last 30 days." %}
+    {% if goods.rows|length > 8 %}<a href="{% url 'production:products' %}">{% blocktranslate count counter=goods.rows|length|add:"-8" %}and {{ counter }} more product{% plural %}and {{ counter }} more products{% endblocktranslate %}</a>{% endif %}
+  </div>
+</div>

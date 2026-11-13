@@ -141,7 +141,7 @@ def _losses_xlsx(data, show_money):
     return exports.xlsx_response(f"losses-{data.start:%Y-%m}.xlsx", sheets)
 
 
-SHOW = ("attention", "expired", "all")
+SHOW = ("attention", "alerts", "expired", "all")  # alerts: 3 months or less left, as in the header's bell
 
 
 @permission(view="production.view_product")
@@ -162,6 +162,8 @@ def expiry_page(request):
             lots = [lot for lot in lots if lot.status == expiry.Status.EXPIRED]
         elif show == "attention":
             lots = [lot for lot in lots if lot.status in (expiry.Status.EXPIRED, expiry.Status.SOON)]
+        elif show == "alerts":
+            lots = [lot for lot in lots if lot.alert]
         groups.append({"key": key, "title": title, "lots": lots, "summary": summary})
     return render(
         request,

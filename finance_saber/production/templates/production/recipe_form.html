@@ -89,11 +89,20 @@
             </button>
             {% endif %}
             <a href="{% url 'production:recipes' %}" class="btn bg-danger-subtle text-danger">{% if can_edit %}{% translate "Cancel" %}{% else %}{% translate "Back" %}{% endif %}</a>
+            {% if can_delete %}
+            {# Opens the confirmation modal (below the form); its own form posts the delete. #}
+            <button type="button" class="btn bg-danger-subtle text-danger ms-auto"
+                    data-bs-toggle="modal" data-bs-target="#delete-product-modal"
+                    data-action="{% url 'production:product_delete' product.pk %}" data-name="{{ product.name }}">
+              <iconify-icon icon="solar:trash-bin-minimalistic-line-duotone"></iconify-icon> {% translate "Delete product" %}
+            </button>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
   </form>
+  {% if can_delete %}{% include "production/_delete_product_modal.html" %}{% endif %}
 {% endblock %}
 
 {% block scripts %}

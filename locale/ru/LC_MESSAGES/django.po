@@ -6731,3 +6731,254 @@ msgstr "Сохранить даты поступления"
 #: finance_saber/production/expiry
 msgid "Stock entered as an opening balance arrived earlier: give the day it really did, and its shelf life counts from then. Stock quantities and their history don't change."
 msgstr "Начальный остаток на самом деле поступил раньше: укажите фактическую дату, и срок годности посчитается от неё. Остатки и их история не меняются."
+
+#: finance_saber/production
+msgid "Per unit, with VAT, in the currency beside it. Used only while no receipt has a price."
+msgstr "За единицу, с НДС, в валюте, выбранной ниже. Используется, только пока ни в одном поступлении нет цены."
+
+#: finance_saber/production
+msgid "price currency"
+msgstr "валюта цены"
+
+#: finance_saber/production
+msgid "receipt price"
+msgstr "цена поступления"
+
+#: finance_saber/production
+msgid "another receipt's price"
+msgstr "цена другого поступления"
+
+#: finance_saber/production
+msgid "How the value is worked out"
+msgstr "Как считается стоимость"
+
+#: finance_saber/production
+msgid "Value = what is left in stock × the price per unit. Under each value you see that sum."
+msgstr "Стоимость = остаток на складе × цена за единицу. Под каждой суммой показан этот расчёт."
+
+#: finance_saber/production
+msgid "The price is taken from the receipt the stock came by: its amount ÷ its quantity. Oldest stock is used first, so what is left belongs to the latest receipts."
+msgstr "Цена берётся из поступления, которым пришёл остаток: сумма ÷ количество. Сначала расходуется самое старое, поэтому остаток — от последних поступлений."
+
+#: finance_saber/production
+msgid "Stock with no priced receipt (an opening balance) takes the price of another receipt of that material; if there is none, the material's «Учётная цена»."
+msgstr "Остаток без поступления с ценой (начальный остаток) берёт цену другого поступления этого материала; если такого нет — «Учётную цену» материала."
+
+#: finance_saber/production
+msgid "«Учётная цена» is per unit, in the currency chosen beside it (UZS or USD): open the material to set it."
+msgstr "«Учётная цена» — за единицу, в валюте, выбранной под ней (UZS или USD): задаётся в карточке материала."
+
+#: finance_saber/production
+#, python-format
+msgid "A price in UZS is divided by the USD rate (%(rate)s); a price in USD is used as it is."
+msgstr "Цена в сумах делится на курс доллара (%(rate)s); цена в USD берётся как есть."
+
+#: finance_saber/production
+msgid "UZS"
+msgstr "сум"
+
+# --- Products: shelf life in months, deleting a product entered by mistake
+#: finance_saber/production
+msgid "Shelf life, months"
+msgstr "Срок годности, мес."
+
+#: finance_saber/production
+msgid "Number of months, e.g. 12. Stock shows until when each batch is good."
+msgstr "Количество месяцев, например 12. В остатках видно, до какого числа годна каждая партия."
+
+#: finance_saber/production
+msgid "Delete product"
+msgstr "Удалить продукт"
+
+#: finance_saber/production
+msgid "The product and its recipe will be deleted. This can't be undone."
+msgstr "Продукт и его рецептура будут удалены. Это действие нельзя отменить."
+
+#: finance_saber/production
+msgid "Only a product entered by mistake can be deleted. One already in production, stock or shipments is kept: switch it off instead."
+msgstr "Удалить можно только продукт, добавленный по ошибке. Продукт, который уже есть в производстве, остатках или отгрузках, сохраняется — его можно отключить."
+
+#: finance_saber/production
+#, python-format
+msgid "%(name)s is already in production, stock or shipments, so it can't be deleted."
+msgstr "«%(name)s» уже есть в производстве, остатках или отгрузках, поэтому удалить его нельзя."
+
+#: finance_saber/production
+msgid "Switch it off instead (uncheck Active)."
+msgstr "Вместо удаления отключите его (снимите отметку «Активна»)."
+
+#: finance_saber/production
+#, python-format
+msgid "Product %(name)s deleted."
+msgstr "Продукт «%(name)s» удалён."
+
+# --- Production dashboard: product shelf life; products Excel shelf life column
+#: finance_saber/production
+#, python-format
+msgid "%(counter)s day left"
+msgid_plural "%(counter)s days left"
+msgstr[0] "остался %(counter)s день"
+msgstr[1] "осталось %(counter)s дня"
+msgstr[2] "осталось %(counter)s дней"
+msgstr[3] "осталось %(counter)s дня"
+
+#: finance_saber/production
+msgid "write the shelf life in months, e.g. 24."
+msgstr "укажите срок годности в месяцах, например 24."
+
+# --- Production dashboard: finished goods card with batches and their shelf life
+#: finance_saber/production
+msgid "Within 30 days"
+msgstr "Истекает за 30 дней"
+
+#: finance_saber/production
+msgid "Below zero"
+msgstr "Ниже нуля"
+
+#: finance_saber/production
+msgid "Set the shelf life"
+msgstr "Указать срок годности"
+
+#: finance_saber/production
+msgid "none in stock"
+msgstr "нет на складе"
+
+#: finance_saber/production
+msgid "Below zero: more was shipped than production entered. Check the daily production and shipments."
+msgstr "Ниже нуля: отгружено больше, чем внесено производства. Проверьте ежедневное производство и отгрузки."
+
+#: finance_saber/production
+msgid "First batch good until"
+msgstr "Первая партия годна до"
+
+#: finance_saber/production
+msgid "Shelf life left"
+msgstr "Остаток срока годности"
+
+#: finance_saber/production
+msgid "Batches and their dates"
+msgstr "Партии и их сроки"
+
+#: finance_saber/production
+msgid "Each batch is good until its production date + the product's shelf life."
+msgstr "Каждая партия годна до даты её производства + срок годности продукта."
+
+#: finance_saber/production
+#, python-format
+msgid "%(counter)s batch"
+msgid_plural "%(counter)s batches"
+msgstr[0] "%(counter)s партия"
+msgstr[1] "%(counter)s партии"
+msgstr[2] "%(counter)s партий"
+msgstr[3] "%(counter)s партии"
+
+#: finance_saber/production
+#, python-format
+msgid "enough for %(counter)s day"
+msgid_plural "enough for %(counter)s days"
+msgstr[0] "хватит на %(counter)s день"
+msgstr[1] "хватит на %(counter)s дня"
+msgstr[2] "хватит на %(counter)s дней"
+msgstr[3] "хватит на %(counter)s дня"
+
+#: finance_saber/production
+#, python-format
+msgid "and %(counter)s more batch"
+msgid_plural "and %(counter)s more batches"
+msgstr[0] "и ещё %(counter)s партия"
+msgstr[1] "и ещё %(counter)s партии"
+msgstr[2] "и ещё %(counter)s партий"
+msgstr[3] "и ещё %(counter)s партии"
+
+# --- Expiry alerts: 3, 2, 1 months and 2 weeks before; header notifications, dashboard, Telegram
+#: finance_saber/production
+msgid "2 weeks left"
+msgstr "Осталось 2 недели"
+
+#: finance_saber/production
+msgid "1 month left"
+msgstr "Остался 1 месяц"
+
+#: finance_saber/production
+msgid "2 months left"
+msgstr "Осталось 2 месяца"
+
+#: finance_saber/production
+msgid "3 months left"
+msgstr "Осталось 3 месяца"
+
+#: finance_saber/templates
+msgid "Shelf life of finished goods: check these batches at the warehouse."
+msgstr "Срок годности готовой продукции: проверьте эти партии на складе."
+
+#: finance_saber/templates
+#, python-format
+msgid "Show all (%(counter)s more)"
+msgid_plural "Show all (%(counter)s more)"
+msgstr[0] "Показать все (ещё %(counter)s)"
+msgstr[1] "Показать все (ещё %(counter)s)"
+msgstr[2] "Показать все (ещё %(counter)s)"
+msgstr[3] "Показать все (ещё %(counter)s)"
+
+#: finance_saber/templates
+msgid "Open the shelf-life page"
+msgstr "Открыть сроки годности"
+
+#: finance_saber/production
+msgid "Within 3 months"
+msgstr "В течение 3 месяцев"
+
+#: finance_saber/production
+msgid "Shelf life: check at the warehouse"
+msgstr "Сроки годности: проверьте на складе"
+
+#: finance_saber/production
+#, python-format
+msgid "%(counter)s batch expires within 3 months or has expired"
+msgid_plural "%(counter)s batches expire within 3 months or have expired"
+msgstr[0] "%(counter)s партия: срок истекает в течение 3 месяцев или уже истёк"
+msgstr[1] "%(counter)s партии: срок истекает в течение 3 месяцев или уже истёк"
+msgstr[2] "%(counter)s партий: срок истекает в течение 3 месяцев или уже истёк"
+msgstr[3] "%(counter)s партии: срок истекает в течение 3 месяцев или уже истёк"
+
+#: finance_saber/production
+msgid "Left"
+msgstr "Осталось"
+
+#: finance_saber/production
+msgid "A batch is flagged 3, 2 and 1 months before its shelf life ends, then 2 weeks before. Check it at the warehouse and ship it first."
+msgstr "Партия отмечается за 3, 2 и 1 месяц до окончания срока годности, затем за 2 недели. Проверьте её на складе и отгрузите в первую очередь."
+
+# --- Notifications in the header (the bell): the morning expiry notification
+#: finance_saber/templates
+msgid "Mark all as read"
+msgstr "Отметить все как прочитанные"
+
+#: finance_saber/templates
+msgid "Unread"
+msgstr "Не прочитано"
+
+#: finance_saber/users
+msgid "notification"
+msgstr "уведомление"
+
+#: finance_saber/users
+msgid "notifications"
+msgstr "уведомления"
+
+#: finance_saber/users
+msgid "The day it is for: one of each kind a day."
+msgstr "День, к которому оно относится: одно каждого вида в день."
+
+#: finance_saber/users
+msgid "Where opening it leads, inside the site."
+msgstr "Куда ведёт уведомление внутри сайта."
+
+# --- Finished goods page: batches and their shelf life
+#: finance_saber/production
+msgid "first batch"
+msgstr "первая партия"
+
+#: finance_saber/production
+msgid "Batches are shipped oldest first."
+msgstr "Партии отгружаются начиная с самых старых."

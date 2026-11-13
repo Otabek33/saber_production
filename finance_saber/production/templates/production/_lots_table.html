@@ -1,0 +1,28 @@
+{% load i18n %}
+{% comment %}
+  A product's batches in stock (expiry.StockLot), the first to go off first: batch code, when it
+  was made, how many are left and until when each is good (its own production date + shelf life).
+  The badge follows the alert steps (expired, 2 weeks, 1, 2, 3 months left), else green.
+  Used by the production overview (_goods_card.html) and the finished goods page.
+  Params: lots; limit (rows shown, the rest are on the shelf-life page).
+{% endcomment %}
+<div class="table-responsive">
+  <table class="table table-sm align-middle mb-0 goods-lots">
+    <thead><tr><th>{% translate "Batch" %}</th><th>{% translate "Made" %}</th><th class="num">{% translate "In stock" %}</th><th>{% translate "Good until" %}</th><th>{% translate "Left" %}</th></tr></thead>
+    <tbody>
+      {% for lot in lots|slice:limit %}
+        <tr>
+          <td class="text-nowrap">{% if lot.run %}<a href="{% url 'production:batch' lot.run.pk %}" class="font-monospace">{{ lot.code }}</a>{% else %}<span class="text-muted">{{ lot.lot.label }}</span>{% endif %}</td>
+          <td class="text-nowrap">{{ lot.date|date:"d.m.Y" }}</td>
+          <td class="num">{{ lot.remaining|floatformat:"0g" }}</td>
+          <td class="text-nowrap">{% if lot.best_before %}<span class="fw-semibold{% if lot.alert %} text-{{ lot.alert_tone }}{% endif %}">{{ lot.best_before|date:"d.m.Y" }}</span>{% else %}<span class="text-muted" title="{% translate "No shelf life given" %}">—</span>{% endif %}</td>
+          <td class="text-nowrap">
+            {% if lot.alert == "expired" %}<span class="badge bg-danger-subtle text-danger">{% translate "Expired" %}</span>
+            {% elif lot.days_left is not None %}<span class="badge {% if lot.alert %}bg-{{ lot.alert_tone }}-subtle text-{{ lot.alert_tone }}{% else %}bg-success-subtle text-success{% endif %}">{% blocktranslate count counter=lot.days_left %}{{ counter }} day{% plural %}{{ counter }} days{% endblocktranslate %}</span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

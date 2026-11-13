@@ -12,6 +12,7 @@ from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
@@ -36,7 +37,7 @@ from .forms import (
     UserCreateForm,
     UserEditForm,
 )
-from .models import RoleAccessChange, User
+from .models import Notification, RoleAccessChange, User
 from .roles import (
     AREAS,
     AREAS_BY_KEY,
@@ -455,3 +456,31 @@ def user_access(request, pk):
             _("%(user)s: %(role)s.") % {"user": user.get_username(), "role": role_label(form.cleaned_data["role"])},
         )
     return redirect(back)
+
+
+# --- Notifications (the header's bell) -------------------------------------------------------
+
+
+def _back(request):
+    """The page the user was on, if it is on this site; else the home page."""
+    target = request.POST.get("next") or request.headers.get("referer") or ""
+    if url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return target
+    return reverse("core:home")
+
+
+@require_POST
+def notification_open(request, pk):
+    """Open one of the user's notifications: it is marked read, and its page is shown."""
+    notification = get_object_or_404(Notification, pk=pk, user=request.user)
+    if notification.read_at is None:
+        notification.read_at = timezone.now()
+        notification.save(update_fields=["read_at"])
+    return redirect(notification.url or _back(request))
+
+
+@require_POST
+def notifications_read(request):
+    """Mark all the user's notifications read."""
+    request.user.notifications.filter(read_at__isnull=True).update(read_at=timezone.now())
+    return redirect(_back(request))
