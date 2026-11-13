@@ -6982,3 +6982,49 @@ msgstr "первая партия"
 #: finance_saber/production
 msgid "Batches are shipped oldest first."
 msgstr "Партии отгружаются начиная с самых старых."
+
+# --- "Show 20 more" under lists (partials/_load_more.html)
+#: finance_saber/templates
+#, python-format
+msgid "Shown %(shown)s of %(total)s"
+msgstr "Показано %(shown)s из %(total)s"
+
+#: finance_saber/templates
+#, python-format
+msgid "Show %(counter)s more"
+msgid_plural "Show %(counter)s more"
+msgstr[0] "Показать ещё %(counter)s"
+msgstr[1] "Показать ещё %(counter)s"
+msgstr[2] "Показать ещё %(counter)s"
+msgstr[3] "Показать ещё %(counter)s"
+
+#: finance_saber/templates
+msgid "Back to the start"
+msgstr "В начало"
+
+# --- Raw materials: the compact stock value line
+#: finance_saber/production
+#, python-format
+msgid "estimated: $ %(amount)s"
+msgstr "из них оценка: $ %(amount)s"
+
+#: finance_saber/production
+#, python-format
+msgid "%(counter)s without a price"
+msgid_plural "%(counter)s without a price"
+msgstr[0] "%(counter)s без цены"
+msgstr[1] "%(counter)s без цены"
+msgstr[2] "%(counter)s без цены"
+msgstr[3] "%(counter)s без цены"
+
+#: finance_saber/production
+msgid "How is it worked out?"
+msgstr "Как считается?"
+
+#: finance_saber/production
+msgid "Stock without a priced receipt, at another receipt's or the standard price."
+msgstr "Остатки без цены в поступлении — по цене другого поступления или учётной цене."
+
+#: finance_saber/production
+msgid "Set «Учётная цена» on the material, or record a receipt with a price."
+msgstr "Укажите «Учётную цену» в карточке материала или внесите поступление с ценой."

@@ -112,6 +112,76 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // "Show 20 more" (partials/_load_more.html): the link's page is fetched and its rows are added
+  // to the list (data-load-more="<selector of the tbody>"); its own "show more" block replaces
+  // this one, with the next link and the new count. If anything goes wrong, the page just opens.
+  // Rows with data-empty-row ("nothing found") are never added.
+  document.addEventListener("click", function (event) {
+    var link = event.target.closest && event.target.closest("a[data-load-more]");
+    if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return; // a new tab or window: the link opens as it is
+    }
+    event.preventDefault();
+    if (link.getAttribute("aria-busy") === "true") {
+      return;
+    }
+    var selector = link.dataset.loadMore;
+    var list = document.querySelector(selector);
+    var block = link.closest("[data-load-more-block]");
+    if (!list || !block) {
+      window.location.href = link.href;
+      return;
+    }
+    link.setAttribute("aria-busy", "true");
+    link.classList.add("disabled");
+    var spinner = link.querySelector(".spinner-border");
+    var icon = link.querySelector(".load-more-icon");
+    if (spinner) spinner.classList.remove("d-none");
+    if (icon) icon.classList.add("d-none");
+
+    fetch(link.href, { credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } })
+      .then(function (response) {
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.text();
+      })
+      .then(function (html) {
+        var page = new DOMParser().parseFromString(html, "text/html");
+        var rows = page.querySelector(selector);
+        if (!rows) throw new Error("no rows on the next page");
+        var first = null;
+        // A group heading row (data-group, e.g. raw materials / packaging) starts each page:
+        // it is left out when the list already ends in that group.
+        var headings = list.querySelectorAll(":scope > [data-group]");
+        var group = headings.length ? headings[headings.length - 1].dataset.group : null;
+        Array.prototype.slice.call(rows.children).forEach(function (row) {
+          if (row.hasAttribute("data-empty-row")) return;
+          if (row.hasAttribute("data-group")) {
+            if (row.dataset.group === group) return;
+            group = row.dataset.group;
+          }
+          var added = document.importNode(row, true);
+          list.appendChild(added);
+          first = first || added;
+        });
+        var next = page.querySelector("[data-load-more-block]");
+        if (next) {
+          next = document.importNode(next, true);
+          var start = next.querySelector(".load-more-start"); // the first rows are already here
+          if (start) start.remove();
+          block.replaceWith(next);
+        } else {
+          block.remove();
+        }
+        if (first) { // keyboard and screen-reader users carry on from the first new row
+          first.setAttribute("tabindex", "-1");
+          first.focus({ preventScroll: true });
+        }
+      })
+      .catch(function () {
+        window.location.href = link.href;
+      });
+  });
+
   // Number inputs (data-number="<decimals>"): digits grouped by spaces and a decimal comma
   // as they are typed, "1250.5" -> "1 250,5", the way the server reads them (QuantityField).
   function formatNumber(text, decimals) {

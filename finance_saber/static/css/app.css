@@ -100,6 +100,22 @@
   html[data-layout="horizontal"] .left-sidebar.with-horizontal .first-level .sidebar-link {
     min-height: 42px;
   }
+  /* Main sections in the drawer: tighter rows; the section you are in stays blue, without the
+     theme's large glow, so it reads as a selected row rather than a card. */
+  html[data-layout="horizontal"] .left-sidebar.with-horizontal #sidebarnav > .sidebar-item > .sidebar-link {
+    margin: 2px 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-radius: 10px;
+    transition: background-color .15s, color .15s;
+  }
+  html[data-layout="horizontal"] .left-sidebar.with-horizontal #sidebarnav > .sidebar-item:not(.selected) > .sidebar-link:hover {
+    background-color: color-mix(in srgb, var(--bs-primary) 10%, transparent);
+    color: var(--bs-primary);
+  }
+  html[data-layout="horizontal"] .left-sidebar.with-horizontal #sidebarnav > .sidebar-item.selected > .sidebar-link {
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--bs-primary) 25%, transparent);
+  }
   html[data-layout="horizontal"] .left-sidebar.with-horizontal {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -423,8 +439,42 @@
     white-space: nowrap;
     gap: 6px;
   }
+  /* Main sections: compact pills centred in the 60px bar (not the theme's full-height blocks).
+     The item itself stays 60px tall, so its dropdown still opens from the bar's edge. */
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item {
+    align-items: center;
+    padding: 0 2px;
+  }
   html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item > .sidebar-link {
-    padding: 6px 10px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-weight: 500;
+    color: var(--bs-body-color);
+    transition: background-color .15s, color .15s, box-shadow .15s;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item > .sidebar-link.has-arrow {
+    padding-right: 26px !important; /* the theme sets 35px !important */
+  }
+  /* The theme's arrow, smaller and closer to the text */
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item > .sidebar-link.has-arrow::after {
+    right: 11px;
+    width: 6px;
+    height: 6px;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item > .sidebar-link .ti {
+    font-size: 17px;
+  }
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item:hover > .sidebar-link {
+    background-color: color-mix(in srgb, var(--bs-primary) 10%, transparent);
+    color: var(--bs-primary);
+  }
+  /* The section you are in: the same blue, as a small pill */
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item.selected > .sidebar-link,
+  html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item > .sidebar-link.active {
+    background-color: var(--bs-primary);
+    color: #fff;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--bs-primary) 30%, transparent);
   }
   html[data-layout="horizontal"] .app-header .main-menu #sidebarnav > .sidebar-item ul {
     top: calc(60px - 8px);
@@ -586,3 +636,8 @@
 
 /* Finished goods page (production/product_stock.html): a product's batches open under its row. */
 .lots-row > td { background: var(--bs-tertiary-bg, rgba(0, 0, 0, .025)); }
+
+/* "Show 20 more" under a list (partials/_load_more.html). */
+.load-more-status { min-width: 180px; text-align: center; }
+.load-more-progress { height: .25rem; background: var(--bs-tertiary-bg, rgba(0, 0, 0, .06)); }
+.load-more-button { min-width: 180px; }

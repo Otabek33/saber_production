@@ -142,4 +142,4 @@ def test_the_stock_page_shows_how_a_value_comes_about(client, finance, db):
     MaterialMove.objects.create(material=tea, date=datetime.date(2026, 11, 2), kind="opening", quantity=100)
     client.force_login(finance)
     content = client.get(reverse("production:materials")).content.decode()
-    assert "Как считается стоимость" in content and "учётная цена" in content and "$5" in content
+    assert "Как считается?" in content and "учётная цена" in content and "$5" in content

@@ -1,0 +1,32 @@
+{% load i18n paging %}
+{% comment %}
+  "Show 20 more": the next page's rows are added under the list (js/app.js, data-load-more)
+  instead of opening another page. It is a real link to that page, so it works without
+  JavaScript too, and the other query parameters (search, filters) are kept.
+  Usage: {% include "partials/_load_more.html" with target="#material-rows" %}
+    target — the CSS selector of the <tbody> (or list) the rows are added to; the same element
+    on the next page holds its rows. A row with data-empty-row ("nothing found") is never added;
+    a group heading row (data-group="<key>") is left out when the list already ends in that group.
+{% endcomment %}
+{% if page_obj.paginator.count %}
+  {% next_count page_obj as more %}{% shown_percent page_obj as percent %}
+  <div class="load-more px-4 py-3 border-top" data-load-more-block>
+    <div class="d-flex flex-wrap align-items-center justify-content-center gap-3">
+      <div class="load-more-status">
+        <span class="text-muted fs-2" aria-live="polite">{% blocktranslate with shown=page_obj.end_index total=page_obj.paginator.count %}Shown {{ shown }} of {{ total }}{% endblocktranslate %}</span>
+        <div class="progress load-more-progress mt-1" role="progressbar" aria-hidden="true"><div class="progress-bar" style="width: {{ percent }}%"></div></div>
+      </div>
+      {% if more %}
+        <a href="{% querystring page=page_obj.next_page_number %}" class="btn btn-sm bg-primary-subtle text-primary load-more-button" data-load-more="{{ target }}">
+          <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+          <iconify-icon icon="solar:alt-arrow-down-bold" class="load-more-icon"></iconify-icon>
+          {% blocktranslate count counter=more %}Show {{ counter }} more{% plural %}Show {{ counter }} more{% endblocktranslate %}
+        </a>
+      {% endif %}
+      {% if page_obj.number > 1 %}
+        {# Opened as a page of its own (without JavaScript): back to the first rows #}
+        <a href="{% querystring page=None %}" class="btn btn-sm btn-link text-decoration-none load-more-start">{% translate "Back to the start" %}</a>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
